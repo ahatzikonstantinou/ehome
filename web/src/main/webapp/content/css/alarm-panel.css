@@ -1,0 +1,108 @@
+.alarm-pin-container{
+    border-radius: 6px;
+    border: solid 1px greenyellow;
+    font-size: 18px;
+    margin: 10px auto 20px auto; /* 10px 0px 10px;*/
+    padding: 4px 16px;
+    width: 85%;
+    height: 60px;
+}
+
+.alarm-challenge{
+    margin: 0 auto;
+    width: 4ch;
+    color: red;
+}
+
+.alarm-pin{
+    margin: 0 auto;
+    width: 4ch;
+    color: white;
+}
+
+.alarm-btn{
+    border-radius: 999px;
+    -webkit-border-radious: 999px;
+    -moz-border-radius: 999px;
+    margin: 12px;
+    height: 60px;
+    width: 60px;
+    padding: 15px;
+    background-color: inherit;
+}
+
+.alarm-btn:focus{
+    outline: none;
+}
+
+.alarm-backspace-btn {
+    display: block;
+    width: 97%;
+    margin: 22px 12px !important;
+    height: 50px;
+    background-color: inherit;
+}
+
+.alarm-backspace-btn:focus{
+    outline: none;
+}
+
+.alarm-cmd-button{
+    margin: 20% 10% 10% 10%;
+    width: 80%;
+    height: 55px;
+    background-color: inherit;
+}
+.alarm-cmd-button:focus{
+    outline:none;
+}
+
+.alarm-numpad {
+    margin: 5px 30px 30px 30px;
+    padding: 15px 70px 10px 60px !important;
+    border: solid 1px greenyellow;
+    border-radius: 30px;
+    display: block;
+    float: left;
+    width: 50%;
+    height: 455px;
+}
+
+.alarm-cmdpad{
+    display: block;
+    float: left;
+    margin: 5px 30px 30px 30px;
+    border: solid 1px greenyellow;
+    border-radius: 30px;
+    /*background-color: yellow;*/
+    width: 33%;
+    height: 455px;
+}
+
+.alarm-header
+{
+    margin: 30px 20px 40px 30px;
+    padding: 10px;
+    border: solid 1px greenyellow;
+    border-radius: 30px;    
+    width: 91%;
+    height: 100px;
+}
+
+.alarm-state
+{
+    font-size: 35px;
+    font-weight: 900;
+    font-family: Arial, Helvetica, sans-serif;
+    position: relative;
+    margin: 15px auto; /*ahat: auto is for centering. Also needs to have width specified, even in %*/
+    width: 250px;
+    color: red;
+}
+
+/* ahat: hide parts of the main page I don't want to display in the alarm panel*/
+.header { display: none; }
+.footer { display: none; }
+.main { padding: 0px; margin: 0px;}
+.container { padding: 0px; margin: 0px;}
+body { background-color: black; }

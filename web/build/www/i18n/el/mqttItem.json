@@ -1,0 +1,22 @@
+{
+    "eHomeApp": {
+        "mqttItem" : {
+            "home": {
+                "title": "Mqtt Items",
+                "createLabel": "Δημιουργήστε ένα νέο Mqtt Item",
+                "createOrEditLabel": "Δημιουργήστε η επεξεργαστείτε ένα Mqtt Item"
+            },
+            "created": "Ένα νέο Mqtt Item έχει δημιουργηθεί με αναγνωριστικό {{ param }}",
+            "updated": "Ένα Mqtt Item έχει ενημερωθεί με αναγνωριστικό {{ param }}",
+            "deleted": "Ένα Mqtt Item έχει διαγραφτεί με αναγνωριστικό {{ param }}",
+            "delete": {
+                "question": "Είστε βέβαιοι όταν θέλετε να διαγράψετε το ακόλουθο Mqtt Item {{ id }};"
+            },
+            "detail": {
+                "title": "Mqtt Item"
+            },
+            "topic": "Topic",
+            "state": "State"
+        }
+    }
+}

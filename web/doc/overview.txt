@@ -1,0 +1,47 @@
+-Every component is either mqtt or http based. This means that is accessed via mqtt messages or via a url
+
+-Initial components:
+	-mqtt alarm:
+		maintains state to dispplay in a panel
+	-mqtt notifier:
+		subscribes to topics regarding making phone calls, sending sms, email, IM
+		publishes topics for incoming commands e.g. alarm disarm
+	-mqtt door sensor(s):
+		publish topics regarding open/close change-status
+		subscribe to topics regarding reporting status
+	-mqtt logger
+		subscribes to all topics and writes everything in a log
+	-javascript/angular website:
+		automatically or using a json configuration displays status for all mqtt components
+
+-Future components:
+	-scenes:
+		python scripts to be executed by a script runner python program, e.g. turn off lights to watch tv
+	-monitors:
+		python scripts to be executed by a monitor runner e.g. when sensors trigger and alarm is armed, tell notifier to make phone call, send sms, email, IM
+
+-Mqtt topic schema:
+	In order for javascript to be able to discover and properly display mqtt components they must obey the following schema regarding topics:
+	address/home/floor/room/location/type/item e.g. 
+		barnaby_street_24/john_s_appartment/1st_floor/bedroom/south_window/window/
+		barnaby_Street_24/john_S_appartment/1st_floor/bedroom/south_window/blind/
+	This allows to easily group and display together all doors and windows, or all lights etc
+	The type to use should correspond to an html template that javascript will use to display the item.
+
+	When publishing, each mqtt component must publish:
+		"topic/state_changed state_payload" when state changes from one state to another
+		"topic/state state_payload" when asked to report state
+		state_payload must be a json in the form { value:"xxx", selectable_values:{ type:"Type", {"depends on Type e.g. range, enumeration etc."} }
+			Type is number/string/enum, range
+			This allows javascript to properly display the item, and draw a control so that the user may update the state
+
+	Each mqtt component must subscribe to:
+		topic/report_state in order to respond to state requests, and respond with "topic/state state_payload"
+
+	This mqtt schema must be followed when defining a json configuration in a file.
+
+	Auto discovery and explicit specification may be mixed. Explicit item specifications override the auto discovered ones.
+
+	The topic/report_state string must be unique and uniquely identifies items (so that javascript knows which explicit specification overrides which auto-discovered item)
+
+

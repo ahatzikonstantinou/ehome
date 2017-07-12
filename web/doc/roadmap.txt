@@ -1,0 +1,23 @@
+-Create javascript/angular website to 
+	-read json specification and display items
+	-auto-discover mqtt items
+	-create html templates for types:
+		door
+		window
+		light
+		alarm
+		roller
+		blind
+	
+
+-Create mqtt logger to log all published mqtt messages
+
+-Create mqtt alarm
+
+-Create panel (html/javascript) for alarm
+
+-Create mqtt sensor (esp8266 software) to publish/subscibe according to mqtt schema in overview.txt
+
+-Create mqtt alarm_monitor to monitor sensors according to alarm status and use notifier if necessary
+
+-Create notifier i.e. test rpi with sim800/sim900 for phonecalls, sms, email, IM

@@ -1,0 +1,14 @@
+<div>
+    <div ng-show="showLabel">
+        <label class="floor">{{f.name}}</label>
+        <button type="button" class="btn btn-link btn-xs" ng-click="isCollapsed.floor = !isCollapsed.floor">
+            <span class="glyphicon glyphicon-triangle-bottom" ng-if="isCollapsed.floor"></span>
+            <span class="glyphicon glyphicon-triangle-top" ng-if="!isCollapsed.floor"></span>
+        </button>    
+    </div>
+    <div ng-show="!isCollapsed.floor || !showLabel">
+        <div ng-repeat="r in f.rooms">
+            <room room='r' show-label="f.rooms.length > 1" is-collapsed-house="isCollapsedHouse" is-collapsed-floor="isCollapsedFloor"  is-collapsed="isCollapsed.room[$index]" filter="filter" show-mqtt-topics="showMqttTopics"/>
+        </div>
+    </div>
+</div>

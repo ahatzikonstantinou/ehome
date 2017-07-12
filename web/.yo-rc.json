@@ -1,0 +1,18 @@
+{
+  "generator-jhipster": {
+    "promptValues": {
+      "nativeLanguage": "en"
+    },
+    "baseName": "eHome",
+    "databaseType": "none",
+    "clientFramework": "angular1",
+    "useSass": false,
+    "enableTranslation": true,
+    "nativeLanguage": "en",
+    "languages": [
+      "en",
+      "el"
+    ],
+    "clientPackageManager": "yarn"
+  }
+}

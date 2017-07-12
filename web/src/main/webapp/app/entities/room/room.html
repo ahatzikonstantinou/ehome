@@ -1,0 +1,13 @@
+
+    <div ng-show="showLabel">
+        <label class="room">{{r.name}}</label>
+        <button type="button" class="btn btn-link btn-xs" ng-click="isCollapsed.room = !isCollapsed.room">
+            <span class="glyphicon glyphicon-triangle-bottom" ng-show="isCollapsed.room"></span>
+            <span class="glyphicon glyphicon-triangle-top" ng-show="!isCollapsed.room"></span>
+        </button>    
+    </div>
+    <div ng-show="!isCollapsed.room || !showLabel">
+        <div ng-repeat="i in r.items">            
+            <item item="i" filter="filter" is-collapsed-house="isCollapsedHouse" is-collapsed-floor="isCollapsedFloor" is-collapsed-room="isCollapsed.room"  show-mqtt-topics="showMqttTopics"/>
+        </div>
+    </div>

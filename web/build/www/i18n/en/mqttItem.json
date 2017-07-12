@@ -1,0 +1,22 @@
+{
+    "eHomeApp": {
+        "mqttItem" : {
+            "home": {
+                "title": "Mqtt Items",
+                "createLabel": "Create a new Mqtt Item",
+                "createOrEditLabel": "Create or edit a Mqtt Item"
+            },
+            "created": "A new Mqtt Item is created with identifier {{ param }}",
+            "updated": "A Mqtt Item is updated with identifier {{ param }}",
+            "deleted": "A Mqtt Item is deleted with identifier {{ param }}",
+            "delete": {
+                "question": "Are you sure you want to delete Mqtt Item {{ id }}?"
+            },
+            "detail": {
+                "title": "Mqtt Item"
+            },
+            "topic": "Topic",
+            "state": "State"
+        }
+    }
+}

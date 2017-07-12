@@ -1,0 +1,41 @@
+<link rel="stylesheet" href="content/css/alarm-panel.css">
+<div ng-cloak>
+    <div class="container" style="padding: 0px; margin: 0px; background-color:black;">
+        <div class="alarm-header">
+            <div class="alarm-state"><span data-translate="{{'home.alarm.' + vm.alarm.state.main}}"/> <span class="alarm-countdown" ng-show="'TRIGGERED' == vm.alarm.state.main || 'ARMING' == vm.alarm.state.main">{{vm.alarm.state.countdown}}</span></div>
+        </div>
+        <div>
+            <div class="alarm-numpad no-margin no-padding">
+                <div class="alarm-pin-container">
+                    <div class="alarm-challenge" ng-show="vm.alarm.state.challengePin.length > 0">{{vm.alarm.state.challengePin}}</div>
+                    <div class="alarm-pin" ng-show="vm.alarm.state.challengePin.length > 0">{{vm.pin}}</div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-4"><label class="btn btn-default btn-lg alarm-btn" ng-click="vm.pinAdd('7')" blur>7</label></div>
+                    <div class="col-xs-4"><label class="btn btn-default btn-lg alarm-btn" ng-click="vm.pinAdd('8')" blur>8</label></div>
+                    <div class="col-xs-4"><label class="btn btn-default btn-lg alarm-btn" ng-click="vm.pinAdd('9')" blur>9</label></div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-4"><label class="btn btn-default btn-lg alarm-btn" ng-click="vm.pinAdd('4')" blur>4</label></div> 
+                    <div class="col-xs-4"><label class="btn btn-default btn-lg alarm-btn" ng-click="vm.pinAdd('5')" blur>5</label></div>
+                    <div class="col-xs-4"><label class="btn btn-default btn-lg alarm-btn" ng-click="vm.pinAdd('6')" blur>6</label></div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-4"><label class="btn btn-default btn-lg alarm-btn" ng-click="vm.pinAdd('1')" blur>1</label></div>
+                    <div class="col-xs-4"><label class="btn btn-default btn-lg alarm-btn" ng-click="vm.pinAdd('2')" blur>2</label></div>
+                    <div class="col-xs-4"><label class="btn btn-default btn-lg alarm-btn" ng-click="vm.pinAdd('3')" blur>3</label></div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-4"><button type="button" class="btn btn-default btn-lg alarm-btn"  ng-click="vm.pinAdd('0')"  blur>0</button></div>
+                    <div class="col-xs-8"><label type="button" class="btn btn-default btn-lg alarm-backspace-btn" ng-click="vm.pinDelChar()"  blur><span class="glyphicon glyphicon-arrow-left"/></label></div>
+                </div>            
+            </div>
+        </div>
+        
+        <div class="no-margin no-padding alarm-cmdpad">
+            <label class="btn btn-default btn-lg alarm-cmd-button" ng-click="vm.alarm.armHome()" blur><span data-translate="home.alarm.ARM_HOME">ARM HOME</span></label>
+            <label class="btn btn-default btn-lg alarm-cmd-button" ng-click="vm.alarm.armAway()" blur><span data-translate="home.alarm.ARM_AWAY">ARM AWAY</span></label>
+            <label class="btn btn-default btn-lg alarm-cmd-button" ng-click="vm.alarm.disarm()" blur><span data-translate="home.alarm.DISARM">DISARM</span></label>            
+        </div>
+    </div>
+</div>

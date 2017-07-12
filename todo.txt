@@ -1,0 +1,26 @@
+Done. Rpi ntp  client-server 
+Done. Esp8266 ntp client
+Done. MotionCamera mqtt wrapper (status only)
+Motion event-on-picture (or on most pixels motion frame) mosquitto_publish picture in base64.
+Done. Alarm on-arm start motion detection
+Done. Alarm on-disarm pause motion detection
+IndexDB storage to store mqtt messages in mobile web app
+
+Use sleekxmpp instead of xmpppy and try OTR.
+Add component to store mqtt message history so that web can retrieve a device's history
+Add xmpp proxy as alternative server (to mqtt) to accomodate communication between the web app and the mqtt broker over IM (xmpp).
+Create settings form in the web app, scenes
+
+Done. Change http_configuration to mqtt_configuration and watch (and reload and publish) the configuration.json file whenever it changes (necessary for live refresh and mqtt over xmpp)
+
+Notifier
+    GSM: phonecalls, sms, when WiredInternet not available: email, IM
+    Done. WiredInternet email, IM
+Esp8266 OTA
+http:
+    Done. translator (house/floor/room/item from mqtt topic to name)
+    Done. configurator (houses json)
+
+
+Note:Motion never sends the on_event_end message when executed as a service. It also kind of freezes. Everything is ok when executed by hand "sudo motion".
+     Added the appropriate command in rc.local

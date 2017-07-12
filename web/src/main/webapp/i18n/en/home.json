@@ -1,0 +1,51 @@
+{
+    "home": {
+        "title": "Welcome, Java Hipster!",
+        "subtitle": "This is your homepage",
+        "logged": {
+            "message": "You are logged in as user \"{{username}}\"."
+        },
+        "question": "If you have any question on JHipster:",
+        "link": {
+            "homepage": "JHipster homepage",
+            "stackoverflow": "JHipster on Stack Overflow",
+            "bugtracker": "JHipster bug tracker",
+            "chat": "JHipster public chat room",
+            "follow": "follow @java_hipster on Twitter"
+        },
+        "like": "If you like JHipster, don't forget to give us a star on",
+        "github": "GitHub",
+        "alarm": {
+            "UNARMED": "Unarmed",
+            "ARMING": "Arming",
+            "ARMED_HOME": "Armed Home",
+            "ARMED_AWAY": "Armed Away",
+            "TRIGGERED": "Triggered",
+            "ACTIVATED": "Activated",
+            "ARM_HOME": "Arm Home",
+            "ARM_AWAY": "Arm Away",
+            "DISARM": "Disarm",
+            "UNAVAILABLE": "Unavailable"
+        },
+        "motion": {
+            "detection": {
+                "NO_MOTION": "No motion",
+                "MOTION_DETECTED": "Motion"
+            },
+            "state": {
+                "CAMERA_LOST": "Camera lost",            
+                "ACTIVE": "Active",
+                "PAUSED": "Inactive",
+                "UNAVAILABLE": "Unavailable"
+            }
+        },
+        "state": {
+            "UNAVAILABLE": "Unavailable",
+            "OPEN": "Open",
+            "CLOSED": "Closed",
+            "RECLINED": "Reclined",
+            "ON": "On",
+            "OFF": "Off"
+        }
+    }
+}
