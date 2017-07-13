@@ -18,6 +18,7 @@
             this.videostream = videostream; 
             this.detection = detection;            
             this.lastDetection = Date.now();
+            this.picture = null;
         }
 
         MotionCamera.prototype = Object.create( MqttDevice.prototype );
@@ -55,7 +56,12 @@
                     {
                         this.detection = data.detection;
                         this.lastDetection = Date.now();
-                    }                    
+                    }
+                    else if( data.picture )
+                    {
+                        this.picture = data.picture;
+                        // console.log( 'received picture: ', data.picture );
+                    }
                 }
             }
         }

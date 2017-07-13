@@ -1,12 +1,16 @@
 <div ng-if="showMqttTopics">
     <span class="item">[{{i.type}}]</span>
-    <span class="text-primary">{{i.device.url}}</span>
+    <span class="text-primary">{{i.device.mqtt_subscribe_topic}} {{i.device.cameraId}} {{i.device.videostream}}</span>
 </div>
-<div style="overflow: auto;">
-    <div  style="float:left;"><span class="mdi mdi-camcorder device-icon"/>{{i.name}}</div>
-    <button style="float:left;" type="button" class="btn btn-md btn-default"  ng-init="show=false" ng-click="show=!show">
-        <span class="glyphicon glyphicon-eye-open" ng-if="show"/>
-        <span class="glyphicon glyphicon-eye-close" ng-if="!show"/>
+<div style="overflow: auto;" ng-init="showPicture=false; showVideostream=false">
+    <div style="float:left;margin-right:5px;"><span class="mdi mdi-camcorder device-icon"/>{{i.name}}</div>
+    <button style="float:left;" type="button" class="btn btn-md btn-default" ng-click="showPicture=!showPicture; showVideostream && showPicture ? showVideostream = false: null;" ng-disabled="i.device.picture == null">
+        <span class="mdi mdi-camera" ng-if="showPicture"/>
+        <span class="mdi mdi-camera-off" ng-if="!showPicture"/>
+    </button>
+    <button style="float:left;" type="button" class="btn btn-md btn-default" ng-click="showVideostream=!showVideostream; showPicture && showVideostream ? showPicture = false: null;">
+        <span class="mdi mdi-camcorder" ng-if="showVideostream"/>
+        <span class="mdi mdi-camcorder-off" ng-if="!showVideostream"/>
     </button>
     <!--<div style="float:left;">
         <div class="last-update">{{i.device.lastDetection ? ( i.device.lastDetection | date: 'dd/MM/yyyy HH:mm') : ''}}</div>
@@ -34,6 +38,7 @@
         Trying to solve this using ng-src is a bad solution because, although the error goes away, the img tag keeps downloading 
         from the specified url regardless of isCollapsedHouse || isCollapsedFloor || isCollapsedRoom
         -->
-        <img src="{{ !show || isCollapsedHouse || isCollapsedFloor || isCollapsedRoom ? '' : i.device.videostream }}" ng-show="show"/>
+        <img src="data:image/jpg;base64, {{i.device.picture}}" ng-show="showPicture"/>
+        <img src="{{ !showVideostream || isCollapsedHouse || isCollapsedFloor || isCollapsedRoom ? '' : i.device.videostream }}" ng-show="showVideostream"/>
     </div>
 </div>
