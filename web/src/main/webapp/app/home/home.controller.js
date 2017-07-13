@@ -91,6 +91,19 @@
         
         // console.log( vm.isCollapsed );
 
+        // function to generate uuid's for mqtt clients. This is necessary because if two clients connect to the same mqtt broker with the same
+        // client id, the second client will disconnect the first, such a case is when multiple users connect simultaneously to the mqtt broker 
+        // using this web app
+        function uuidv4() {
+            return ([1e7]+-1e3+-4e3+-8e3+-1e11)
+                .replace(
+                    /[018]/g, 
+                    function( c ){
+                        return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16);
+                    }
+                );
+        }
+
         function getAllServers()
         {
             return [
@@ -99,7 +112,7 @@
                     settings: { 
                         mqtt_broker_ip : '192.168.1.11',
                         mqtt_broker_port : 1884,
-                        mqtt_client_id : 'eHomeWebGUI',
+                        mqtt_client_id : uuidv4(),
                         configuration: {
                             subscribeTopic: 'A///CONFIGURATION/C/status',
                             publishTopic: 'A///CONFIGURATION/C/cmd'
@@ -110,6 +123,7 @@
             ];
         }
         var servers = getAllServers();
+        console.log( 'servers: ', servers );
         initServers( servers );
         function initServers( servers )
         {
