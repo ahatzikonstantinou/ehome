@@ -1,0 +1,7 @@
+#!/bin/bash
+#echo $1
+. "/home/antonis/motion/mqtt.conf"
+if [ -f "/home/antonis/motion/$1.conf" ]; then
+	. "/home/antonis/motion/$1.conf"
+	mosquitto_pub -h "$broker" -p "$port" -t "$mqtt_topic" -m '{"camera": "'$1'", "picture": "'"`base64 -w 0 $2`"'"}'
+fi

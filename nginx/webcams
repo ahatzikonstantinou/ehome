@@ -1,0 +1,9 @@
+server {
+	listen 80;
+	location /webcam/ {
+		proxy_set_header Authorization "Basic YWRtaW46";
+		proxy_pass http://192.168.1.239/;
+		#error_log    /var/log/nginx/webcam.error.log debug;
+		#rewrite_log on;
+	}
+}
