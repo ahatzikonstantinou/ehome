@@ -61,6 +61,16 @@
     "node": "^4.3"
   },
   "scripts": {
-    "test": "gulp test"
-  }
+    "test": "gulp test",
+    "lint": "jshint .",
+    "validate": "npm ls"
+  },
+  "dependencies": {
+    "stanza.io": "^8.4.3"
+  },
+  "pre-commit": [
+    "lint",
+    "validate",
+    "test"
+  ]
 }

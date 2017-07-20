@@ -48,7 +48,7 @@ class WiredInternet( object ):
     def im( self, iMessage ):
         jid = xmpp.protocol.JID( self.imParams.jid )
         cl = xmpp.Client( jid.getDomain(), debug=[] )
-        con = cl.connect()
+        con = cl.connect( ( self.imParams.server, self.imParams.port ) )
         if not con:
             print 'could not connect!'
             return False
@@ -84,7 +84,7 @@ class WiredInternet( object ):
         return True
 
 if __name__ == "__main__":
-    wi = WiredInternet( MailParams( 'ahatzikonstantinou@gmail.com', '645kk\\45', 'smtp.gmail.com', 587 ), InstantMessageParams( 'ahatziko.mainpc@gmail.com', '312ggp12' ) )
+    wi = WiredInternet( MailParams( 'ahatzikonstantinou@gmail.com', '645kk\\45', 'smtp.gmail.com', 587 ), InstantMessageParams( 'alyki@ahatzikonstantinou.dtdns.net', '312ggp12', '192.168.1.79', 5222 ) )
     print( wi.isAvailable() )
     # wi.email( EMail( "rpi-security", ["ahatzikonstantinou@gmail.com", "ahatzikonstantinou@silicontech.gr"], "mail test", "testing testing" ) )
-    wi.im( InstantMessage( ['ahatzikonstantinou@gmail.com', 'ahatziko.master@gmail.com'], 'test3 im message' ) )
+    wi.im( InstantMessage( ['ahatzikonstantinou@gmail.com', 'ahatziko.master@gmail.com', 'antonis@ahatzikonstantinou.dtdns.net'], 'test3 im message' ) )

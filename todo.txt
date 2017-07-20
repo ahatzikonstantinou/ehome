@@ -1,7 +1,7 @@
 Done. Rpi ntp  client-server 
 Done. Esp8266 ntp client
 Done. MotionCamera mqtt wrapper (status only)
-Motion event-on-picture (or on most pixels motion frame) mosquitto_publish picture in base64.
+Done. Motion event-on-picture (or on most pixels motion frame) mosquitto_publish picture in base64.
 Done. Alarm on-arm start motion detection
 Done. Alarm on-disarm pause motion detection
 IndexDB storage to store mqtt messages in mobile web app

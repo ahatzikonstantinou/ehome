@@ -4,9 +4,11 @@ class InstantMessage( object ):
         self.message = message
 
 class InstantMessageParams( object ):
-    def __init__( self, jid, password ):
+    def __init__( self, jid, password, server, port ):
         self.jid = jid
         self.password = password
+        self.server = server
+        self.port = port
 
 class EMail( object ):
     def __init__( self, From, To, subject, body ):

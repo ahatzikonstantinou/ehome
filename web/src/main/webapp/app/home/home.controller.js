@@ -119,6 +119,27 @@
                         }
                     },
                     houses: []
+                },
+                {
+                    type: 'xmpp',
+                    settings: {
+                        // host: 'https://192.168.1.79:5281/http_bind',
+                        host: 'wss://192.168.1.79:5281/xmpp-websocket',
+                        user: 'antonis@ahatzikonstantinou.dtdns.net',
+                        password: '312ggp12',
+                        destination: 'alyki@ahatzikonstantinou.dtdns.net',
+                        // ahat: Note. The following connection to accounts at jabber.hot-chilli.net return 404
+                        // host: 'wss://jabber.hot-chilli.net:5281/xmpp-websocket',
+                        // user: 'ahatziko.web@jabber.hot-chilli.net',
+                        // password: '312ggp12',
+                        // destination: 'ahatziko.alyki@jabber.hot-chilli.net',
+                        email: 'ahatziko.alyki@gmail.com',
+                        configuration: {
+                            subscribeTopic: 'A///CONFIGURATION/C/status',
+                            publishTopic: 'A///CONFIGURATION/C/cmd',
+                            publishMessage: '{"cmd": "SEND"}'
+                        }
+                    }
                 }
             ];
         }
@@ -130,116 +151,146 @@
             for( var i = 0 ; i < servers.length ; i++ )
             {
                 var server = servers[i];
-                server.client = MqttClient;
-                var client = server.client;
-                client.observerDevices = [];
-                client.init( server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, server.settings.mqtt_client_id );
-                
-                client.connect({
-                    onSuccess: successCallback,
-                    onFailure: function() { console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); },
-                    invocationContext: server
-                });   
-
-                client._client.onMessageArrived = function( message )
+                switch( server.type )
                 {
-                    var server = this.connectOptions.invocationContext;
-                    console.log( server );
-                    console.log( 'Received [topic] "message": [', message.destinationName.trim(), '] "' );//, message.payloadString, '"' );
-                    if( message.destinationName == server.settings.configuration.subscribeTopic )
-                    {
-                        if( server.houses && server.houses.length > 0 )
-                        {
-                            unsubscribeHouses( server.client, server.houses );
-                            removeHouses( server.houses );
-                        }
-                        server.houses = Configuration.generateHousesList( angular.fromJson( message.payloadString ) );                        
-                        addHouses( server.houses );
-                        subscribeHouses( server.client, server.houses );
-                        return;
-                    }
-
-                    // if this is not a new houses-configuration message then it must be a message for the subscribed devices of the current house configuration
-                    for( var i = 0 ; i < server.client.observerDevices.length ; i++ )
-                    {
-                        // console.log( client.observerDevices[i] );
-                        $scope.$apply( function() { server.client.observerDevices[i].update( message.destinationName, message.payloadString ); } );
-                    }
-                }
-
-                client._client.onConnectionLost = function( error ) { 
-                    console.log( 'Connection lost with error: ', error, ' attempting to reconnect.' );
-                    client.connect( {
-                        onSuccess: successCallback,
-                        onFailure: function() 
-                        { 
-                            var server = invocationContext;
-                            console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); 
-                        }
-                    } );
-                }
-
-                function successCallback()
-                {
-                    var server = this.invocationContext;
-                    // console.log( server );
-                    console.log( 'Successfully connected to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, ' subscribing to subscribeTopic...', server.settings.configuration.subscribeTopic );
-                    client.subscribe( server.settings.configuration.subscribeTopic );
-                    
-                    console.log( 'Will publish to publshTopic to get house-configuration...', server.settings.configuration.publishTopic );
-                    var message = new Paho.MQTT.Message( '{"cmd": "SEND"}' );
-                    message.destinationName = server.settings.configuration.publishTopic ;
-                    client.send( message );
-                }
+                    case 'mqtt':
+                        initMqttServer( server );
+                        break;
+                    case 'xmpp':
+                        initXmppServer( server );
+                        break;
+                    default:
+                        console.log( 'Unknown server type [', server.type, ']: ', server );
+                }                
             }
         }
 
         
-/*
-        //MQTT
-        var mqtt_broker_ip = '192.168.1.11';
-        var mqtt_broker_port = 1884;
-        var mqtt_client_id = 'eHomeWebGUI'
-        var client = MqttClient;
-        client.observerDevices = [];
-        client.init( mqtt_broker_ip, mqtt_broker_port, mqtt_client_id );
-        
-        client.connect({
-            onSuccess: successCallback,
-            onFailure: function() { console.log( 'Failed to connect to mqtt broker ', mqtt_broker_ip, mqtt_broker_port ); }
-        });   
-
-        client._client.onMessageArrived = function( message )
+        function initXmppServer( server )
         {
-            console.log( 'Received [topic] "message": [', message.destinationName.trim(), '] "' );//, message.payloadString, '"' );
-            if( message.destinationName == vm.houseConfigurationMqtt().subscribeTopic )
-            {
-                if( vm.houses && vm.houses.length > 0 )
+            server.client = XMPP.createClient({
+                jid: server.settings.user,
+                password: server.settings.password,
+
+                // If you have a .well-known/host-meta.json file for your
+                // domain, the connection transport config can be skipped.
+
+                transport: 'websocket',
+                wsURL: server.settings.host
+            });
+
+            var client = server.client;
+            client.server = server;
+
+            client.on('session:started', function () {
+                client.getRoster();
+                client.sendPresence();
+
+                //subscribe to configuration topic
+                client.sendMessage(
+                    {
+                        to: server.settings.destination,
+                        body: '{ "cmd":"subscribe", "topic": ' + '"' + server.settings.configuration.subscribeTopic + '" }'
+                    }
+                );
+
+                //send cmd to have configuration sent back to us
+                client.sendMessage(
+                    {
+                        to: server.settings.destination,
+                        body: '{ "cmd":"publish", "topic": ' + '"' + server.settings.configuration.publishTopic + '", "message": "' + JSON.stringify( server.settings.configuration.publishMessage ) + '" }'
+                    }
+                );
+            });
+
+            client.on( 'disconnected', function(){
+                client.connect();
+            });
+
+            client.on('chat', function (msg) {
+                // client.sendMessage({
+                // to: msg.from,
+                // body: 'You sent: ' + msg.body
+                // });
+                
+                var message = angular.fromJson( msg.body );
+                if( message.topic == this.serverSettings.configuration.subscribeTopic )
                 {
-                    unsubscribeHouses( vm.houses );
+                    updateConfiguration( this.server, message.payload );
+                    return;
                 }
-                vm.houses = Configuration.generateHousesList( angular.fromJson( message.payloadString ) );
-                initCollapsedList();
-                onNewConfiguration();
-                return;
-            }
+            });
 
-            // if this is not a new houses-configuration message then it must be a message for the subscribed devices of the current house configuration
-            for( var i = 0 ; i < client.observerDevices.length ; i++ )
-            {
-                // console.log( client.observerDevices[i] );
-                $scope.$apply( function() { client.observerDevices[i].update( message.destinationName, message.payloadString ); } );
-            }
+            client.connect();
         }
 
-        client._client.onConnectionLost = function( error ) { 
-            console.log( 'Connection lost with error: ', error, ' attempting to reconnect.' );
-            client.connect( {
+        function initMqttServer( server )
+        {
+            server.client = MqttClient;
+            var client = server.client;            
+            client.observerDevices = [];
+            client.init( server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, server.settings.mqtt_client_id );
+            
+            client.connect({
                 onSuccess: successCallback,
-                onFailure: function() { console.log( 'Failed to connect to mqtt broker ', mqtt_broker_ip, mqtt_broker_port ); }
-            } );
+                onFailure: function() { console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); },
+                invocationContext: server
+            });   
+
+            client._client.onMessageArrived = function( message )
+            {
+                var server = this.connectOptions.invocationContext;
+                //console.log( server );
+                //console.log( 'Received [topic] "message": [', message.destinationName.trim(), '] "' );//, message.payloadString, '"' );
+                if( message.destinationName == server.settings.configuration.subscribeTopic )
+                {
+                    updateConfiguration( server, message.payloadString );
+                    
+                    // if( server.houses && server.houses.length > 0 )
+                    // {
+                    //     unsubscribeHouses( server.client, server.houses );
+                    //     removeHouses( server.houses );
+                    // }
+                    // server.houses = Configuration.generateHousesList( angular.fromJson( message.payloadString ) );                        
+                    // addHouses( server.houses );
+                    // subscribeHouses( server.client, server.houses );
+                    return;
+                }
+
+                // if this is not a new houses-configuration message then it must be a message for the subscribed devices of the current house configuration
+                for( var i = 0 ; i < server.client.observerDevices.length ; i++ )
+                {
+                    // console.log( client.observerDevices[i] );
+                    $scope.$apply( function() { server.client.observerDevices[i].update( message.destinationName, message.payloadString ); } );
+                }
+            }
+
+            client._client.onConnectionLost = function( error ) { 
+                console.log( 'Connection lost with error: ', error, ' attempting to reconnect.' );
+                client.connect( {
+                    onSuccess: successCallback,
+                    onFailure: function() 
+                    { 
+                        var server = invocationContext;
+                        console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); 
+                    }
+                } );
+            }
+
+            function successCallback()
+            {
+                var server = this.invocationContext;
+                // console.log( server );
+                console.log( 'Successfully connected to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, ' subscribing to subscribeTopic...', server.settings.configuration.subscribeTopic );
+                client.subscribe( server.settings.configuration.subscribeTopic );
+                
+                //console.log( 'Will publish to publshTopic to get house-configuration...', server.settings.configuration.publishTopic );
+                var message = new Paho.MQTT.Message( server.settings.configuration.publishMessage );
+                message.destinationName = server.settings.configuration.publishTopic ;
+                client.send( message );
+            }
         }
-*/
+
         function successCallback()
         {
             console.log( 'Successfully connected to mqtt broker ', mqtt_broker_ip, mqtt_broker_port, ' subscribing to vm.vm.houseConfigurationMqtt().subscribeTopic...', vm.houseConfigurationMqtt().subscribeTopic );
@@ -249,6 +300,18 @@
             var message = new Paho.MQTT.Message( '{"cmd": "SEND"}' );
             message.destinationName = vm.houseConfigurationMqtt().publishTopic ;
             client.send( message );
+        }
+
+        function updateConfiguration( server, messagePayloadString )
+        {
+            if( server.houses && server.houses.length > 0 )
+            {
+                unsubscribeHouses( server.client, server.houses );
+                removeHouses( server.houses );
+            }
+            server.houses = Configuration.generateHousesList( angular.fromJson( messagePayloadString ) );                        
+            addHouses( server.houses );
+            subscribeHouses( server.client, server.houses );
         }
 
         function unsubscribeHouses( client, houses )
@@ -321,7 +384,7 @@
                     vm.houses.push( add[a] );
                     vm.isCollapsed.push( createCollapsedHouse( add[a] ) );
                 }
-                console.log( 'added house ', add[a] );
+                // console.log( 'added house ', add[a] );
 
             }
         }

@@ -66,7 +66,7 @@
     },
     "angular-paho": {
       "dependencies": {
-          "paho-mqtt-js": "^1.0.1"
+        "paho-mqtt-js": "^1.0.1"
       }
     }
   },
