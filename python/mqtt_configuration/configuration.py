@@ -34,7 +34,7 @@ class Configuration( object ):
         self.client.on_connect = self.__on_connect
         self.client.on_message = self.__on_message
         #set last will and testament before connecting
-        self.client.will_set( self.mqttParams.publishTopic, json.dumps({ 'main': 'UNAVAILABLE' }), qos = 1, retain = True )
+        self.client.will_set( self.mqttParams.publishTopic, json.dumps({ 'main': 'UNAVAILABLE' }), qos = 2, retain = True )
         self.client.connect( self.mqttParams.address, self.mqttParams.port )
         self.client.loop_start()
         lastModdate = None
@@ -47,10 +47,11 @@ class Configuration( object ):
             time.sleep( 5 )
             try:
                 moddate = os.stat( Configuration.ConfigurationFile )[8]
-                print( 'last [{}], currrent [{}]'.format( time.ctime( lastModdate ), time.ctime( moddate ) ) )
+                # print( 'last [{}], currrent [{}]'.format( time.ctime( lastModdate ), time.ctime( moddate ) ) )
                 if( lastModdate != moddate ):
-                    print( '{} has changed. Reading ans resending'.format( Configuration.ConfigurationFile ) )
+                    print( '{} has changed. Reading and resending'.format( Configuration.ConfigurationFile ) )
                     self.__readAndSendConfiguration()
+                    lastModdate = moddate
             except Exception, e:
                 print( 'Error in infinite loop stating {}. Error: {}'.format( Configuration.ConfigurationFile, e.message ) )
 
@@ -68,7 +69,7 @@ class Configuration( object ):
         print( m )
 
         # tell other devices that the notifier is available
-        self.client.will_set( self.mqttParams.publishTopic, json.dumps({ 'main': 'AVAILABLE' }), qos = 1, retain = True )
+        self.client.publish( self.mqttParams.publishTopic, json.dumps({ 'main': 'AVAILABLE' }), qos = 2, retain = False )
         
         #subscribe to start listening for incomming commands
         self.client.subscribe( self.mqttParams.subscribeTopic )
@@ -78,7 +79,7 @@ class Configuration( object ):
             with open( Configuration.ConfigurationFile ) as json_file:
                 configurationTxt = json.load( json_file )
                 print( configurationTxt )
-                self.client.publish( self.mqttParams.publishTopic, json.dumps( configurationTxt ), qos = 2, retain = True )
+                self.client.publish( self.mqttParams.publishTopic, json.dumps( configurationTxt ), qos = 2, retain = False )
         except Exception, e:
             print( 'Error reading {}. Error: {}'.format( Configuration.ConfigurationFile, e.message ) )
             pass
@@ -110,7 +111,7 @@ class Configuration( object ):
                     with open( Configuration.ConfigurationFile, 'w' ) as outfile:
                         json.dump( data, outfile )
                         #publish the new configurationso all subscribers are updated
-                        self.client.publish( self.mqttParams.publishTopic, data, qos = 2, retian = True )
+                        self.client.publish( self.mqttParams.publishTopic, data, qos = 2, retain = False )
                 except Exception, e:
                     print( 'Failed saving new configuration. Error: {}'.format( e.message ) )
                     pass

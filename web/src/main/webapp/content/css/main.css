@@ -1,3 +1,15 @@
+/*ahat: change margins and paddings for mobile devices*/
+.container {
+    padding-right: 0px;
+    padding-left: 0px;
+    margin-right: 0px;
+    margin-left: 0px;
+}
+
+.well {
+    padding: 0px;
+}
+
 .state.label-danger{
     color: yellow;
 }
@@ -100,6 +112,13 @@
     cursor: default;
 }
 
+/*ahat: this makes the images and vide from web cams autoresize to fill all available area*/
+.state-container > img 
+{
+    max-width:100%;
+    max-height:100%;
+}
+
 .unarmed { background-color: #5bc0de; color: #fff; }
 .arming { background-color: #337ab7; color: #fff; }
 .armed-home { background-color: #5cb85c; color: #fff; }
@@ -113,7 +132,7 @@
     margin: 1px 0px 0px 5px;
     border-radius: 4px;
     color: white;
-    width: 100px;
+    width: 80px;
 }
 
 .state.primary
@@ -179,7 +198,7 @@
     margin-bottom: 4px;
 }
 
-.item > div
+.item > div:nth-of-type(2)
 {
     padding: 8px 0px 4px 0px;
     margin-bottom: 5px;
@@ -198,7 +217,8 @@ label.house
 
 house > div
 {
-    margin-left: 10px;
+    margin-left: 5px;
+    margin-right: 5px;
 }
 
 floor > div 

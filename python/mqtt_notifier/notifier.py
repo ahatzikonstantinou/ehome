@@ -87,7 +87,6 @@ class Notifier( object ):
             if( 'im' in cmds and cmds[ 'im' ] is not None ):
                 # wiCmds[ 'im' ] = InstantMessage( cmds[ 'im' ][ 'recipients' ], cmds[ 'im' ][ 'message' ] )
                 wiCmds[ 'im ' ] = jsonpickle.decode( json.dumps( cmds[ 'im' ] ) )
-                TODO
 
             #if wi is not available and cannot execute the commands, have gsm execute them
             if( not self.wi.execute( wiCmds ) ):

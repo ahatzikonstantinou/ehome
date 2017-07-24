@@ -6,10 +6,10 @@
         .controller('HomeController', HomeController);
 
     // HomeController.$inject = ['$scope', 'Principal', 'LoginService', '$state'];
-    HomeController.$inject = [ '$http', '$scope', '$state', 'MqttClient', 'Door1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'Houses', 'MotionCamera', 'MotionCameraPanTilt', 'Configuration' ];
+    HomeController.$inject = [ '$http', '$scope', '$state', 'MqttClient', 'Door1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', 'Configuration' ];
 
     // function HomeController ($scope, Principal, LoginService, $state) {
-    function HomeController( $http, $scope, $state, MqttClient, Door1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, Houses, MotionCamera, MotionCameraPanTilt, Configuration ) {
+    function HomeController( $http, $scope, $state, MqttClient, Door1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, Configuration ) {
         var vm = this;
 
         vm.account = null;
@@ -115,32 +115,37 @@
                         mqtt_client_id : uuidv4(),
                         configuration: {
                             subscribeTopic: 'A///CONFIGURATION/C/status',
-                            publishTopic: 'A///CONFIGURATION/C/cmd'
+                            publishTopic: 'A///CONFIGURATION/C/cmd',
+                            publishMessage: '{"cmd": "SEND"}'
                         }
                     },
                     houses: []
                 },
-                {
-                    type: 'xmpp',
-                    settings: {
-                        // host: 'https://192.168.1.79:5281/http_bind',
-                        host: 'wss://192.168.1.79:5281/xmpp-websocket',
-                        user: 'antonis@ahatzikonstantinou.dtdns.net',
-                        password: '312ggp12',
-                        destination: 'alyki@ahatzikonstantinou.dtdns.net',
-                        // ahat: Note. The following connection to accounts at jabber.hot-chilli.net return 404
-                        // host: 'wss://jabber.hot-chilli.net:5281/xmpp-websocket',
-                        // user: 'ahatziko.web@jabber.hot-chilli.net',
-                        // password: '312ggp12',
-                        // destination: 'ahatziko.alyki@jabber.hot-chilli.net',
-                        email: 'ahatziko.alyki@gmail.com',
-                        configuration: {
-                            subscribeTopic: 'A///CONFIGURATION/C/status',
-                            publishTopic: 'A///CONFIGURATION/C/cmd',
-                            publishMessage: '{"cmd": "SEND"}'
-                        }
-                    }
-                }
+                // {
+                //     type: 'xmpp',
+                //     settings: {
+                //         // host: 'https://jabber.hot-chilli.net:5281/http-bind',
+                //         // user: 'ahatziko.web@jabber.hot-chilli.net',
+                //         // password: '312ggp12',
+                //         // destination: 'ahatziko.alyki@jabber.hot-chilli.net',
+                //         host: 'wss://192.168.1.79:5281/xmpp-websocket',
+                //         user: 'antonis@ahatzikonstantinou.dtdns.net',
+                //         password: '312ggp12',
+                //         destination: 'alyki@ahatzikonstantinou.dtdns.net',
+                //         // ahat: Note. The following connection to accounts at jabber.hot-chilli.net return 404
+                //         // host: 'wss://jabber.hot-chilli.net:5281/xmpp-websocket',
+                //         // user: 'ahatziko.web@jabber.hot-chilli.net',
+                //         // password: '312ggp12',
+                //         // destination: 'ahatziko.alyki@jabber.hot-chilli.net',
+                //         email: 'ahatziko.alyki@gmail.com',
+                //         configuration: {
+                //             subscribeTopic: 'A///CONFIGURATION/C/status',
+                //             publishTopic: 'A///CONFIGURATION/C/cmd',
+                //             publishMessage: '{"cmd": "SEND"}'
+                //         }
+                //     },
+                //     houses: []
+                // }
             ];
         }
         var servers = getAllServers();
@@ -165,24 +170,76 @@
             }
         }
 
-        
+        XMPP.Client.prototype.subscribe = function( topic )
+        {
+            console.log( 'xmpp.subscribe override, topic: ', topic );
+        }
+
+        XMPP.Client.prototype.publish = function( topic )
+        {
+            console.log( 'xmpp.publish override, topic: ', topic );
+        }
+
         function initXmppServer( server )
         {
-            server.client = XMPP.createClient({
-                jid: server.settings.user,
-                password: server.settings.password,
+            if( server.settings.host.startsWith( "https" ) )
+            {
+                server.client = XMPP.createClient({
+                    jid: server.settings.user,
+                    password: server.settings.password,
 
-                // If you have a .well-known/host-meta.json file for your
-                // domain, the connection transport config can be skipped.
+                    // If you have a .well-known/host-meta.json file for your
+                    // domain, the connection transport config can be skipped.
 
-                transport: 'websocket',
-                wsURL: server.settings.host
-            });
+                    transport: 'bosh',
+                    boshURL: server.settings.host
+                });                
+            }
+            else if( server.settings.host.startsWith( "ws" ) || server.settings.host.startsWith( "ws" ) )
+            {
+                server.client = XMPP.createClient({
+                    jid: server.settings.user,
+                    password: server.settings.password,
 
+                    // If you have a .well-known/host-meta.json file for your
+                    // domain, the connection transport config can be skipped.
+
+                    transport: 'websocket',
+                    wsURL: server.settings.host
+                });
+            }
+            console.log( 'connecting to ', server.settings.host, ' as ', server.settings.user );
             var client = server.client;
             client.server = server;
+            client.observerDevices = [];
+            client.subscribe = function( topic )
+            {
+                // console.log( 'my xmpp subscribe for topic ', topic );
+                var body = '{ "cmd": "subscribe", "topic": ' + '"' + topic + '" }';
+                client.sendMessage(
+                    {
+                        to: server.settings.destination,
+                        body: body
+                    }
+                );
+                console.log( 'sent message ', body, ' to ', server.settings.destination );
+            }
+
+            client.unsubscribe = function( topic )
+            {
+                // console.log( 'my xmpp unsubscribe for topic ', topic );
+                var body = '{ "cmd": "unsubscribe", "topic": ' + '"' + topic + '" }';
+                client.sendMessage(
+                    {
+                        to: server.settings.destination,
+                        body: body
+                    }
+                );
+                console.log( 'sent message ', body, ' to ', server.settings.destination );
+            }
 
             client.on('session:started', function () {
+                console.log( 'session:started so i must be connected!' );
                 client.getRoster();
                 client.sendPresence();
 
@@ -193,31 +250,57 @@
                         body: '{ "cmd":"subscribe", "topic": ' + '"' + server.settings.configuration.subscribeTopic + '" }'
                     }
                 );
+                console.log( 'sent message ', server.settings.configuration.subscribeTopic, ' to ', server.settings.destination );
 
                 //send cmd to have configuration sent back to us
                 client.sendMessage(
                     {
                         to: server.settings.destination,
-                        body: '{ "cmd":"publish", "topic": ' + '"' + server.settings.configuration.publishTopic + '", "message": "' + JSON.stringify( server.settings.configuration.publishMessage ) + '" }'
+                        body: '{ "cmd":"publish", "topic": ' + '"' + server.settings.configuration.publishTopic + '", "message": "' + btoa( server.settings.configuration.publishMessage ) + '" }'
                     }
                 );
+                console.log( 'sent message ', server.settings.configuration.publishTopic, ' to ', server.settings.destination );
             });
 
             client.on( 'disconnected', function(){
+                console.log( 'disconnected from ', server.settings.host );  
                 client.connect();
             });
 
-            client.on('chat', function (msg) {
-                // client.sendMessage({
-                // to: msg.from,
-                // body: 'You sent: ' + msg.body
-                // });
-                
-                var message = angular.fromJson( msg.body );
-                if( message.topic == this.serverSettings.configuration.subscribeTopic )
+            // ahat: Note. It seems that whatever arrives as a chat also arrives as a message
+            //       so I cancel the on 'chat' callback
+            // client.on( 'chat', function (msg) {
+            //     // client.sendMessage({
+            //     // to: msg.from,
+            //     // body: 'You sent: ' + msg.body
+            //     // });
+            //     var text = pako.inflate( atob( msg.body ), { to: 'string' } );
+            //     console.log( 'received [chat]  from ', msg.from, ': ', text );
+            //     var message = angular.fromJson( text );
+            //     if( message.topic == this.server.settings.configuration.subscribeTopic )
+            //     {
+            //         updateConfiguration( this.server, message.payload );
+            //         return;
+            //     }
+            // });
+
+            client.on( 'message', function (msg) {
+                var text = pako.inflate( atob( msg.body ), { to: 'string' } );
+                console.log( 'received [message]  from ', msg.from, ': ', text );
+                var message = angular.fromJson( text );
+                if( message.topic == this.server.settings.configuration.subscribeTopic )
                 {
                     updateConfiguration( this.server, message.payload );
                     return;
+                }
+                
+                // if this is not a new houses-configuration message then it must be a message for the subscribed devices of the current house configuration
+                // console.log( this );
+                $scope.observerDevices = this.observerDevices;
+                for( var i = 0 ; i < this.observerDevices.length ; i++ )
+                {
+                    // console.log( this.observerDevices[i] );                    
+                    $scope.$apply( function() { $scope.observerDevices[i].update( message.topic, message.payload ); } );
                 }
             });
 
@@ -284,7 +367,7 @@
                 console.log( 'Successfully connected to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, ' subscribing to subscribeTopic...', server.settings.configuration.subscribeTopic );
                 client.subscribe( server.settings.configuration.subscribeTopic );
                 
-                //console.log( 'Will publish to publshTopic to get house-configuration...', server.settings.configuration.publishTopic );
+                console.log( 'Will publish to publshTopic to get house-configuration...', server.settings.configuration.publishTopic );
                 var message = new Paho.MQTT.Message( server.settings.configuration.publishMessage );
                 message.destinationName = server.settings.configuration.publishTopic ;
                 client.send( message );
@@ -309,13 +392,16 @@
                 unsubscribeHouses( server.client, server.houses );
                 removeHouses( server.houses );
             }
-            server.houses = Configuration.generateHousesList( angular.fromJson( messagePayloadString ) );                        
-            addHouses( server.houses );
+            server.houses = Configuration.generateHousesList( angular.fromJson( messagePayloadString ) );
+            console.log( 'generated ', server.houses.length, ' houses' );
+            
+            $scope.$apply( addHouses( server.houses ) );
             subscribeHouses( server.client, server.houses );
         }
 
         function unsubscribeHouses( client, houses )
         {
+            console.log( 'unsubscribeHouses for ', houses.length, ' houses' );
             for( var h = 0 ; h < houses.length ; h++ )
             {
                 // console.log( 'Doing house "', vm.houses[h].name, '":' )
@@ -350,6 +436,7 @@
 
         function removeHouses( houses )
         {
+            console.log( 'removing ', houses.length, ' houses' );
             for( var rm = 0 ; rm < houses.length ; rm++ )
             {
                 for( var h = 0 ; h < vm.houses.length ; h++ )
@@ -358,6 +445,7 @@
                     {
                         console.log( 'removing house ', houses[rm].name );
                         vm.houses.splice( h, 1 );
+                        vm.isCollapsed.splice( h, 1 );
                     }
                 }
             }
@@ -365,6 +453,7 @@
 
         function addHouses( houses )
         {
+            console.log( 'adding ', houses.length, ' houses' );
             var add = houses.sort( function( a, b ) { return a.name.localeCompare( b.name ); } );
             for( var a = 0 ; a < add.length ; a++ )
             {
@@ -384,13 +473,14 @@
                     vm.houses.push( add[a] );
                     vm.isCollapsed.push( createCollapsedHouse( add[a] ) );
                 }
-                // console.log( 'added house ', add[a] );
+                console.log( 'added house ', add[a] );
 
             }
         }
 
         function subscribeHouses( client, houses )
         {
+            console.log( 'subscribing ', houses.length, ' houses' );
             // subscribe to all topics
             for( var h = 0 ; h < houses.length ; h++ )
             {

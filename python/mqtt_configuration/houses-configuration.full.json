@@ -32,7 +32,7 @@
                         { "name": "Σίτα παραθύρου", "domain": "COVER", "type": "NET", "protocol": "mqtt", "subscribe": "A/4/L/COVER/NW" },
                         { "name": "Ρολό παραθύρου", "domain": "COVER", "type": "ROLLER1", "protocol": "mqtt", "subscribe": "A/4/L/COVER/RW" },
                         { "name": "Γυάλινος Πολυέλεος", "domain": "LIGHT", "type": "LIGHT2", "protocol": "mqtt", "subscribe": "A/4/L/LIGHT/GCH/state", "publish": "A/4/L/LIGHT/GCH/set" },
-                        { "name": "Ξύλινος Πολυέλεος", "domain": "LIGHT", "type": "LIGHT2", "protocol": "mqtt",  "subscribe": "A/4/L/LIGHT/WCH/state", "publish": "A/4/L/LIGHT/WCH/set" },
+                        { "name": "Ξύλινος Πολυέλεος", "domain": "LIGHT", "type": "LIGHT2", "protocol": "mqtt",  "subscribe": "A/4/L/LIGHT/GCH/state", "publish": "A/4/L/LIGHT/GCH/set" },
                         { "name": "Σποτ μπαλκονόπορτα", "domain": "LIGHT", "type": "LIGHT1", "protocol": "mqtt", "subscribe": "A/4/L/LIGHT/LD/state", "publish": "A/4/L/LIGHT/LD/set" },
                         { "name": "Σποτ παραθύρου", "domain": "LIGHT", "type": "LIGHT1", "protocol": "mqtt", "subscribe": "A/4/L/LIGHT/LW/state", "publish": "A/4/L/LIGHT/LW/set" },
                         { "name": "Εξωτερικό φως μπαλκονόπορτα", "domain": "LIGHT", "type": "LIGHT1", "protocol": "mqtt","subscribe": "A/4/L/LIGHT/LOB/state", "publish": "A/4/L/LIGHT/LOB/set" },
