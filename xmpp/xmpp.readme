@@ -1,0 +1,6 @@
+Xmpp tunneling of mqtt messages is used in case wired internet is not available. The xmpp server must support either bosch or websockets. 
+Tested locally with prosody and remotely with jabber.hot-chilli.net. Attention: service at jabber.hot-chilli.net stopped after some time probably due to limit in daily traffic per account. 
+
+Important Note: Use pidgin or other xmpp client to authorize each other xmpp account or else connection will fail. 
+
+Important Note: Use chrome plugin to allow CORS or else connection will fail (unfortunately no such plugin seems to be availble for android chrome).
