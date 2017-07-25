@@ -29,7 +29,8 @@
             if( this.publisher )
             { 
                 var m = new Paho.MQTT.Message( '{"cmd":"' + value +'", "camera":"' + this.cameraId + '"}' ); 
-                m.destinationName = this.mqtt_publish_topic; 
+                m.destinationName = this.mqtt_publish_topic;
+                // console.log( 'sending msg: ', m );
                 this.publisher.send( m ); 
             } 
         }

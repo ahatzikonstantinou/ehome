@@ -4,11 +4,14 @@ Done. MotionCamera mqtt wrapper (status only)
 Done. Motion event-on-picture (or on most pixels motion frame) mosquitto_publish picture in base64.
 Done. Alarm on-arm start motion detection
 Done. Alarm on-disarm pause motion detection
+Done. Added language selection. Selection is saved in localStorage and reused on startup.
 IndexDB storage to store mqtt messages in mobile web app
 
+Inestigate camera usage for xmpp servers. If video stream is not possible replace with picture and add button to take snapshot and send (use the motion web interface e.g. curl -s -o /dev/null http://192.168.1.11:8080/1/action/snapshot).
+Check motion's web api http://192.168.1.11:8080/1/detection/connection to see if it works for camera lost an camera re-activated.
 Use sleekxmpp instead of xmpppy and try OTR.
 Add component to store mqtt message history so that web can retrieve a device's history
-Add xmpp proxy as alternative server (to mqtt) to accomodate communication between the web app and the mqtt broker over IM (xmpp).
+Done. Add xmpp proxy as alternative server (to mqtt) to accomodate communication between the web app and the mqtt broker over IM (xmpp).
 Create settings form in the web app, scenes
 
 Done. Change http_configuration to mqtt_configuration and watch (and reload and publish) the configuration.json file whenever it changes (necessary for live refresh and mqtt over xmpp)

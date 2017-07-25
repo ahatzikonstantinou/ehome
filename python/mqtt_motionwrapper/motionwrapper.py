@@ -5,6 +5,7 @@ import sys
 import os
 import requests # for communication with the cameras
 import json # for publishing status
+import time
 
 class MqttParams( object ):
     """ Holds the mqtt connection params
@@ -17,7 +18,7 @@ class MqttParams( object ):
 
 class Camera( object ):
     """ Holds the basic params of a linux motion camera """
-    def __init__( self, name, url, startDetection, pauseDetection, getState, up, down, left, right, stop ):
+    def __init__( self, name, url, startDetection, pauseDetection, getState, connection, up, down, left, right, stop ):
         self.name = name
         self.url = url
         self.startDetection = startDetection
@@ -28,6 +29,7 @@ class Camera( object ):
         self.left = left
         self.right = right
         self.stop = stop
+        self.connection = connection
         self.hasPanTilt = self.up is not None and self.down is not None and self.left is not None and self.right is not None and self.stop
 
 class MotionWrapper( object ):
@@ -37,6 +39,7 @@ class MotionWrapper( object ):
         self.mqttParams = mqttParams
         self.mqttId = mqttId
         self.cameras = cameras
+        self.lostCameras = []
         signal.signal( signal.SIGINT, self.__signalHandler )
 
     def run( self ):
@@ -50,6 +53,19 @@ class MotionWrapper( object ):
         self.client.loop_start()
         #go in infinite loop
         while( True ):
+            time.sleep( 1 )
+            if( len( self.lostCameras ) > 0 ):
+                for camName in self.lostCameras:
+                    cam = self.__findCamera( camName )
+                    if( cam is not None ):                        
+                        response = requests.get( cam.connection ).text
+                        print( 'Camera {}, connection: {}'.format( camName, response ) )
+                        if( 'Connection OK' in response ):
+                            print( 'Camera {} is back online'.format( camName ) )
+                            self.lostCameras[:] = [ c for c in self.lostCameras if c != camName ]
+                            self.__getAndPublishCameraState( cam )
+                        else:
+                            print( 'Camera {} is still off'.format( camName ) )
             pass
 
     def __signalHandler( self, signal, frame ):
@@ -79,9 +95,18 @@ class MotionWrapper( object ):
         #subscribe to start listening for incomming commands
         self.client.subscribe( self.mqttParams.subscribeTopic )
 
+        #subscribe to publishTopic to listen for camera-lost events
+        self.client.subscribe( self.mqttParams.publishTopic )
+
         for cam in self.cameras:
             #get the camera status and publish it
             self.__getAndPublishCameraState( cam )
+
+    def __findCamera( self, cameraName ):
+        for cam in self.cameras:
+            if( cam.name == cameraName ):
+                return cam
+        return None
 
     def __on_message( self, client, userdata, message ):
         """Executed when an mqtt arrives
@@ -92,6 +117,18 @@ class MotionWrapper( object ):
         """
         text = message.payload.decode( "utf-8" )
         print( 'Received message "{}"'.format( text ).encode( 'utf-8' ) )
+        if( mqtt.topic_matches_sub( self.mqttParams.publishTopic, message.topic ) ):
+            try:
+                jsonMessage = json.loads( text )
+                if( 'state' in jsonMessage and jsonMessage[ 'state' ] == 'CAMERA_LOST' and 
+                    jsonMessage[ 'camera' ] not in self.lostCameras ):
+                    print( 'CAMERA_LOST for {}. Adding to lostCameras'.format( jsonMessage[ 'camera' ] ) )
+                    self.lostCameras.append( jsonMessage[ 'camera' ] )
+                    return
+            except ValueError, e:
+                print( '"{}" is not a valid json text, exiting.'.format( text ) )
+                return
+
         if( mqtt.topic_matches_sub( self.mqttParams.subscribeTopic, message.topic ) ):
             try:
                 jsonMessage = json.loads( text )
@@ -99,13 +136,14 @@ class MotionWrapper( object ):
                 print( '"{}" is not a valid json text, exiting.'.format( text ) )
                 return
 
-        try:
-            cmd = jsonMessage[ 'cmd' ]
-            cameraName = jsonMessage[ 'camera' ]
-        except:
-            print( '"{}" does not have the proper format i.e. \{"cmd": "one of startDetection, pauseDetection, getState, up, down, left, right, stop", "camera": "camera-id"\}'.format( text ) )
-        for cam in self.cameras:
-            if( cam.name == cameraName ):
+        if( 'cmd' in jsonMessage ):
+            try:
+                cmd = jsonMessage[ 'cmd' ]
+                cameraName = jsonMessage[ 'camera' ]
+            except:
+                print( '"{}" does not have the proper format i.e. \{"cmd": "one of startDetection, pauseDetection, getState, up, down, left, right, stop", "camera": "camera-id"\}'.format( text ) )
+            cam = self.__findCamera( cameraName )
+            if( cam.name is not None ):
                 print( 'Found camera name "{}" will execute command "{}"'.format( cameraName, cmd ) )
                 try:
                     if( cmd == 'startDetection' ):
@@ -120,9 +158,6 @@ class MotionWrapper( object ):
                         requests.get( cam.up )
                     elif( cmd == 'down' ):
                         requests.get( cam.down )
-                    elif( cmd == 'left' ):
-                        print( 'Sending cmd left to "{}"'.format( cam.left ) )
-                        requests.get( cam.left )
                     elif( cmd == 'left' ):
                         requests.get( cam.left )
                     elif( cmd == 'right' ):
@@ -154,6 +189,7 @@ if( __name__ == '__main__' ):
                     x['startDetection'],
                     x['pauseDetection'],
                     x['state'],
+                    x['connection'],
                     None if x['up'] is None else x['up'],
                     None if x['down'] is None else x['down'],
                     None if x['left'] is None else x['left'],

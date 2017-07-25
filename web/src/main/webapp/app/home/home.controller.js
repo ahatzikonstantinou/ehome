@@ -341,6 +341,10 @@
                 }
 
                 // if this is not a new houses-configuration message then it must be a message for the subscribed devices of the current house configuration
+                if( message.destinationName == 'A///MOTION/M/status' )
+                {
+                    console.log( message.payloadString );
+                }
                 for( var i = 0 ; i < server.client.observerDevices.length ; i++ )
                 {
                     // console.log( client.observerDevices[i] );
@@ -356,12 +360,14 @@
                     { 
                         var server = invocationContext;
                         console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); 
-                    }
+                    },
+                    invocationContext: server
                 } );
             }
 
             function successCallback()
             {
+                console.log( this );
                 var server = this.invocationContext;
                 // console.log( server );
                 console.log( 'Successfully connected to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, ' subscribing to subscribeTopic...', server.settings.configuration.subscribeTopic );
