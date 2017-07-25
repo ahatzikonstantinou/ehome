@@ -7,8 +7,9 @@
     <span class="mdi mdi-blinds device-icon"/>{{i.name}}
     <span class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
     <div class="state-container" style="display: table-cell;vertical-align: middle;">
-        <span class="state info">{{i.device.tempPercent}}</span>
-        <div style="float:left; width:200px;">
+        <span class="state info slider-value">{{i.device.tempPercent}}</span>
+        <div class="rzslider-container">
+            <div class="rzslider-disable" ng-if="i.device.state.main == 'UNAVAILABLE'"/>
             <rzslider rz-slider-model="i.device.tempPercent" rz-slider-options="{ floor: 0, ceil: 100, step: 1, onEnd: i.device.setPercent() }" ng-disabled="i.device.state.main == 'UNAVAILABLE'" ></rzslider>
         </div>
         <span class="state" ng-class="{ 'warning': i.device.state.main == 'OPEN', 'info': i.device.state.main == 'CLOSED', 'unavailable': i.device.state.main == 'UNAVAILABLE' }" data-translate="{{'home.state.' + i.device.state.main}}">{{i.device.state.main}}</span>        

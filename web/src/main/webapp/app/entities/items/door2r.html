@@ -8,9 +8,9 @@
 
     <div class="state-container">
         <div>
-        <span style="float:right;" class="state" ng-class="{ 'warning': i.device.state.recline == 'OPEN', 'info': i.device.state.recline == 'CLOSED', 'unavailable': i.device.state.recline == 'UNAVAILABLE' }" data-translate="{{'home.state.' + (i.device.state.recline == 'OPEN' ? 'RECLINED' : i.device.state.recline)}}">
+        <div style="float:right;" class="state" ng-class="{ 'warning': i.device.state.recline == 'OPEN', 'info': i.device.state.recline == 'CLOSED', 'unavailable': i.device.state.recline == 'UNAVAILABLE' }" data-translate="{{'home.state.' + (i.device.state.recline == 'OPEN' ? 'RECLINED' : i.device.state.recline)}}">
             {{i.device.state.recline == 'OPEN' ? 'RECLINED' : i.device.state.recline }}
-        </span>
+        </div>
         </div>
         <div style="margin-top:28px;">
             <span class="state" ng-class="{ 'warning': i.device.state.left == 'OPEN', 'info': i.device.state.left == 'CLOSED', 'unavailable': i.device.state.left == 'UNAVAILABLE' }" data-translate="{{'home.state.' + i.device.state.left}}">{{i.device.state.left}}</span>

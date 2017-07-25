@@ -46,6 +46,10 @@
             "RECLINED": "Reclined",
             "ON": "On",
             "OFF": "Off"
+        },
+        "filters": {
+            "all": "All",
+            "none": "None"
         }
     }
 }
