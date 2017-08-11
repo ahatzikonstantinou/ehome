@@ -1,0 +1,21 @@
+<div>
+    <span class="mdi mdi-server"/>
+    <label class="server">{{server.name}}</label>
+    <div class="state-container">
+        <span class="state connection" ng-class="{ 
+            'danger': server.connection.type == 'NOT_CONNECTED', 
+            'info': server.connection.type != 'NOT_CONNECTED' && server.connection.primary, 
+            'warning': server.connection.type != 'NOT_CONNECTED' && !server.connection.primary }">
+            <span ng-if="server.connection.type == 'NOT_CONNECTED'" data-translate="{{'server.connection.' + server.connection.type}}"/>
+            <span ng-if="server.connection.type != 'NOT_CONNECTED'">{{server.connection.type}}</span>
+        </span>
+        <span class="state protocol" ng-class="{ 'info': server.connection.protocol != 'UNAVAILABLE', 'unavailable': server.connection.protocol == 'UNAVAILABLE' }">
+            <span ng-if="server.connection.protocol == 'UNAVAILABLE'" data-translate="{{'server.connection.' + server.connection.protocol}}"/>
+            <span ng-if="server.connection.protocol != 'UNAVAILABLE'">{{server.connection.protocol}}</span>
+    </div>
+    <div ng-repeat="h in vm.houses" ng-init="houseIndex = $index; isCollapsed=vm.isCollapsed[$index]">
+        <div>
+            <house house="h" is-collapsed="vm.isCollapsed[houseIndex]" expand-all-children="vm.expandAllChildren( house, expand )"/>
+         </div>
+    </div>
+</div>

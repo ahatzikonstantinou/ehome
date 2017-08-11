@@ -1,0 +1,8 @@
+{
+    "server": {
+        "connection": {
+            "UNAVAILABLE": "Unavailable",
+            "NOT_CONNECTED": "Not connected"
+        }
+    }
+}

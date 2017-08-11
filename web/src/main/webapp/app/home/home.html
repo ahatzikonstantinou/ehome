@@ -1,118 +1,12 @@
 <div ng-cloak>
-    <!--<div class="row">
-        <div class="col-md-4">
-            <span class="hipster img-responsive img-rounded"></span>
-        </div>
-        <div class="col-md-8">
-            <h1 data-translate="home.title">Welcome, Java Hipster!</h1>
-            <p class="lead" data-translate="home.subtitle">This is your homepage</p>
-
-            <div>
-
-            </div>
-
-        </div>
-    </div>-->
-    <div ng-repeat="h in vm.houses" ng-init="houseIndex = $index; isCollapsed=vm.isCollapsed[$index]">
+    <div ng-repeat="s in vm.servers">
+        <div class="well">
+            <server server="s"/>
+         </div>
+    </div>
+    <!-- <div ng-repeat="h in vm.houses" ng-init="houseIndex = $index; isCollapsed=vm.isCollapsed[$index]">
         <div class="well">
             <house house="h" is-collapsed="vm.isCollapsed[houseIndex]" expand-all-children="vm.expandAllChildren( house, expand )"/>
-            
-
-
-            <!--<div>
-                <label class="house">{{h.name}}</label>
-                <span class="summary" ng-if="h.floors.length == 1">({{h.floors[0].name}})</span>
-                <button type="button" class="btn btn-default btn-xs" ng-click="isCollapsed.house = !isCollapsed.house">
-                    <span class="mdi mdi-chevron-down" ng-if="isCollapsed.house"></span>
-                    <span class="mdi mdi-chevron-up" ng-if="!isCollapsed.house"></span>
-                </button>
-                <button type="button" class="btn btn-default btn-xs" ng-click="vm.expandAllChildren( h, isCollapsed.allChildrenExpanded )">
-                    <span class="mdi mdi-chevron-double-down" ng-if="!isCollapsed.allChildrenExpanded"></span>
-                    <span class="mdi mdi-chevron-double-up" ng-if="isCollapsed.allChildrenExpanded"></span>
-                </button>    
-                <div class="filters-bar">
-                    <button type="button" class="btn btn-xs" ng-class="{ 'btn-default': !isCollapsed.filter.DOOR, 'btn-primary': isCollapsed.filter.DOOR }" ng-click="isCollapsed.filter.DOOR = !isCollapsed.filter.DOOR">
-                        <span class="mdi mdi-glassdoor"/>
-                    </button>
-                    <button type="button" class="btn btn-xs" ng-class="{ 'btn-default': !isCollapsed.filter.WINDOW, 'btn-primary': isCollapsed.filter.WINDOW }" ng-click="isCollapsed.filter.WINDOW = !isCollapsed.filter.WINDOW">
-                        <span class="mdi mdi-window-open"/>
-                    </button>
-                    <button type="button" class="btn btn-xs" ng-class="{ 'btn-default': !isCollapsed.filter.LIGHT, 'btn-primary': isCollapsed.filter.LIGHT }" ng-click="isCollapsed.filter.LIGHT = !isCollapsed.filter.LIGHT">
-                        <span class="mdi mdi-lightbulb"/>
-                    </button>
-                    <button type="button" class="btn btn-xs" ng-class="{ 'btn-default': !isCollapsed.filter.CLIMATE, 'btn-primary': isCollapsed.filter.CLIMATE }" ng-click="isCollapsed.filter.CLIMATE = !isCollapsed.filter.CLIMATE">
-                        <span class="mdi mdi-thermometer"/>
-                    </button>
-                    <button type="button" class="btn btn-xs" ng-class="{ 'btn-default': !isCollapsed.filter.COVER, 'btn-primary': isCollapsed.filter.COVER }" ng-click="isCollapsed.filter.COVER = !isCollapsed.filter.COVER">
-                        <span class="mdi mdi-blinds"/>
-                    </button>
-                    <button type="button" class="btn btn-xs" ng-class="{ 'btn-default': !isCollapsed.filter.ALARM, 'btn-primary': isCollapsed.filter.ALARM }" ng-click="isCollapsed.filter.ALARM = !isCollapsed.filter.ALARM">
-                        <span class="mdi mdi-security-home"/>
-                    </button>
-                    <button type="button" class="btn btn-xs" ng-class="{ 'btn-default': !isCollapsed.filter.CAMERA, 'btn-primary': isCollapsed.filter.CAMERA }" ng-click="isCollapsed.filter.CAMERA = !isCollapsed.filter.CAMERA">
-                        <span class="mdi mdi-camcorder"/>
-                    </button>        
-                    <button type="button" class="btn btn-xs btn-link" ng-click="isCollapsed.filter.DOOR = isCollapsed.filter.WINDOW = isCollapsed.filter.LIGHT = isCollapsed.filter.CLIMATE = isCollapsed.filter.COVER = isCollapsed.filter.ALARM = isCollapsed.filter.CAMERA = true">
-                        All
-                    </button>        
-                    <button type="button" class="btn btn-xs btn-link" ng-click="isCollapsed.filter.DOOR = isCollapsed.filter.WINDOW = isCollapsed.filter.LIGHT = isCollapsed.filter.CLIMATE = isCollapsed.filter.COVER = isCollapsed.filter.ALARM = isCollapsed.filter.CAMERA = false">
-                        None
-                    </button>        
-                </div>
-                <div uib-collapse="isCollapsed.house">
-                    <div ng-repeat="f in h.floors" ng-init="floorIndex=$index; showLabel=(h.floors.length > 1)">
-                        <div>
-                            <div ng-if="showLabel">
-                                <label class="floor">{{f.name}}</label>
-                                <button type="button" class="btn btn-link btn-xs" ng-click="isCollapsed.floor[floorIndex].floor = !isCollapsed.floor[floorIndex].floor">
-                                    <span class="glyphicon glyphicon-triangle-bottom" ng-if="isCollapsed.floor[floorIndex].floor"></span>
-                                    <span class="glyphicon glyphicon-triangle-top" ng-if="!isCollapsed.floor[floorIndex].floor"></span>
-                                </button>    
-                            </div>
-                            <div ng-if="!isCollapsed.floor[floorIndex].floor || !showLabel">
-                                <div ng-repeat="r in f.rooms" ng-init="roomIndex=$index; showLabel=(f.rooms.length > 1)" >
-                                    <div ng-if="showLabel">
-                                        <label class="room">{{r.name}}</label>
-                                        <button type="button" class="btn btn-link btn-xs" ng-click="isCollapsed.floor[floorIndex].room[roomIndex].room = !isCollapsed.floor[floorIndex].room[roomIndex].room">
-                                            <span class="glyphicon glyphicon-triangle-bottom" ng-if="isCollapsed.floor[floorIndex].room[roomIndex].room"></span>
-                                            <span class="glyphicon glyphicon-triangle-top" ng-if="!isCollapsed.floor[floorIndex].room[roomIndex].room"></span>
-                                        </button>    
-                                    </div>
-                                    <div ng-if="!isCollapsed.floor[floorIndex].room[roomIndex].room || !showLabel">
-                                        <div ng-repeat="i in r.items">
-                                            <div>
-                                                <alarm class="item" item='i' ng-if="i.type == 'ALARM' && isCollapsed.filter.ALARM"/>
-                                                <door1 class="item" item='i' ng-if="i.type == 'DOOR1' && isCollapsed.filter.DOOR"/>
-                                                <door2r class="item" item='i' ng-if="i.type == 'DOOR2R' && isCollapsed.filter.DOOR"/>
-                                                <window1 class="item" item='i' ng-if="i.type == 'WINDOW1' && isCollapsed.filter.WINDOW"/>
-                                                <window1r class="item" item='i' ng-if="i.type == 'WINDOW1R' && isCollapsed.filter.WINDOW"/>
-                                                <window2r class="item" item='i' ng-if="i.type == 'WINDOW2R' && isCollapsed.filter.WINDOW"/>
-                                                <light class="item" item='i' ng-if="i.type == 'LIGHT' && isCollapsed.filter.LIGHT"/>
-                                                <camera class="item" item='i' ng-if="i.type == 'CAMERA' && isCollapsed.filter.CAMERA"/>
-                                                <temphum class="item" item='i' ng-if="i.type == 'TEMPERATURE_HUMIDITY' && isCollapsed.filter.CLIMATE"/>
-                                                <cover class="item" item='i' ng-if="i.type == 'COVER' && isCollapsed.filter.COVER"/>
-                                                <roller1 class="item" item='i' ng-if="i.type == 'ROLLER1' && isCollapsed.filter.COVER"/>
-                                                <roller1auto class="item" item='i' ng-if="i.type == 'ROLLER1_AUTO' && isCollapsed.filter.COVER"/>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div ng-repeat="i in h.items">
-                        <item item='i' filter="isCollapsed.filter"/>
-                    </div>
-                </div>
-            </div>
-
-
-
--->
-
-
-
-
-        </div>
-    </div>
+         </div>
+    </div> -->
 </div>

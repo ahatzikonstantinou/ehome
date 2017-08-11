@@ -1,0 +1,8 @@
+{
+    "server": {
+        "connection": {
+            "UNAVAILABLE": "Άγνωστο",
+            "NOT_CONNECTED": "Χωρίς σύνδεση"
+        }
+    }
+}

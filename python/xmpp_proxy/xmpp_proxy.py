@@ -10,13 +10,16 @@ import Queue
 import threading
 import zlib
 import bz2
+import datetime
 
 class MqttParams( object ):
     """ Holds the mqtt connection params
     """
-    def __init__( self, address, port ):
+    def __init__( self, address, port, subscribeTopic, expirationSeconds ):
         self.address = address
         self.port = port
+        self.subscribeTopic = subscribeTopic
+        self.expirationSeconds = expirationSeconds
 
 class XmppParams( object ):
     """ Holds the xmpp connection params
@@ -60,12 +63,32 @@ class Subscriptions( object ):
 
         return self._subscriptions[ subscription ]
 
+class QueuedMqttMessage( object ):
+    """ This class is used to wrap an mqtt message adding a timestamp for the time it was received.
+        This will be used to maintain a backlog of received mqtt messages in order to be able to
+        send the mqtt messages of the last x minutes through xmpp when xmpp is activated. The idea is that
+        xmpp will be activated when the main network interface (ethernet) is down. It may take some time to
+        detect that the main interface is down and during this time some mqtt messages may have been published
+        but they will never reach the web application (which is another mqtt client reachable only via the main
+        network interface). So when xmpp is activated the mqtt messages of the last x minutes will be re-send via xmpp.
+    """
+    def __init__( self, message, timestamp ):
+        self.message = message
+        self.timestamp = timestamp
+
 class XmppProxy( object ):
     """ This class handles notifications such as phonecalls, sms, email and IM
     """
-    def __init__( self, mqttId, mqttParams, xmppParams ):        
+
+    ActivateCommand = 'activate'
+    DeactivateCommand = 'deactivate'
+    
+    def __init__( self, mqttId, continuouslyOn, mqttParams, xmppParams ):        
         self.mqttParams = mqttParams
         self.mqttId = mqttId
+        self.continuouslyOn = continuouslyOn
+        self.__isActive = self.continuouslyOn #set to active if xmpp must be on continuousle, else set inactive and wait for command to activate
+        self.lock = threading.Lock()
         self.xmppParams = xmppParams
         self.mqttClient = None
         self.xmppClient = None
@@ -124,6 +147,9 @@ class XmppProxy( object ):
             #     self.__xmppConnect()
             pass
 
+    def __setActive( activate ):
+        self.__isActive = activate
+    
     def __mqttConnect( self, xmppQueue, mqttQueue ):
         self.mqttClient = mqtt.Client( self.mqttId )
         self.mqttClient.xmppQueue = xmppQueue
@@ -134,6 +160,7 @@ class XmppProxy( object ):
         self.mqttClient.loop_start()
         while( True ):
             try:
+                #read messages from the mqttQueue and take appropriate mqtt action
                 mqttMessage = self.mqttClient.mqttQueue.get_nowait()
                 type = mqttMessage.getType()
                 fromjid = mqttMessage.getFrom().getStripped()
@@ -161,12 +188,12 @@ class XmppProxy( object ):
                 #nothing to do if queue is empty
                 pass
 
-    def start( self, event ):
-        self.xmppClient.send_presence()
+    # def start( self, event ):
+    #     self.xmppClient.send_presence()
 
-    def message(self, msg):
-        if msg['type'] in ('message', 'chat', None):
-            msg.reply("Thanks for sending\n%(body)s" % msg).send()
+    # def message(self, msg):
+    #     if msg['type'] in ('message', 'chat', None):
+    #         msg.reply("Thanks for sending\n%(body)s" % msg).send()
         
     def __signalHandler( self, signal, frame ):
         print('Ctrl+C pressed!')
@@ -180,6 +207,9 @@ class XmppProxy( object ):
         #debug:
         m = "Connected flags"+str(flags_dict)+"result code " + str(result)+"client1_id  "+str(client)
         print( m )
+
+        #subscribe to start listening for incomming commands
+        self.mqttClient.subscribe( self.mqttParams.subscribeTopic )
 
     def __xmppConnect( self, xmppQueue, mqttQueue ):
         print( 'Attempting to connect to {}:{}'.format( self.xmppParams.server, self.xmppParams.port ) )
@@ -204,21 +234,30 @@ class XmppProxy( object ):
         # self.xmppClient.send( xmpp.Message( self.xmppParams.destination, 'testing from {}'.format( jid ) ) )
         self.xmppClient.sendInitPresence( requestRoster = 0 ) #if this line is ommited no messages are received
         
-        while( True ):
+        while( True ):            
             if( self.xmppClient.isConnected() ):
-                self.xmppClient.Process( 1 ) #if this line is ommited no messages are received
+                self.xmppClient.Process( 1 ) #if this line is ommited no messages are received                
                 try:
-                    # xmppMessage = self.xmppClient.xmppQueue.get_nowait()
-                    mqttMessage = self.xmppClient.xmppQueue.get_nowait()
-                    for jid in self._subscriptions.jids( mqttMessage.topic ):
-                        try:
-                            text = bytes( '{{ "topic": "{}", "payload": {} }}'.format( mqttMessage.topic, mqttMessage.payload.decode( "utf-8" ) ).encode('utf-8') )
-                            xmppMessage = xmpp.Message( to = jid, body = base64.b64encode( zlib.compress( text, 9 ) ), typ = 'chat' )
-                            print( 'Sending xmpp message (type:[{}]) to [{}]. uncompressed body: {}'.format( xmppMessage.getType(), xmppMessage.getTo(), text ) )
-                            self.xmppClient.send( xmppMessage )                            
-                        except Exception, e:
-                            print( 'An error occured while trying to send xmpp message. Error: {}'.format( e.message ) )
-                            # self.xmppClient.xmppQueue.put( xmppMessage )
+                    self.lock.aqcuire()
+                    if( self.__isActive ):
+                        mqttMessage = self.xmppClient.xmppQueue.get_nowait()
+                        for jid in self._subscriptions.jids( mqttMessage.topic ):
+                            try:
+                                text = bytes( '{{ "topic": "{}", "payload": {} }}'.format( mqttMessage.topic, mqttMessage.payload.decode( "utf-8" ) ).encode('utf-8') )
+                                xmppMessage = xmpp.Message( to = jid, body = base64.b64encode( zlib.compress( text, 9 ) ), typ = 'chat' )
+                                print( 'Sending xmpp message (type:[{}]) to [{}]. uncompressed body: {}'.format( xmppMessage.getType(), xmppMessage.getTo(), text ) )
+                                self.xmppClient.send( xmppMessage )
+                            except Exception, e:
+                                print( 'An error occured while trying to send xmpp message. Error: {}'.format( e.message ) )
+                    else:
+                        #in case xmpp_proxy is not active remove old messages from xmppQueue
+                        tempList = []
+                        while not self.xmppClient.xmppQueue.empty():
+                            queuedMessage = self.xmppClient.xmppQueue.get_nowait()
+                            if( queuedMessage.timestamp > ( datetime.datetime.now() - datetime.timedelta( seconds = self.mqttParams.expirationSeconds ) ) ):
+                                tempList.append( queuedMessage )
+                        for q in tempList:
+                            self.xmppClient.xmppQueue.put_nowait()
                 except Queue.Empty:
                     #nothing to do if queue is empty
                     # print( 'xmppQueue is empty' )
@@ -244,9 +283,19 @@ class XmppProxy( object ):
         """
         text = message.payload.decode( "utf-8" )
         print( 'Received mqtt message "{}"'.format( text ).encode( 'utf-8' ) )
+        self.lock.acquire()
         try:
+            if( message.topic == self.mqttParams.subscribeTopic ):
+                if( text.lower == XmppProxy.ActivateCommand ):
+                    self.__setActive( True )
+                elif( text.lower == XmppProxy.DeactivateCommand ):
+                    self.__setActive( False )
+                else:
+                    print( 'Unrecognised command "{}"'.format( text ) )
+                return
+            
             if( self._subscriptions.contains( message.topic ) ):            
-                self.mqttClient.xmppQueue.put_nowait( message )
+                self.mqttClient.xmppQueue.put_nowait( QueuedMqttMessage( message, datetime.datetime.now() )
                 # xmppMessage = bytes( '{{ "topic": "{}", "payload": {} }}'.format( message.topic, text ).encode('utf-8') )
                 # # xmppMessage = base64.b64encode( bytes( '{{ "topic": {}, "payload": {} }}'.format( message.topic, 'test' ).encode('utf-8') ) )
                 # # print( 'Will attempt to send xmpp message with body size {}'.format( len( xmppMessage ) ) )
@@ -262,6 +311,8 @@ class XmppProxy( object ):
         except Exception as e:
             print( 'Error: ', e )
             return
+        finally:
+            self.lock.release()
 
     def __on_xmppMessage( self, con, event ):
         type = event.getType()
@@ -269,9 +320,13 @@ class XmppProxy( object ):
         text = event.getBody()
         # print( 'xmpp message "{}" arrived from {}, text: [{}]'.format( type, fromjid, text.decode( "utf-8" ) ).encode( 'utf-8' ) )
         print( 'xmpp message "{}" arrived from {}'.format( type, fromjid ).encode( 'utf-8' ) )
-        if( type in ['message', 'chat', None] and fromjid in self.xmppParams.authorizedRemoteJids ):
-            # self.xmppClient.send( xmpp.Message( fromjid, 'You sent "{}"'.format( event.getBody() ) ) )
-            self.xmppClient.mqttQueue.put_nowait( event )
+        self.lock.acquire()
+        try:
+            if( self.__isActive and type in ['message', 'chat', None] and fromjid in self.xmppParams.authorizedRemoteJids ):
+                # self.xmppClient.send( xmpp.Message( fromjid, 'You sent "{}"'.format( event.getBody() ) ) )
+                self.xmppClient.mqttQueue.put_nowait( event )
+        finally:
+            self.lock.release()
 
 if( __name__ == '__main__' ):
     configurationFile = 'xmpp_proxy.conf'
@@ -286,7 +341,8 @@ if( __name__ == '__main__' ):
 
         xmppProxy = XmppProxy( 
             configuration['mqttId'],
-            MqttParams( configuration['mqttParams']['address'], int( configuration['mqttParams']['port'] ) ),
+            configuration['continuouslyOn'],
+            MqttParams( configuration['mqttParams']['address'], int( configuration['mqttParams']['port'] ), configuration['mqttParams']['subscribeTopic'], int( configuration['mqttParams']['expirationSeconds'] ) ),
             XmppParams( configuration['xmppParams']['user'], configuration['xmppParams']['password'], configuration['xmppParams']['server'], configuration['xmppParams']['port'], [ arj for arj in configuration['xmppParams']['authorizedRemoteJids'] ] )
         )
 

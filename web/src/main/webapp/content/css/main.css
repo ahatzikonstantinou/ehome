@@ -213,13 +213,25 @@ a.dropdown-toggle.ng-scope
 .state.danger
 {
     background-color: #d9534f;
-    color: #fff;
+    color: yellow;
 }
 
 .state.unavailable 
 {
     background-color: #c2c2c2;
     color: #fff;
+}
+
+.connection
+{
+    font-size: 13px;
+    line-height: normal;
+}
+
+.protocol
+{
+    font-size: 13px;
+    line-height: normal;
 }
 
 .temperature

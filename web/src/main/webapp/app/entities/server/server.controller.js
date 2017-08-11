@@ -3,15 +3,15 @@
 
     angular
         .module('eHomeApp')
-        .controller('HomeController', HomeController);
+        .controller('ServerController', ServerController);
 
-    // HomeController.$inject = ['$scope', 'Principal', 'LoginService', '$state'];
-    HomeController.$inject = [ '$http', '$scope', '$state', 'MqttClient', 'Door1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', 'Configuration' ];
+    // ServerController.$inject = ['$scope', 'Principal', 'LoginService', '$state'];
+    ServerController.$inject = [ '$http', '$scope', '$state', 'MqttClient', 'Door1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', 'Configuration' ];
 
-    // function HomeController ($scope, Principal, LoginService, $state) {
-    function HomeController( $http, $scope, $state, MqttClient, Door1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, Configuration ) {
+    // function ServerController ($scope, Principal, LoginService, $state) {
+    function ServerController( $http, $scope, $state, MqttClient, Door1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, Configuration ) {
         var vm = this;
-
+        vm.server = $scope.server;
         vm.account = null;
         vm.isAuthenticated = true; //null;
         // vm.login = LoginService.open;
@@ -91,91 +91,20 @@
         
         // console.log( vm.isCollapsed );
 
-        // function to generate uuid's for mqtt clients. This is necessary because if two clients connect to the same mqtt broker with the same
-        // client id, the second client will disconnect the first, such a case is when multiple users connect simultaneously to the mqtt broker 
-        // using this web app
-        function uuidv4() {
-            return ([1e7]+-1e3+-4e3+-8e3+-1e11)
-                .replace(
-                    /[018]/g, 
-                    function( c ){
-                        return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16);
-                    }
-                );
-        }
-
-        function getAllServers()
+        initServer( vm.server );
+        function initServer( server )
         {
-            return [
-                {
-                    name: 'Antonis Athens',
-                    type: 'mqtt',
-                    settings: { 
-                        mqtt_broker_ip : '192.168.1.79',
-                        mqtt_broker_port : 1884,
-                        mqtt_client_id : uuidv4(),
-                        configuration: {
-                            subscribeTopic: 'A///CONFIGURATION/C/status',
-                            publishTopic: 'A///CONFIGURATION/C/cmd',
-                            publishMessage: '{"cmd": "SEND"}'
-                        }
-                    },
-                    connection: {
-                        type: 'ADSL', // '3G', //NOT_CONNECTED',
-                        primary: true,
-                        protocol: 'Xmpp' // 'Mqtt' // 'UNAVAILABLE'
-                    },
-                    houses: []
-                },
-                // {
-                //     name: 'Antonis Alyki',
-                //     type: 'xmpp',
-                //     settings: {
-                //         // host: 'https://jabber.hot-chilli.net:5281/http-bind',
-                //         // user: 'ahatziko.web@jabber.hot-chilli.net',
-                //         // password: '312ggp12',
-                //         // destination: 'ahatziko.alyki@jabber.hot-chilli.net',
-                //         host: 'wss://192.168.1.79:5281/xmpp-websocket',
-                //         user: 'antonis@ahatzikonstantinou.dtdns.net',
-                //         password: '312ggp12',
-                //         destination: 'alyki@ahatzikonstantinou.dtdns.net',
-                //         // ahat: Note. The following connection to accounts at jabber.hot-chilli.net return 404
-                //         // host: 'wss://jabber.hot-chilli.net:5281/xmpp-websocket',
-                //         // user: 'ahatziko.web@jabber.hot-chilli.net',
-                //         // password: '312ggp12',
-                //         // destination: 'ahatziko.alyki@jabber.hot-chilli.net',
-                //         email: 'ahatziko.alyki@gmail.com',
-                //         configuration: {
-                //             subscribeTopic: 'A///CONFIGURATION/C/status',
-                //             publishTopic: 'A///CONFIGURATION/C/cmd',
-                //             publishMessage: '{"cmd": "SEND"}'
-                //         }
-                //     },
-                //     houses: []
-                // }
-            ];
-        }
-        var servers = getAllServers();
-        vm.servers = servers;
-        console.log( 'servers: ', servers );
-        // initServers( servers );
-        function initServers( servers )
-        {
-            for( var i = 0 ; i < servers.length ; i++ )
+            switch( server.type )
             {
-                var server = servers[i];
-                switch( server.type )
-                {
-                    case 'mqtt':
-                        initMqttServer( server );
-                        break;
-                    case 'xmpp':
-                        initXmppServer( server );
-                        break;
-                    default:
-                        console.log( 'Unknown server type [', server.type, ']: ', server );
-                }                
-            }
+                case 'mqtt':
+                    initMqttServer( server );
+                    break;
+                case 'xmpp':
+                    initXmppServer( server );
+                    break;
+                default:
+                    console.log( 'Unknown server type [', server.type, ']: ', server );
+            }                
         }
 
         XMPP.Client.prototype.subscribe = function( topic )
@@ -410,6 +339,7 @@
             console.log( 'generated ', server.houses.length, ' houses' );
             
             $scope.$apply( addHouses( server.houses ) );
+            console.log( vm.houses.length + ' houses should be rendered for server ' + server.name );
             subscribeHouses( server.client, server.houses );
         }
 

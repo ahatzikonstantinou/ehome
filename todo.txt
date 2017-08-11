@@ -5,7 +5,39 @@ Done. Motion event-on-picture (or on most pixels motion frame) mosquitto_publish
 Done. Alarm on-arm start motion detection
 Done. Alarm on-disarm pause motion detection
 Done. Added language selection. Selection is saved in localStorage and reused on startup.
-IndexDB storage to store mqtt messages in mobile web app
+
+Done. Xmpp add configuration to function continuously, or by command.
+Done. Xmpp add code to activate deactivate by mqtt message
+Xmpp add message to web app when activated, in order for webapp to send all messages via xmpp
+Xmpp add message to web app when deactivated, in order for webapp to send all messages via mqtt
+Web app: enhance mqtt server definition to accomodate xmpp failover
+Web app: add code to initialize xmpp failover (when supported) in mqtt servers. 
+Web app: when xmpp-activate message is received (via xmpp failover) all messages must be published via xmpp
+Web app: when xmpp-deactivate message is received (via xmpp failover) all messages must be published via mqtt
+
+Develop eth0 monitor:
+    when internet is not accessible via eth0 
+        enable ppp
+        send mqtt activate message to xmpp
+        publish mqtt message "server connection is now 3g"
+    when eth0 is back on
+        bring down ppp
+        send mqtt deactivate message to xmpp
+        publish mqtt message "server connection is now land internet"
+
+Develop mqtt_smscentre
+    process incoming sms
+    receive mqtt messages to send as sms
+
+Store incoming messages and mark them as unread. 
+    Show the latest unread source + datetime next to the house name.
+    Add a display filter at house level as dropdown with for 'all', 'unread', last 1 minute, last 10 minutes, last hour, last day
+    Add button 'mark all read'.
+    To mark individual mqtt message as read, click on the corresponding items name.
+    Item names for unread mqtt messages must be bold, for read must be normal.
+    Display list of incoming mqtt messages with history button next to house.
+    Add "clear" button with dropdown "all", older than 1 minute, older than 10 minutes, older than 1 hour, older than 1 day
+    Perhaps also add auto clear for mqtt messages older than 1 week 
 
 Inestigate camera usage for xmpp servers. If video stream is not possible replace with picture and add button to take snapshot and send (use the motion web interface e.g. curl -s -o /dev/null http://192.168.1.11:8080/1/action/snapshot).
 Check motion's web api http://192.168.1.11:8080/1/detection/connection to see if it works for camera lost an camera re-activated.
