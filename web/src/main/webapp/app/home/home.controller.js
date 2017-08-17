@@ -157,12 +157,12 @@
         }
         var servers = getAllServers();
         vm.servers = servers;
-        console.log( 'servers: ', servers );
+        console.log( 'servers: ', vm.servers );
         // initServers( servers );
         function initServers( servers )
         {
             for( var i = 0 ; i < servers.length ; i++ )
-            {
+            {                
                 var server = servers[i];
                 switch( server.type )
                 {

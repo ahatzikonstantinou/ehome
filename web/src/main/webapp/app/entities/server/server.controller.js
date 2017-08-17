@@ -6,14 +6,16 @@
         .controller('ServerController', ServerController);
 
     // ServerController.$inject = ['$scope', 'Principal', 'LoginService', '$state'];
-    ServerController.$inject = [ '$http', '$scope', '$state', 'MqttClient', 'Door1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', 'Configuration' ];
+    ServerController.$inject = [ '$http', '$scope', '$state', 'MqttClient', 'Door1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', 'Configuration', 'ServerConnection' ];
 
     // function ServerController ($scope, Principal, LoginService, $state) {
-    function ServerController( $http, $scope, $state, MqttClient, Door1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, Configuration ) {
+    function ServerController( $http, $scope, $state, MqttClient, Door1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, Configuration, ServerConnection ) {
         var vm = this;
         vm.server = $scope.server;
         vm.account = null;
         vm.isAuthenticated = true; //null;
+
+        var CONNECTION_TOPIC = 'connection';
         // vm.login = LoginService.open;
         // vm.register = register;
         // $scope.$on('authenticationSuccess', function() {
@@ -94,6 +96,7 @@
         initServer( vm.server );
         function initServer( server )
         {
+            server.device = ServerConnection( CONNECTION_TOPIC );
             switch( server.type )
             {
                 case 'mqtt':
@@ -307,7 +310,12 @@
                 console.log( this );
                 var server = this.invocationContext;
                 // console.log( server );
-                console.log( 'Successfully connected to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, ' subscribing to subscribeTopic...', server.settings.configuration.subscribeTopic );
+                console.log( 'Successfully connected to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port );
+
+                console.log( 'Subscribing to connection topic...', CONNECTION_TOPIC );
+                subscribe( client, server );
+
+                console.log( 'Subscribing to subscribeTopic...', server.settings.configuration.subscribeTopic );
                 client.subscribe( server.settings.configuration.subscribeTopic );
                 
                 console.log( 'Will publish to publshTopic to get house-configuration...', server.settings.configuration.publishTopic );
