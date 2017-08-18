@@ -125,6 +125,25 @@
                         primary: true,
                         protocol: 'Xmpp' // 'Mqtt' // 'UNAVAILABLE'
                     },
+                    failover: {
+                        type: 'xmpp',
+                        settings: {
+                            // host: 'https://jabber.hot-chilli.net:5281/http-bind',
+                            // user: 'ahatziko.web@jabber.hot-chilli.net',
+                            // password: '312ggp12',
+                            // destination: 'ahatziko.alyki@jabber.hot-chilli.net',
+                            host: 'wss://localhost:5281/xmpp-websocket',
+                            user: 'antonis@ahatzikonstantinou.dtdns.net',
+                            password: '312ggp12',
+                            destination: 'athens@ahatzikonstantinou.dtdns.net',
+                            email: 'ahatziko.athina@gmail.com',
+                            configuration: {
+                                subscribeTopic: 'A///CONFIGURATION/C/status',
+                                publishTopic: 'A///CONFIGURATION/C/cmd',
+                                publishMessage: '{"cmd": "SEND"}'
+                            }
+                        }
+                    },
                     houses: []
                 },
                 // {

@@ -8,22 +8,22 @@ Done. Added language selection. Selection is saved in localStorage and reused on
 
 Done. Xmpp add configuration to function continuously, or by command.
 Done. Xmpp add code to activate deactivate by mqtt message
-Xmpp add message to web app when activated, in order for webapp to send all messages via xmpp
-Xmpp add message to web app when deactivated, in order for webapp to send all messages via mqtt
 Web app: enhance mqtt server definition to accomodate xmpp failover
 Web app: add code to initialize xmpp failover (when supported) in mqtt servers. 
-Web app: when xmpp-activate message is received (via xmpp failover) all messages must be published via xmpp
-Web app: when xmpp-deactivate message is received (via xmpp failover) all messages must be published via mqtt
+Web app: add message to xmpp when activated, in order for xmpp to send all mqtt messages via xmpp
+Web app: add message to xmpp when deactivated, in order for xmpp to stop sending mqtt messages via xmpp
+Xmpp when xmpp-activate message is received (via xmpp failover) all intercepted mqtt messages must be sent via xmpp
+Xmpp when xmpp-deactivate message is received (via xmpp failover) mqtt messages must stop being sent via xmpp
 
-Develop eth0 monitor:
+Done (with eth and wifi, must also test with ppp). Develop eth0 monitor:
     when internet is not accessible via eth0 
         enable ppp
-        send mqtt activate message to xmpp
         publish mqtt message "server connection is now 3g"
     when eth0 is back on
         bring down ppp
-        send mqtt deactivate message to xmpp
         publish mqtt message "server connection is now land internet"
+
+Web app: add refresh button for server connection, in order to get latest value.
 
 Develop mqtt_smscentre
     process incoming sms
@@ -39,7 +39,7 @@ Store incoming messages and mark them as unread.
     Add "clear" button with dropdown "all", older than 1 minute, older than 10 minutes, older than 1 hour, older than 1 day
     Perhaps also add auto clear for mqtt messages older than 1 week 
 
-Inestigate camera usage for xmpp servers. If video stream is not possible replace with picture and add button to take snapshot and send (use the motion web interface e.g. curl -s -o /dev/null http://192.168.1.11:8080/1/action/snapshot).
+Investigate camera usage for xmpp servers. If video stream is not possible replace with picture and add button to take snapshot and send (use the motion web interface e.g. curl -s -o /dev/null http://192.168.1.11:8080/1/action/snapshot).
 Check motion's web api http://192.168.1.11:8080/1/detection/connection to see if it works for camera lost an camera re-activated.
 Use sleekxmpp instead of xmpppy and try OTR.
 Add component to store mqtt message history so that web can retrieve a device's history
