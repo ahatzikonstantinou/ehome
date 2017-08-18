@@ -10,7 +10,7 @@ ETH0=$(ifconfig | grep -e "^e.*Ethernet" | cut -d " " -f 1)
 
 echo "ETH0:$ETH0, ALT_INT:$ALT_INT"
 
-function listen {
+(
     while true; do
         mosquitto_sub -k 5 -C 1 -R -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_sub_topic"
         echo "past mosquitto_sub with $?"
@@ -18,20 +18,28 @@ function listen {
         if ifconfig "${ETH0}" | grep "inet addr" > /dev/null 2>&1; then
             echo "publish $ETH0 is up"
             mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "type": "'"$primary"'", "primary": true }' -q 2
-        elif ifconfig "${ALT_INT}" | grep "inet addr" > /dev/null 2>&1; then
+        elif [ -n "${ALT_INT}" ] && ifconfig "${ALT_INT}" | grep "inet addr" > /dev/null 2>&1; then
             echo "publish $ALT_INT is up"
             mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "type": "'"$alternative"'", "primary": false }' -q 2
+        else
+            echo "publish NOT_CONNECTED"
+            mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "type": "NOT_CONNECTED", "primary": true }' -q 2
         fi
     done
-}
+)&
 
-listen &
 #The next two flags become true when the corresponding events occurre.
 #They become false as soon as the corresponding states are confirmed.
 on_disconnect_alt_int=false
 on_connect_alt_int=false
 
 while true; do
+    if [ -z "${ALT_INT}" ]; then
+        # echo "No alternative interface. Nothing to do..."
+        sleep 10
+        continue
+    fi
+
     # when the event has fired and the mqtt broker is available over the newlly connected interface
     # reset the flag and publish the appropriate mqtt message
     if [ "$on_disconnect_alt_int" = true ] && ( ./ping_interface.sh "$ETH0" > /dev/null 2>&1 ); then
