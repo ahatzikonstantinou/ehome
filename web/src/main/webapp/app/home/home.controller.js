@@ -118,6 +118,11 @@
                             subscribeTopic: 'A///CONFIGURATION/C/status',
                             publishTopic: 'A///CONFIGURATION/C/cmd',
                             publishMessage: '{"cmd": "SEND"}'
+                        },
+                        connection: {
+                            subscribeTopic: 'connection',
+                            publishTopic: 'connection/report',
+                            keepAliveInterval: 5 //seconds
                         }
                     },
                     connection: {

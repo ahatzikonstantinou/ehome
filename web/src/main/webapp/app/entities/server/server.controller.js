@@ -15,9 +15,6 @@
         vm.account = null;
         vm.isAuthenticated = true; //null;
 
-        var CONNECTION_TOPIC_SUB = 'connection';
-        var CONNECTION_TOPIC_PUB = 'connection/report';
-        var KEEP_ALIVE_INTERVAL = 5;        //seconds
         // vm.login = LoginService.open;
         // vm.register = register;
         // $scope.$on('authenticationSuccess', function() {
@@ -98,7 +95,7 @@
         initServer( vm.server );
         function initServer( server )
         {
-            server.device = new ServerConnection( server, CONNECTION_TOPIC_SUB, CONNECTION_TOPIC_PUB, {} );
+            server.device = new ServerConnection( server, server.settings.connection.subscribeTopic, server.settings.connection.publishTopic, {} );
             // console.log( 'server.device: ', server.device );
             switch( server.type )
             {
@@ -261,7 +258,7 @@
                 onSuccess: successCallback,
                 onFailure: function() { console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); },
                 invocationContext: server,
-                keepAliveInterval: KEEP_ALIVE_INTERVAL
+                keepAliveInterval: server.settings.connection.keepAliveInterval
             });   
 
             client._client.onMessageArrived = function( message )
@@ -296,7 +293,7 @@
                         console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); 
                     },
                     invocationContext: server,
-                    keepAliveInterval: KEEP_ALIVE_INTERVAL
+                    keepAliveInterval: server.settings.connection.keepAliveInterval
                 } );
             }
 
@@ -307,7 +304,7 @@
                 console.log( server );
                 console.log( 'Successfully connected to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port );
 
-                console.log( 'Subscribing to connection topic...', CONNECTION_TOPIC_SUB );
+                console.log( 'Subscribing to connection topic...', server.device.mqtt_subscribe_topic );
                 client.observerDevices.push( server.device );
                 client.subscribe( server.device.mqtt_subscribe_topic );
                 server.device.setPublisher( client );
@@ -315,9 +312,9 @@
                 console.log( 'Subscribing to subscribeTopic...', server.settings.configuration.subscribeTopic );
                 client.subscribe( server.settings.configuration.subscribeTopic );
                 
-                console.log( 'Will publish to get server connection...', CONNECTION_TOPIC_PUB );
+                console.log( 'Will publish to get server connection...', server.settings.connection.publishTopic );
                 var message = new Paho.MQTT.Message( "no_data" );
-                message.destinationName = CONNECTION_TOPIC_PUB ;
+                message.destinationName = server.device.mqtt_publish_topic ;
                 client.send( message );
 
                 console.log( 'Will publish to publshTopic to get house-configuration...', server.settings.configuration.publishTopic );
