@@ -9,9 +9,9 @@
 
     function ServerConnection() {
         //Constructor
-        function ServerConnection( server, mqtt_subscribe_topic, state )
+        function ServerConnection( server, mqtt_subscribe_topic, mqtt_publish_topic, state )
         {
-            MqttDevice.call( this, mqtt_subscribe_topic, state );
+            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic );
             this.server = server;
         }
         
@@ -29,6 +29,18 @@
 
                 this.server.connection.type = data.type;
                 this.server.connection.primary = data.primary;
+            }
+        }
+
+        ServerConnection.prototype.refresh = function()
+        {
+            console.log( 'will refresh the connection type' );
+            if( this.publisher )
+            {
+                var message = new Paho.MQTT.Message( "" );
+                message.destinationName = this.mqtt_publish_topic ;
+                console.log( 'ServerConnection sending message: ', message );
+                this.publisher.send( message );
             }
         }
 

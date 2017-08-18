@@ -98,7 +98,7 @@
         initServer( vm.server );
         function initServer( server )
         {
-            server.device = new ServerConnection( server, CONNECTION_TOPIC_SUB, {} );
+            server.device = new ServerConnection( server, CONNECTION_TOPIC_SUB, CONNECTION_TOPIC_PUB, {} );
             // console.log( 'server.device: ', server.device );
             switch( server.type )
             {

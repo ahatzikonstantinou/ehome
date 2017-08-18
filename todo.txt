@@ -7,7 +7,8 @@ Done. Alarm on-disarm pause motion detection
 Done. Added language selection. Selection is saved in localStorage and reused on startup.
 
 Done. Xmpp add configuration to function continuously, or by command.
-Done. Xmpp add code to activate deactivate by mqtt message
+Xmpp remove code to activate deactivate by mqtt message
+Xmpp add code to activate deactivate by xmpp message
 Web app: enhance mqtt server definition to accomodate xmpp failover
 Web app: add code to initialize xmpp failover (when supported) in mqtt servers. 
 Web app: add message to xmpp when activated, in order for xmpp to send all mqtt messages via xmpp
@@ -23,7 +24,7 @@ Done (with eth and wifi, must also test with ppp). Develop eth0 monitor:
         bring down ppp
         publish mqtt message "server connection is now land internet"
 
-Web app: add refresh button for server connection, in order to get latest value.
+Done. Web app: add refresh button for server connection, in order to get latest value.
 
 Develop mqtt_smscentre
     process incoming sms
