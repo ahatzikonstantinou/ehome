@@ -34,13 +34,13 @@ on_connect_alt_int=false
 while true; do
     # when the event has fired and the mqtt broker is available over the newlly connected interface
     # reset the flag and publish the appropriate mqtt message
-    if [ "$on_disconnect_alt_int" = true ] && ( ping -i 0.2 -c 1 -W 1 -I "$ETH0" "$mqtt_broker" > /dev/null 2>&1 ); then
+    if [ "$on_disconnect_alt_int" = true ] && ( ./ping_interface.sh "$ETH0" > /dev/null 2>&1 ); then
         echo "publish disconnection from ALT_INT"
         on_disconnect_alt_int=false
         sleep 3 #ahat: Note. Without this delay the published message seems to get lost...
         mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "type": "'"$primary"'", "primary": true }' -q 2
     fi
-    if [ "$on_connect_alt_int" = true ] && ( ping -i 0.2 -c 1 -W 1 -I "$ALT_INT" "$mqtt_broker" > /dev/null 2>&1 ); then
+    if [ "$on_connect_alt_int" = true ] && ( ./ping_interface.sh "$ALT_INT" > /dev/null 2>&1 ); then
         echo "publish connection to ALT_INT"
         on_connect_alt_int=false
         sleep 3 #ahat: Note. Without this delay the published message seems to get lost...

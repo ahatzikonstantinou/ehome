@@ -111,7 +111,7 @@
                     name: 'Antonis Athens',
                     type: 'mqtt',
                     settings: { 
-                        mqtt_broker_ip : '192.168.1.79',
+                        mqtt_broker_ip : 'localhost', // '192.168.1.79',
                         mqtt_broker_port : 1884,
                         mqtt_client_id : uuidv4(),
                         configuration: {
