@@ -80,8 +80,8 @@ class XmppProxy( object ):
     """ This class handles notifications such as phonecalls, sms, email and IM
     """
 
-    ActivateCommand = 'activate'
-    DeactivateCommand = 'deactivate'
+    ActivateCommand = 'activate-xmpp'
+    DeactivateCommand = 'deactivate-xmpp'
     
     def __init__( self, mqttId, continuouslyOn, mqttParams, xmppParams ):        
         self.mqttParams = mqttParams
@@ -142,13 +142,13 @@ class XmppProxy( object ):
             # print( 'in infinite loop' )
             # if( self.xmppClient.isConnected() ):
             #     self.xmppClient.Process( 1 ) #if this line is ommited no messages are received
-            time.sleep( 1 )
+            # time.sleep( 1 )
             # else:
             #     self.__xmppConnect()
             pass
 
-    def __setActive( activate ):
-        self.__isActive = activate
+    def __setActive( self, activate ):
+        self.__isActive = activate        
     
     def __mqttConnect( self, xmppQueue, mqttQueue ):
         self.mqttClient = mqtt.Client( self.mqttId )
@@ -231,19 +231,19 @@ class XmppProxy( object ):
 
         self.xmppClient.RegisterHandler( 'message', self.__on_xmppMessage )
         # self.xmppClient.RegisterDisconnectHandler( self.__on_xmppDisconnect )
-        # self.xmppClient.send( xmpp.Message( self.xmppParams.destination, 'testing from {}'.format( jid ) ) )
+        # self.xmppClient.send( xmpp.Message( 'antonis@ahatzikonstantinou.dtdns.net', 'testing from {}'.format( self.jid ) ) )
         self.xmppClient.sendInitPresence( requestRoster = 0 ) #if this line is ommited no messages are received
         
         while( True ):            
             if( self.xmppClient.isConnected() ):
                 self.xmppClient.Process( 1 ) #if this line is ommited no messages are received                
                 try:
-                    self.lock.aqcuire()
+                    self.lock.acquire()
                     if( self.__isActive ):
                         mqttMessage = self.xmppClient.xmppQueue.get_nowait()
-                        for jid in self._subscriptions.jids( mqttMessage.topic ):
+                        for jid in self._subscriptions.jids( mqttMessage.message.topic ):
                             try:
-                                text = bytes( '{{ "topic": "{}", "payload": {} }}'.format( mqttMessage.topic, mqttMessage.payload.decode( "utf-8" ) ).encode('utf-8') )
+                                text = bytes( '{{ "topic": "{}", "payload": {} }}'.format( mqttMessage.message.topic, mqttMessage.message.payload.decode( "utf-8" ) ).encode('utf-8') )
                                 xmppMessage = xmpp.Message( to = jid, body = base64.b64encode( zlib.compress( text, 9 ) ), typ = 'chat' )
                                 print( 'Sending xmpp message (type:[{}]) to [{}]. uncompressed body: {}'.format( xmppMessage.getType(), xmppMessage.getTo(), text ) )
                                 self.xmppClient.send( xmppMessage )
@@ -257,13 +257,16 @@ class XmppProxy( object ):
                             if( queuedMessage.timestamp > ( datetime.datetime.now() - datetime.timedelta( seconds = self.mqttParams.expirationSeconds ) ) ):
                                 tempList.append( queuedMessage )
                         for q in tempList:
-                            self.xmppClient.xmppQueue.put_nowait()
+                            self.xmppClient.xmppQueue.put_nowait( q )
                 except Queue.Empty:
                     #nothing to do if queue is empty
                     # print( 'xmppQueue is empty' )
                     pass
+                finally:
+                    self.lock.release()
             else:
                 self.__on_xmppDisconnect()
+            
             time.sleep( 1 )
 
     def __on_xmppDisconnect( self ):
@@ -283,19 +286,20 @@ class XmppProxy( object ):
         """
         text = message.payload.decode( "utf-8" )
         print( 'Received mqtt message "{}"'.format( text ).encode( 'utf-8' ) )
-        self.lock.acquire()
         try:
-            if( message.topic == self.mqttParams.subscribeTopic ):
-                if( text.lower == XmppProxy.ActivateCommand ):
-                    self.__setActive( True )
-                elif( text.lower == XmppProxy.DeactivateCommand ):
-                    self.__setActive( False )
-                else:
-                    print( 'Unrecognised command "{}"'.format( text ) )
-                return
+            self.lock.acquire()
+            # cancelled: xmpp is now activated by the web app via an xmpp message
+            # if( message.topic == self.mqttParams.subscribeTopic ):
+            #     if( text.lower == XmppProxy.ActivateCommand ):
+            #         self.__setActive( True )
+            #     elif( text.lower == XmppProxy.DeactivateCommand ):
+            #         self.__setActive( False )
+            #     else:
+            #         print( 'Unrecognised command "{}"'.format( text ) )
+            #     return
             
             if( self._subscriptions.contains( message.topic ) ):            
-                self.mqttClient.xmppQueue.put_nowait( QueuedMqttMessage( message, datetime.datetime.now() )
+                self.mqttClient.xmppQueue.put_nowait( QueuedMqttMessage( message, datetime.datetime.now() ) )
                 # xmppMessage = bytes( '{{ "topic": "{}", "payload": {} }}'.format( message.topic, text ).encode('utf-8') )
                 # # xmppMessage = base64.b64encode( bytes( '{{ "topic": {}, "payload": {} }}'.format( message.topic, 'test' ).encode('utf-8') ) )
                 # # print( 'Will attempt to send xmpp message with body size {}'.format( len( xmppMessage ) ) )
@@ -319,12 +323,39 @@ class XmppProxy( object ):
         fromjid = event.getFrom().getStripped()
         text = event.getBody()
         # print( 'xmpp message "{}" arrived from {}, text: [{}]'.format( type, fromjid, text.decode( "utf-8" ) ).encode( 'utf-8' ) )
-        print( 'xmpp message "{}" arrived from {}'.format( type, fromjid ).encode( 'utf-8' ) )
-        self.lock.acquire()
         try:
-            if( self.__isActive and type in ['message', 'chat', None] and fromjid in self.xmppParams.authorizedRemoteJids ):
-                # self.xmppClient.send( xmpp.Message( fromjid, 'You sent "{}"'.format( event.getBody() ) ) )
-                self.xmppClient.mqttQueue.put_nowait( event )
+            print( 'xmpp message "{}" arrived from {}'.format( text, fromjid ).encode( 'utf-8' ) )
+        except:
+            print( 'received xmpp message from {} but could not decode it'.format( fromjid ) )
+        
+        try:
+            self.lock.acquire()
+            print( 'self.continuouslyOn:{}, self.__isActive:{}'.format( self.continuouslyOn, self.__isActive ) )
+            if( type in ['message', 'chat', None] and fromjid in self.xmppParams.authorizedRemoteJids ):
+                if( ( not self.continuouslyOn ) and ( not self.__isActive ) and text == XmppProxy.ActivateCommand ):
+                    print( 'Activating xmpp (xmpp-message:{})'.format( text ) )
+                    self.__setActive( True )
+                elif( ( not self.continuouslyOn ) and self.__isActive and text == XmppProxy.DeactivateCommand ):
+                    print( 'Deactivating xmpp (xmpp-message:{})'.format( text ) )
+                    self.__setActive( False )
+                else:
+                    # subscribe and unsubscribe messages will be queued and executed
+                    # regardless of __isActive
+                    # publish messages will be queued only if __isActive
+                    try:
+                        cmds = json.loads( text )
+                        print( 'cmds: {}'.format( json.dumps( cmds, indent = 2 ) ) )
+                        if( ( cmds[ 'cmd' ] == 'subscribe' or cmds[ 'cmd' ] == 'unsubscribe' ) and 'topic' in cmds and cmds[ 'topic' ] is not None ):
+                            print( 'adding un/subscribe message to mqttQueue' )
+                            self.xmppClient.mqttQueue.put_nowait( event )
+                        elif( self.__isActive ):
+                            print( 'adding message to mqttQueue' )
+                            self.xmppClient.mqttQueue.put_nowait( event )
+                    except Exception, e:
+                        print( 'Error: {}'.format( e.message ) )
+                        pass
+        except:
+            pass
         finally:
             self.lock.release()
 

@@ -50,3 +50,5 @@ configure nginx (from https://peterkieser.com/2016/03/09/prosody-websocket-behin
 		proxy_set_header Connection "upgrade";
 	  }
 	}
+
+In order for the web app to work properly you may first have to navigate to https://xmpp-server-url:port/xmpp-websocket and add a security exception for the browser you are using, or else the browser may drop the connection as insecure.

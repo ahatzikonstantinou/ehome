@@ -39,9 +39,24 @@
             {
                 var message = new Paho.MQTT.Message( "" );
                 message.destinationName = this.mqtt_publish_topic ;
-                console.log( 'ServerConnection sending message: ', message );
+                // console.log( 'ServerConnection sending message: ', message, ' with publisher: ', this.publisher );
                 this.publisher.send( message );
             }
+        }
+
+        ServerConnection.prototype.disconnected = function()
+        {
+            this.server.connection.type = 'NOT_CONNECTED';
+        }
+
+        ServerConnection.prototype.connected = function( type )
+        {
+            this.server.connection.type = type;
+        }
+
+        ServerConnection.prototype.setProtocol = function( protocol )
+        {
+            this.server.connection.protocol = protocol;
         }
 
         return ServerConnection;

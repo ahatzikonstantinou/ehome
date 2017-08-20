@@ -8,7 +8,7 @@
             'warning': server.connection.type != 'NOT_CONNECTED' && !server.connection.primary }">
             <span ng-if="server.connection.type == 'NOT_CONNECTED'" data-translate="{{'server.connection.' + server.connection.type}}"/>
             <span ng-if="server.connection.type != 'NOT_CONNECTED'">{{server.connection.type}}</span>
-            <span style="float:right" class="glyphicon glyphicon-refresh"/>
+            <span style="float:right; margin-left:8px;" class="glyphicon glyphicon-refresh"/>
         </span>
         <span class="state protocol" ng-class="{ 'info': server.connection.protocol != 'UNAVAILABLE', 'unavailable': server.connection.protocol == 'UNAVAILABLE' }">
             <span ng-if="server.connection.protocol == 'UNAVAILABLE'" data-translate="{{'server.connection.' + server.connection.protocol}}"/>

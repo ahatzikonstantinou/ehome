@@ -128,20 +128,17 @@
                     connection: {
                         type: 'ADSL', // '3G', //NOT_CONNECTED',
                         primary: true,
-                        protocol: 'Xmpp' // 'Mqtt' // 'UNAVAILABLE'
+                        protocol: 'Mqtt' // 'UNAVAILABLE'
                     },
                     failover: {
+                        active: false,
                         type: 'xmpp',
                         settings: {
-                            // host: 'https://jabber.hot-chilli.net:5281/http-bind',
-                            // user: 'ahatziko.web@jabber.hot-chilli.net',
-                            // password: '312ggp12',
-                            // destination: 'ahatziko.alyki@jabber.hot-chilli.net',
-                            host: 'wss://localhost:5281/xmpp-websocket',
+                            host: 'wss://192.168.1.79:5281/xmpp-websocket',
                             user: 'antonis@ahatzikonstantinou.dtdns.net',
                             password: '312ggp12',
-                            destination: 'athens@ahatzikonstantinou.dtdns.net',
-                            email: 'ahatziko.athina@gmail.com',
+                            destination: 'alyki@ahatzikonstantinou.dtdns.net',
+                            email: 'ahatziko.alyki@gmail.com',
                             configuration: {
                                 subscribeTopic: 'A///CONFIGURATION/C/status',
                                 publishTopic: 'A///CONFIGURATION/C/cmd',
@@ -173,6 +170,11 @@
                 //             subscribeTopic: 'A///CONFIGURATION/C/status',
                 //             publishTopic: 'A///CONFIGURATION/C/cmd',
                 //             publishMessage: '{"cmd": "SEND"}'
+                //         },
+                //         connection: {
+                //             subscribeTopic: 'connection',
+                //             publishTopic: 'connection/report',
+                //             keepAliveInterval: 5 //seconds
                 //         }
                 //     },
                 //     houses: []

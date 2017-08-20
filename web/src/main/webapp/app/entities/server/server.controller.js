@@ -110,18 +110,12 @@
             }                
         }
 
-        XMPP.Client.prototype.subscribe = function( topic )
+        function initXmppServer( server, failover )
         {
-            console.log( 'xmpp.subscribe override, topic: ', topic );
-        }
+            console.log( 'initXmppServer( server: ', server, ',\n failover ): ', failover );
+            server.isFailover = ( typeof failover !== 'undefined' ) ? failover : false;
+            server.messageQueue = new Queue();
 
-        XMPP.Client.prototype.publish = function( topic )
-        {
-            console.log( 'xmpp.publish override, topic: ', topic );
-        }
-
-        function initXmppServer( server )
-        {
             if( server.settings.host.startsWith( "https" ) )
             {
                 server.client = XMPP.createClient({
@@ -151,37 +145,78 @@
             console.log( 'connecting to ', server.settings.host, ' as ', server.settings.user );
             var client = server.client;
             client.server = server;
-            client.observerDevices = [];
-            client.subscribe = function( topic )
+            server.observerDevices = [];
+
+            server.subscribe = function( topic )
             {
                 // console.log( 'my xmpp subscribe for topic ', topic );
+                console.log( 'xmpp subscribe with client: ', client );
                 var body = '{ "cmd": "subscribe", "topic": ' + '"' + topic + '" }';
-                client.sendMessage(
-                    {
-                        to: server.settings.destination,
-                        body: body
-                    }
-                );
-                console.log( 'sent message ', body, ' to ', server.settings.destination );
+                server._send( body );
+                console.log( 'sent subscribe ', body, ' to ', server.settings.destination );
             }
 
-            client.unsubscribe = function( topic )
+            server.subscribeDevice = function( device, topic )
+            {
+                server.subscribe( topic );
+                server.observerDevices.push( device );
+            }
+
+            server.unsubscribe = function( topic )
             {
                 // console.log( 'my xmpp unsubscribe for topic ', topic );
                 var body = '{ "cmd": "unsubscribe", "topic": ' + '"' + topic + '" }';
-                client.sendMessage(
-                    {
-                        to: server.settings.destination,
-                        body: body
-                    }
-                );
-                console.log( 'sent message ', body, ' to ', server.settings.destination );
+                server._send( body );
+                console.log( 'sent unsubscribe ', body, ' to ', server.settings.destination );
+            }
+
+            server.send = function( mqttMessage )
+            {
+                var text = '{ "cmd":"publish", "topic": ' + '"' + mqttMessage.destinationName + '", "message": "' + btoa( mqttMessage.payloadString ) + '" }';
+                server._send( text );
+                console.log( 'sent message "', text, '" to ', server.settings.destination );
+            }
+
+            server._send = function( message )
+            {
+                if( client.sessionStarted )
+                {
+                    client.sendMessage(
+                        {
+                            to: server.settings.destination,
+                            body: message
+                        }
+                    );
+                    console.log( '_sent message "', message, '" to ', server.settings.destination );
+                }
+                else
+                {
+                    server.messageQueue.enqueue( message );
+                    console.log( 'queued message "', message, '" to ', server.settings.destination );
+                }
+            }
+
+            server.activate = function( active )
+            {
+                server.active = active;
+                var message = active ? 'activate-xmpp' : 'deactivate-xmpp';
+                // client.sendMessage( { to: server.settings.destination, body: message } );
+                server._send( message );
+                if( active && server.device )
+                {
+                    $scope.$apply( server.device.setProtocol( 'Xmpp' ) );
+                }
             }
 
             client.on('session:started', function () {
                 console.log( 'session:started so i must be connected!' );
                 client.getRoster();
                 client.sendPresence();
+
+                if( server.device )
+                {
+                    $scope.$apply( server.device.setProtocol( 'Xmpp' ) );
+                }
 
                 //subscribe to configuration topic
                 client.sendMessage(
@@ -190,20 +225,40 @@
                         body: '{ "cmd":"subscribe", "topic": ' + '"' + server.settings.configuration.subscribeTopic + '" }'
                     }
                 );
-                console.log( 'sent message ', server.settings.configuration.subscribeTopic, ' to ', server.settings.destination );
+                console.log( 'sent message ', server.settings.configuration.subscribeTopic, ' to ', server.settings.destination, 'with client: ', client );
 
-                //send cmd to have configuration sent back to us
-                client.sendMessage(
-                    {
-                        to: server.settings.destination,
-                        body: '{ "cmd":"publish", "topic": ' + '"' + server.settings.configuration.publishTopic + '", "message": "' + btoa( server.settings.configuration.publishMessage ) + '" }'
-                    }
-                );
-                console.log( 'sent message ', server.settings.configuration.publishTopic, ' to ', server.settings.destination );
+                console.log( 'xmpp: ', this );
+                if( !server.isFailover )
+                {
+                    //send cmd to have configuration sent back to us
+                    client.sendMessage(
+                        {
+                            to: server.settings.destination,
+                            body: '{ "cmd":"publish", "topic": ' + '"' + server.settings.configuration.publishTopic + '", "message": "' + btoa( server.settings.configuration.publishMessage ) + '" }'
+                        }
+                    );
+                    console.log( 'sent message ', server.settings.configuration.publishTopic, ' to ', server.settings.destination );
+                }
+
+                while( !server.messageQueue.isEmpty() )
+                {
+                    var message = server.messageQueue.dequeue();
+                    client.sendMessage(
+                        {
+                            to: server.settings.destination,
+                            body: message
+                        }
+                    );
+                    console.log( 'sent queued message "', message, '" to ', server.settings.destination );
+                }
             });
 
             client.on( 'disconnected', function(){
                 console.log( 'disconnected from ', server.settings.host );  
+                if( server.device )
+                {
+                    $scope.$apply( server.device.disconnected() );
+                }
                 client.connect();
             });
 
@@ -225,21 +280,22 @@
             // });
 
             client.on( 'message', function (msg) {
+                console.log( 'received xmpp message: ', msg );
                 var text = pako.inflate( atob( msg.body ), { to: 'string' } );
                 console.log( 'received [message]  from ', msg.from, ': ', text );
                 var message = angular.fromJson( text );
-                if( message.topic == this.server.settings.configuration.subscribeTopic )
+                if( message.topic == server.settings.configuration.subscribeTopic )
                 {
-                    updateConfiguration( this.server, message.payload );
+                    updateConfiguration( server, message.payload );
                     return;
                 }
                 
                 // if this is not a new houses-configuration message then it must be a message for the subscribed devices of the current house configuration
                 // console.log( this );
-                $scope.observerDevices = this.observerDevices;
-                for( var i = 0 ; i < this.observerDevices.length ; i++ )
+                $scope.observerDevices = server.observerDevices;
+                for( var i = 0 ; i < server.observerDevices.length ; i++ )
                 {
-                    // console.log( this.observerDevices[i] );                    
+                    console.log( 'updating device: ', this.server.observerDevices[i] );                    
                     $scope.$apply( function() { $scope.observerDevices[i].update( message.topic, message.payload ); } );
                 }
             });
@@ -249,22 +305,83 @@
 
         function initMqttServer( server )
         {
+            if( server.failover )
+            {
+                console.log( 'Initialising failover of server ', server.name );
+                switch( server.failover.type )
+                {
+                    case 'xmpp':                    
+                        initXmppServer( server.failover, true );
+                        console.log( 'Failover of server ', server.name, ': ', server.failover );
+                        break;
+                    default:
+                        console.log( 'Unsupported failover server type [', server.failover.type, ']: ', server.failover );
+                }                
+            }
+
             server.client = MqttClient;
             var client = server.client;            
-            client.observerDevices = [];
+            server.observerDevices = [];
             client.init( server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, server.settings.mqtt_client_id );
-            
+    
+            // messages subscribed by this function should be handled directly in the client.onMessageArrived function
+            server.subscribe = function( topic )
+            {
+                // console.log( 'my mqtt server subscribe for topic ', topic );
+                this.client.subscribe( topic );
+                if( this.failover )
+                {
+                    this.failover.subscribe( topic );
+                }
+            }
+
+            server.subscribeDevice = function( device, topic )
+            {
+                // console.log( 'my mqtt server subscribe for topic ', topic );
+                this.client.subscribe( topic );
+                this.observerDevices.push( device );
+                if( this.failover )
+                {
+                    this.failover.subscribeDevice( device, topic );
+                }
+            }
+
+            server.unsubscribe = function( topic )
+            {
+                // console.log( 'my mqtt unsubscribe for topic ', topic );
+                this.client.unsubscribe( topic );
+                if( server.failover )
+                {
+                    server.failover.unsubscribe( topic );
+                }
+            }
+
+            server.send = function( message )
+            {
+                console.log( 'mqtt server will send "', message, '", server: ', this );
+                if( this.failover && this.failover.active )
+                {
+                    this.failover.send( message );
+                    return;
+                }
+
+                // else
+                this.client.send( message );
+            }
+
             client.connect({
                 onSuccess: successCallback,
-                onFailure: function() { console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); },
+                onFailure: function() { 
+                    console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, ' attempting to reconnect.' ); 
+                },
                 invocationContext: server,
                 keepAliveInterval: server.settings.connection.keepAliveInterval
-            });   
+            });
 
             client._client.onMessageArrived = function( message )
             {
                 var server = this.connectOptions.invocationContext;
-                //console.log( server );
+                console.log( server );
                 console.log( 'Received [topic] "message": [', message.destinationName.trim(), '] "', message.payloadString, '"' );
                 if( message.destinationName == server.settings.configuration.subscribeTopic )
                 {
@@ -276,25 +393,38 @@
                 {
                     console.log( message.payloadString );
                 }
-                for( var i = 0 ; i < server.client.observerDevices.length ; i++ )
+                for( var i = 0 ; i < server.observerDevices.length ; i++ )
                 {
-                    // console.log( client.observerDevices[i] );
-                    $scope.$apply( function() { server.client.observerDevices[i].update( message.destinationName, message.payloadString ); } );
+                    // console.log( server.observerDevices[i] );
+                    $scope.$apply( function() { server.observerDevices[i].update( message.destinationName, message.payloadString ); } );
                 }
             }
 
             client._client.onConnectionLost = function( error ) { 
                 console.log( 'Connection lost with error: ', error, ' attempting to reconnect.' );
+                $scope.$apply( server.device.disconnected() );
                 client.connect( {
                     onSuccess: successCallback,
                     onFailure: function() 
                     { 
-                        var server = invocationContext;
+                        var server = this.invocationContext;
                         console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); 
                     },
                     invocationContext: server,
                     keepAliveInterval: server.settings.connection.keepAliveInterval
                 } );
+
+                if( server.failover )
+                {
+                    console.log( 'Activating failover until mqtt reconnects, failover: ', server.failover );                    
+                    server.failover.activate( true );
+                    $scope.$apply( server.device.setProtocol( 'Xmpp' ) );
+
+                    console.log( 'Will publish to refresh server connection...', server.settings.connection.publishTopic );
+                    var message = new Paho.MQTT.Message( "no_data" );
+                    message.destinationName = server.device.mqtt_publish_topic ;
+                    server.send( message );
+                }
             }
 
             function successCallback()
@@ -304,23 +434,35 @@
                 console.log( server );
                 console.log( 'Successfully connected to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port );
 
+                $scope.$apply( server.device.setProtocol( 'Mqtt' ) );
+
+                if( server.failover && server.failover.active )
+                {
+                    console.log( 'Deactivating failover because mqtt reconnected' );
+                    server.failover.activate( false );
+                }
+
                 console.log( 'Subscribing to connection topic...', server.device.mqtt_subscribe_topic );
-                client.observerDevices.push( server.device );
-                client.subscribe( server.device.mqtt_subscribe_topic );
-                server.device.setPublisher( client );
+                server.observerDevices.push( server.device );
+                if( server.failover )
+                {
+                    server.failover.observerDevices.push( server.device );
+                }
+                server.subscribe( server.device.mqtt_subscribe_topic );
+                server.device.setPublisher( server );
 
                 console.log( 'Subscribing to subscribeTopic...', server.settings.configuration.subscribeTopic );
-                client.subscribe( server.settings.configuration.subscribeTopic );
+                server.subscribe( server.settings.configuration.subscribeTopic );
                 
                 console.log( 'Will publish to get server connection...', server.settings.connection.publishTopic );
                 var message = new Paho.MQTT.Message( "no_data" );
                 message.destinationName = server.device.mqtt_publish_topic ;
-                client.send( message );
+                server.send( message );
 
                 console.log( 'Will publish to publshTopic to get house-configuration...', server.settings.configuration.publishTopic );
                 message = new Paho.MQTT.Message( server.settings.configuration.publishMessage );
                 message.destinationName = server.settings.configuration.publishTopic ;
-                client.send( message );
+                server.send( message );
             }
         }
 
@@ -339,7 +481,7 @@
         {
             if( server.houses && server.houses.length > 0 )
             {
-                unsubscribeHouses( server.client, server.houses );
+                unsubscribeHouses( server, server.houses );
                 removeHouses( server.houses );
             }
             server.houses = Configuration.generateHousesList( angular.fromJson( messagePayloadString ) );
@@ -347,10 +489,10 @@
             
             $scope.$apply( addHouses( server.houses ) );
             console.log( vm.houses.length + ' houses should be rendered for server ' + server.name );
-            subscribeHouses( server.client, server.houses );
+            subscribeHouses( server, server.houses );
         }
 
-        function unsubscribeHouses( client, houses )
+        function unsubscribeHouses( server, houses )
         {
             console.log( 'unsubscribeHouses for ', houses.length, ' houses' );
             for( var h = 0 ; h < houses.length ; h++ )
@@ -366,7 +508,7 @@
                         {
                             if( houses[h].floors[f].rooms[r].items[i].protocol = 'mqtt' )
                             {
-                                unsubscribe( client, houses[h].floors[f].rooms[r].items[i] );
+                                unsubscribe( server, houses[h].floors[f].rooms[r].items[i] );
                             }
                         }
                     }
@@ -377,12 +519,12 @@
                     {
                         if( houses[h].items[i].protocol = 'mqtt' )
                         {
-                            unsubscribe( client, houses[h].items[i] );
+                            unsubscribe( server, houses[h].items[i] );
                         }
                     }
                 }
             }
-            client.observerDevices = [];
+            server.observerDevices = [];
         }
 
         function removeHouses( houses )
@@ -429,7 +571,7 @@
             }
         }
 
-        function subscribeHouses( client, houses )
+        function subscribeHouses( server, houses )
         {
             console.log( 'subscribing ', houses.length, ' houses' );
             // subscribe to all topics
@@ -446,7 +588,7 @@
                         {
                             if( houses[h].floors[f].rooms[r].items[i].protocol = 'mqtt' )
                             {
-                                subscribe( client, houses[h].floors[f].rooms[r].items[i] );
+                                subscribe( server, houses[h].floors[f].rooms[r].items[i] );
                             }
                         }
                     }
@@ -457,14 +599,14 @@
                     {
                         if( houses[h].items[i].protocol = 'mqtt' )
                         {
-                            subscribe( client, houses[h].items[i] );
+                            subscribe( server, houses[h].items[i] );
                         }
                     }
                 }
             }
         }
 
-        function subscribe( client, item )
+        function subscribe( server, item )
         {
             // console.log( '\t\titem:', item );
             switch( item.type )
@@ -489,9 +631,8 @@
                     }
                     else if( item.device.mqtt_subscribe_topic )
                     {
-                        // console.log( 'Subscribing ', item.device );
-                        client.observerDevices.push( item.device );
-                        client.subscribe( item.device.mqtt_subscribe_topic );
+                        // console.log( 'Subscribing ', item.device );        
+                        server.subscribeDevice( item.device, item.device.mqtt_subscribe_topic );
                     }
                     break;
                 default: 
@@ -508,7 +649,7 @@
                 case 'ROLLER1_AUTO':
                     if( item.device )
                     {
-                        item.device.setPublisher( client );
+                        item.device.setPublisher( server );
                     }
                     break;
                 default:
@@ -516,7 +657,7 @@
             }
         }
 
-        function unsubscribe( client, item )
+        function unsubscribe( server, item )
         {
             // console.log( '\t\titem:', item );
             switch( item.type )
@@ -542,7 +683,7 @@
                     else if( item.device.mqtt_subscribe_topic )
                     {
                         // console.log( 'Subscribing ', item.device );
-                        client.unsubscribe( item.device.mqtt_subscribe_topic );
+                        server.unsubscribe( item.device.mqtt_subscribe_topic );
                     }
                     break;
                 default: 
