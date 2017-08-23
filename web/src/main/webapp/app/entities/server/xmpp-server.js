@@ -131,7 +131,7 @@
                 var message = active ? 'activate-xmpp' : 'deactivate-xmpp';
                 // client.sendMessage( { to: server.settings.destination, body: message } );
                 server._send( message );
-                if( active && server.connectionDevice )
+                if( active )
                 {
                     // $scope.$apply( server.connectionDevice.setProtocol( server.type ) );
                     server.connectionDevice.setProtocol( server.type );
@@ -143,19 +143,29 @@
                 client.getRoster();
                 client.sendPresence();
 
-                if( server.connectionDevice && !server.isFailover )
-                {
-                    // $scope.$apply( server.connectionDevice.setProtocol( server.type ) );
-                    server.connectionDevice.setProtocol( server.type );
-                }
+                server.connectionStatus = 'CONNECTED';
 
                 // before doing any subscriptions, set active status so that if inactive, the xmpp_proxy will not
                 // send received mqtt messages that arrive after the subscriptions
                 // console.log( 'server.isFailover: ', server.isFailover, ' typeof server.active:', typeof server.active );
-                if( server.isFailover && typeof server.active !== 'undefined' )
+                if( server.isFailover )
                 {
-                    console.log( 'setting server.activate( ', server.active, ' )' );
-                    server.activate( server.active );
+                    if( typeof server.active !== 'undefined' )
+                    {
+                        console.log( 'setting server.activate( ', server.active, ' )' );
+                        server.activate( server.active );
+                    }
+                }
+                else
+                {
+                    console.log( 'activating xmpp_proxy' );
+                    server.activate( true );
+                }
+
+                if( !server.isFailover || server.active )
+                {
+                    // $scope.$apply( server.connectionDevice.setProtocol( server.type ) );
+                    server.connectionDevice.setProtocol( server.type );
                 }
 
                 //subscribe to configuration topic
@@ -177,7 +187,7 @@
                             body: '{ "cmd":"publish", "topic": ' + '"' + server.connectionDevice.mqtt_publish_topic + '", "message": "' + btoa( "no_data" ) + '" }'
                         }
                     );
-                    console.log( 'sent message ', server.settings.configuration.publishTopic, ' to ', server.settings.destination );
+                    console.log( 'sent message ', server.connectionDevice.mqtt_publish_topic, ' to ', server.settings.destination );
 
                     //send cmd to have configuration sent back to us
                     client.sendMessage(
@@ -203,11 +213,14 @@
             });
 
             client.on( 'disconnected', function(){
-                console.log( 'disconnected from ', server.settings.host );  
-                if( server.connectionDevice )
+                console.log( 'disconnected from ', server.settings.host );
+                server.connectionStatus = 'DISCONNECTED';
+                
+                // if this is a failover server, the connectionDevice belongs to the main server
+                if( !server.isFailover || server.active )
                 {
-                    // $scope.$apply( server.connectionDevice.disconnected() );
                     server.connectionDevice.disconnected();
+                    server.connectionDevice.connecting( server.type );
                 }
                 client.connect();
             });
@@ -260,6 +273,11 @@
                 if( !client.sessionStarted )
                 {
                     console.log( 'Xmpp client still not connected. Attempting reconnection' );
+                    server.connectionStatus = 'CONNECTING';
+                    if( !server.isFailover || server.active )
+                    {
+                        server.connectionDevice.connecting( server.type );
+                    }
                     client.connect();
                 }
             }, 5000, 0, true, client );

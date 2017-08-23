@@ -188,6 +188,11 @@
                 //             keepAliveInterval: 5 //seconds
                 //         }
                 //     },
+                //     connection: {
+                //         type: 'ADSL', // '3G', //NOT_CONNECTED',
+                //         primary: true,
+                //         protocol: 'Mqtt' // 'UNAVAILABLE'
+                //     },
                 //     houses: []
                 // }
             ];
