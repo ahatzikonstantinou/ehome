@@ -2,7 +2,12 @@
     "server": {
         "connection": {
             "UNAVAILABLE": "Άγνωστο",
-            "NOT_CONNECTED": "Χωρίς σύνδεση"
+            "NOT_CONNECTED": "Χωρίς σύνδεση",
+            "CONNECTING": "{{protocol}} συνδέεται..."
+        },
+        "configurationStatus": {
+            "UNAVAILABLE": "Πληροφορίες συσκευών μη διαθέσιμες",
+            "ERROR": "Σφάλμα στις πληροφορίες συσκευών"
         }
     }
 }

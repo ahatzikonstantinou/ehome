@@ -145,6 +145,7 @@ class XmppProxy( object ):
             # time.sleep( 1 )
             # else:
             #     self.__xmppConnect()
+            time.sleep( 1 )
             pass
 
     def __setActive( self, activate ):
@@ -185,8 +186,10 @@ class XmppProxy( object ):
                     print( 'Error: {}'.format( e.message ) )
                     pass
             except Queue.Empty:
-                #nothing to do if queue is empty
+                #nothing to do if queue is empty                
                 pass
+            
+            time.sleep( 1 )
 
     # def start( self, event ):
     #     self.xmppClient.send_presence()

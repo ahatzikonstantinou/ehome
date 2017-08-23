@@ -11,6 +11,7 @@
         //Constructor
         function IPCameraPanTilt( baseUrl, videostream, right, left, up, down, stop )
         {
+            Device.call( this );
             //public properties
             this.baseUrl = baseUrl; 
             this.videostream = videostream; 
@@ -20,6 +21,9 @@
             this.down = down; 
             this.stop = stop;        
         }
+
+        IPCameraPanTilt.prototype = Object.create( Device.prototype );
+        IPCameraPanTilt.prototype.constructor = IPCameraPanTilt;
 
         function videoUrl() { return baseUrl + videostream ; }
         function rightUrl() { return baseUrl + right ; }

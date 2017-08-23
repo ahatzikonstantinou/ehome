@@ -7,14 +7,17 @@ Done. Alarm on-disarm pause motion detection
 Done. Added language selection. Selection is saved in localStorage and reused on startup.
 
 Done. Xmpp add configuration to function continuously, or by command.
-Xmpp remove code to activate deactivate by mqtt message
-Xmpp add code to activate deactivate by xmpp message
-Web app: enhance mqtt server definition to accomodate xmpp failover
-Web app: add code to initialize xmpp failover (when supported) in mqtt servers. 
-Web app: add message to xmpp when activated, in order for xmpp to send all mqtt messages via xmpp
-Web app: add message to xmpp when deactivated, in order for xmpp to stop sending mqtt messages via xmpp
-Xmpp when xmpp-activate message is received (via xmpp failover) all intercepted mqtt messages must be sent via xmpp
-Xmpp when xmpp-deactivate message is received (via xmpp failover) mqtt messages must stop being sent via xmpp
+Done: Xmpp remove code to activate deactivate by mqtt message
+Done: Xmpp add code to activate deactivate by xmpp message
+Done: Web app: enhance mqtt server definition to accomodate xmpp failover
+Done: Web app: add code to initialize xmpp failover (when supported) in mqtt servers. 
+Done: Web app: add message to xmpp when activated, in order for xmpp to send all mqtt messages via xmpp
+Done: Web app: add message to xmpp when deactivated, in order for xmpp to stop sending mqtt messages via xmpp
+Done: Xmpp when xmpp-activate message is received (via xmpp failover) all intercepted mqtt messages must be sent via xmpp
+Done: Xmpp when xmpp-deactivate message is received (via xmpp failover) mqtt messages must stop being sent via xmpp
+
+Enhance web app to store last received message (must have timestamp) and when activating failover request only newer messages
+Enhance xmpp (messages must have timestamp) and when xmpp is activated, send only messages from mqttQueue newer than last web app message
 
 Done (with eth and wifi, must also test with ppp). Develop eth0 monitor:
     when internet is not accessible via eth0 

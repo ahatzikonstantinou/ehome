@@ -161,7 +161,7 @@ a.dropdown-toggle.ng-scope
     max-height:100%;
 }
 
-/*ahat: this makes the images and vide from web cams autoresize to fill all available area*/
+/*ahat: this makes the images and video from web cams autoresize to fill all available area*/
 .state-container > img 
 {
     max-width:100%;

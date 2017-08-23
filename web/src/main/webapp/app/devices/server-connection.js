@@ -23,12 +23,14 @@
             if( topic == this.mqtt_subscribe_topic )
             {
                 var data = angular.fromJson( message );
-                console.log( 'data: ',  data );
+                // console.log( 'data: ',  data );
                 this.state = data;
                 this.lastUpdate = Date.now();
 
                 this.server.connection.type = data.type;
                 this.server.connection.primary = data.primary;
+                this.server.connection.connecting = false;
+                this.server.connection.connectingProtocol = '';
             }
         }
 
@@ -47,11 +49,19 @@
         ServerConnection.prototype.disconnected = function()
         {
             this.server.connection.type = 'NOT_CONNECTED';
+            this.server.connection.connecting = false;
+        }
+
+        ServerConnection.prototype.connecting = function( protocol )
+        {
+            this.server.connection.connecting = true;
+            this.server.connection.connectingProtocol = protocol;
         }
 
         ServerConnection.prototype.connected = function( type )
         {
             this.server.connection.type = type;
+            this.server.connection.connecting = false;
         }
 
         ServerConnection.prototype.setProtocol = function( protocol )

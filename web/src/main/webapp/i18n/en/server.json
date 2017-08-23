@@ -2,7 +2,12 @@
     "server": {
         "connection": {
             "UNAVAILABLE": "Unavailable",
-            "NOT_CONNECTED": "Not connected"
+            "NOT_CONNECTED": "Not connected",
+            "CONNECTING": "{{protocol}} connecting..."
+        },
+        "configurationStatus": {
+            "UNAVAILABLE": "Configuration unavailable",
+            "ERROR": "Configuration error"
         }
     }
 }

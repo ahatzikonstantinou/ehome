@@ -91,9 +91,6 @@
         
         // console.log( vm.isCollapsed );
 
-        // function to generate uuid's for mqtt clients. This is necessary because if two clients connect to the same mqtt broker with the same
-        // client id, the second client will disconnect the first, such a case is when multiple users connect simultaneously to the mqtt broker 
-        // using this web app
         function uuidv4() {
             return ([1e7]+-1e3+-4e3+-8e3+-1e11)
                 .replace(
@@ -113,7 +110,10 @@
                     settings: { 
                         mqtt_broker_ip : 'localhost', // '192.168.1.79',
                         mqtt_broker_port : 1884,
-                        mqtt_client_id : uuidv4(),
+                        //uuid is necessary because if two clients connect to the same mqtt broker with the same
+                        // client id, the second client will disconnect the first, such a case is when multiple users 
+                        // connect simultaneously to the mqtt broker using this web app
+                        mqtt_client_id : uuidv4(), 
                         configuration: {
                             subscribeTopic: 'A///CONFIGURATION/C/status',
                             publishTopic: 'A///CONFIGURATION/C/cmd',
@@ -122,7 +122,8 @@
                         connection: {
                             subscribeTopic: 'connection',
                             publishTopic: 'connection/report',
-                            keepAliveInterval: 5 //seconds
+                            keepAliveInterval: 5, //seconds,
+                            timeout: 10 //seconds
                         }
                     },
                     connection: {
@@ -143,8 +144,18 @@
                                 subscribeTopic: 'A///CONFIGURATION/C/status',
                                 publishTopic: 'A///CONFIGURATION/C/cmd',
                                 publishMessage: '{"cmd": "SEND"}'
+                            },
+                            connection: {
+                                subscribeTopic: 'connection',
+                                publishTopic: 'connection/report'    
                             }
-                        }
+                        },
+                        connection: {
+                            type: 'NOT_CONNECTED',
+                            primary: false,
+                            protocol: 'Xmpp'
+                        },    
+                        houses: []
                     },
                     houses: []
                 },

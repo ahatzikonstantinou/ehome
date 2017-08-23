@@ -1,13 +1,15 @@
 <div>
     <span class="mdi mdi-server"/>
     <label class="server">{{server.name}}</label>
+    <span class="summary" ng-if="server.connection.connecting" translate="server.connection.CONNECTING" translate-values="{ protocol: server.connection.connectingProtocol }"/>
+    <span class="summary" ng-if="server.configurationDevice.status == 'UNAVAILABLE' || server.configurationDevice.status == 'ERROR'" data-translate="{{'server.configurationStatus.' + server.configurationDevice.status}}"/>
     <div class="state-container">
-        <span class="state connection" ng-click="server.device.refresh()" ng-class="{ 
-            'danger': server.connection.type == 'NOT_CONNECTED', 
+        <span class="state connection" ng-click="server.connectionDevice.refresh()" ng-class="{ 
+            'danger': server.connection.type == 'NOT_CONNECTED',
             'info': server.connection.type != 'NOT_CONNECTED' && server.connection.primary, 
             'warning': server.connection.type != 'NOT_CONNECTED' && !server.connection.primary }">
-            <span ng-if="server.connection.type == 'NOT_CONNECTED'" data-translate="{{'server.connection.' + server.connection.type}}"/>
-            <span ng-if="server.connection.type != 'NOT_CONNECTED'">{{server.connection.type}}</span>
+            <span ng-if="server.connection.type == 'NOT_CONNECTED' || server.connection.type == 'CONNECTING'" data-translate="{{'server.connection.' + server.connection.type}}"/>
+            <span ng-if="server.connection.type != 'NOT_CONNECTED' && server.connection.type != 'CONNECTING'">{{server.connection.type}}</span>
             <span style="float:right; margin-left:8px;" class="glyphicon glyphicon-refresh"/>
         </span>
         <span class="state protocol" ng-class="{ 'info': server.connection.protocol != 'UNAVAILABLE', 'unavailable': server.connection.protocol == 'UNAVAILABLE' }">
