@@ -3,6 +3,8 @@
     <label class="server">{{server.name}}</label>
     <span class="summary" ng-if="server.connection.connecting" translate="server.connection.CONNECTING" translate-values="{ protocol: server.connection.connectingProtocol }"/>
     <span class="summary" ng-if="server.configurationDevice.status == 'UNAVAILABLE' || server.configurationDevice.status == 'ERROR'" data-translate="{{'server.configurationStatus.' + server.configurationDevice.status}}"/>
+    <span class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
+    <span class="last-update">{{server.connectionDevice.lastUpdate ? ( server.connectionDevice.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
     <div class="state-container">
         <span class="state connection" ng-click="server.connectionDevice.refresh()" ng-class="{ 
             'danger': server.connection.type == 'NOT_CONNECTED',
@@ -14,11 +16,16 @@
         </span>
         <span class="state protocol" ng-class="{ 'info': server.connection.protocol != 'UNAVAILABLE', 'unavailable': server.connection.protocol == 'UNAVAILABLE' }">
             <span ng-if="server.connection.protocol == 'UNAVAILABLE'" data-translate="{{'server.connection.' + server.connection.protocol}}"/>
-            <span ng-if="server.connection.protocol != 'UNAVAILABLE'">{{server.connection.protocol}}</span>
+            <span ng-if="server.connection.protocol != 'UNAVAILABLE'">{{server.connection.protocol}}</span>        
+    </div>
+    <div ng-repeat="i in vm.items" ng-init="showMqttTopics = false">
+        <div class="items">            
+            <item item="i" filter="filter" show-mqtt-topics="showMqttTopics"/>
+        </div>
     </div>
     <div ng-repeat="h in vm.houses" ng-init="houseIndex = $index; isCollapsed=vm.isCollapsed[$index]">
         <div>
             <house house="h" is-collapsed="vm.isCollapsed[houseIndex]" expand-all-children="vm.expandAllChildren( house, expand )"/>
-         </div>
+        </div>
     </div>
 </div>

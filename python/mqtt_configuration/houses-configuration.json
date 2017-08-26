@@ -1,22 +1,28 @@
-[
-    { 
-        "name": "Διαμέρισμα Αντώνη",
-        "mqtt": "A",
-        "floors": [ 
-            { 
-                "name": "4ος", 
-                "mqtt": "4",
-                "rooms": [ 
-                    { 
-                        "name": "Χωλ",
-                        "mqtt": "H",
-                        "items": [
-                            { "name": "Πόρτα εισόδου", "domain": "DOOR", "type": "DOOR1", "protocol": "mqtt", "subscribe": "A/4/H/DOOR/D" }
-                        ]
-                    }
-                ] 
-            } 
-        ],
-        "items": [  ]
-    }
+{
+    "items": [
+        { "name": "Modems", "domain": "MODEM", "type": "MODEM", "protocol": "mqtt", "subscribe": "modem", "publish": "modem/cmd" }
+    ],
+    "houses": [    
+        { 
+            "name": "Διαμέρισμα Αντώνη",
+            "mqtt": "A",
+            "floors": [ 
+                { 
+                    "name": "4ος", 
+                    "mqtt": "4",
+                    "rooms": [ 
+                        { 
+                            "name": "Χωλ",
+                            "mqtt": "H",
+                            "items": [
+                                { "name": "Πόρτα εισόδου", "domain": "DOOR", "type": "DOOR1", "protocol": "mqtt", "subscribe": "A/4/H/DOOR/D" },
+                                { "name": "Φως ταβάνι", "domain": "LIGHT", "type": "LIGHT1", "protocol": "mqtt", "subscribe": "A/4/H/LIGHT/LC/state", "publish": "A/4/H/LC/set" }
+                            ]
+                        }
+                    ] 
+                } 
+            ],
+            "items": [  ]
+        }
     ]
+}

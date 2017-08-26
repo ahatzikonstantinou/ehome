@@ -5,12 +5,27 @@
         .module('eHomeApp')
         .factory('Configuration', Configuration);
 
-    Configuration.$inject = [ 'Door1', 'Window1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', '$resource' ];
+    Configuration.$inject = [ 'Door1', 'Window1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', '$resource', 'Modem' ];
 
-    function Configuration( Door1, Window1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, $resource ) 
+    function Configuration( Door1, Window1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, $resource, Modem ) 
     {
         return {
-        generateHousesList: function ( data )
+            generateList: function( data )
+            {
+                var items = []
+                for( var i = 0 ; i < data.items.length ; i++ )
+                {
+                    items.push( generateItem( data.items[i] ) );
+                }
+
+                return {
+                    items: items,
+                    houses: generateHousesList( data.houses )
+                };
+            }
+        };
+
+        function generateHousesList( data )
         {
             var housesList = []
             for( var h = 0 ; h < data.length ; h++ )
@@ -51,13 +66,13 @@
                 housesList.push( house );
             }
             return housesList;
-        
+        }
 
         function generateItem( def )
         {
             var item = {
                 name: def.name,
-                doamin: def.domain,
+                domain: def.domain,
                 type: def.type,
                 protocol: def.protocol,
                 device: {}
@@ -66,59 +81,61 @@
             switch( item.type )
             {
                 case 'ALARM':
-                    item.device = new Alarm( def.subscribe, def.publish, { main: 'UNAVAILABLE' } )
+                    item.device = new Alarm( def.subscribe, def.publish, { main: 'UNAVAILABLE' } );
                     break;
                 case 'NET':
-                    item.device = new Net( def.subscribe, { main: 'UNAVAILABLE' } )
+                    item.device = new Net( def.subscribe, { main: 'UNAVAILABLE' } );
                     break;
                 case 'DOOR1':
-                    item.device = new Door1( def.subscribe, { main: 'UNAVAILABLE' } )
+                    item.device = new Door1( def.subscribe, { main: 'UNAVAILABLE' } );
                     break;
                 case 'DOOR2R':                
-                    item.device = new Door2R( def.subscribe, { left: 'UNAVAILABLE', right: 'UNAVAILABLE', recline: 'UNAVAILABLE' } )
+                    item.device = new Door2R( def.subscribe, { left: 'UNAVAILABLE', right: 'UNAVAILABLE', recline: 'UNAVAILABLE' } );
                     break;
                 case 'IPCAMERA':
-                    item.device = new IPCamera( def.url )
+                    item.device = new IPCamera( def.url );
                     break;
                 case 'IPCAMERAPANTILT':
-                    item.device = new IPCameraPanTilt( def.baseUrl, def.videostream, def.right, def.left, def.up, def.down, def.stop )
+                    item.device = new IPCameraPanTilt( def.baseUrl, def.videostream, def.right, def.left, def.up, def.down, def.stop );
                     break;
                 case 'LIGHT1':
-                    item.device = new Light1( def.subscribe, def.publish, { main: 'UNAVAILABLE' } )
+                    item.device = new Light1( def.subscribe, def.publish, { main: 'UNAVAILABLE' } );
                     break;
                 case 'LIGHT2':
-                    item.device = new Light2( def.subscribe, def.publish, { left: 'UNAVAILABLE', right: 'UNAVAILABLE' } )
+                    item.device = new Light2( def.subscribe, def.publish, { left: 'UNAVAILABLE', right: 'UNAVAILABLE' } );
                     break;
                 case 'MOTIONCAMERA':
-                    item.device = new MotionCamera( def.subscribe, def.publish, def.cameraId, def.videostream, 'UNAVAILABLE', 'NO_MOTION' )
+                    item.device = new MotionCamera( def.subscribe, def.publish, def.cameraId, def.videostream, 'UNAVAILABLE', 'NO_MOTION' );
                     break;
                 case 'MOTIONCAMERAPANTILT':
-                    item.device = new MotionCameraPanTilt( def.subscribe, def.publish, def.cameraId, def.videostream, 'UNAVAILABLE', 'NO_MOTION' )
+                    item.device = new MotionCameraPanTilt( def.subscribe, def.publish, def.cameraId, def.videostream, 'UNAVAILABLE', 'NO_MOTION' );
                     break;
                 case 'ROLLER1':
-                    item.device = new Roller1( def.subscribe, { main: 'UNAVAILABLE' } )
+                    item.device = new Roller1( def.subscribe, { main: 'UNAVAILABLE' } );
                     break;
                 case 'ROLLER1_AUTO':
-                    item.device = new Roller1_Auto( def.subscribe, def.publish, { main: 'UNAVAILABLE', percent: -1 } )
+                    item.device = new Roller1_Auto( def.subscribe, def.publish, { main: 'UNAVAILABLE', percent: -1 } );
                     break;
                 case 'TEMPERATURE_HUMIDITY':
-                    item.device = new TemperatureHumidity( def.subscribe, { main: 'UNAVAILABLE', temperature: 0, humidity: 0 } )
+                    item.device = new TemperatureHumidity( def.subscribe, { main: 'UNAVAILABLE', temperature: 0, humidity: 0 } );
                     break;
                 case 'WINDOW1':
-                    item.device = new Window1( def.subscribe, { main: 'UNAVAILABLE' } )
+                    item.device = new Window1( def.subscribe, { main: 'UNAVAILABLE' } );
                     break;
                 case 'WINDOW1R':
-                    item.device = new Window1R( def.subscribe, { main: 'UNAVAILABLE', recline: 'UNAVAILABLE' } )
+                    item.device = new Window1R( def.subscribe, { main: 'UNAVAILABLE', recline: 'UNAVAILABLE' } );
                     break;
                 case 'WINDOW2R':
-                    item.device = new Window2R( def.subscribe, { left: 'UNAVAILABLE', right: 'UNAVAILABLE', recline: 'UNAVAILABLE' } )
+                    item.device = new Window2R( def.subscribe, { left: 'UNAVAILABLE', right: 'UNAVAILABLE', recline: 'UNAVAILABLE' } );
+                    break;
+                case 'MODEM':
+                    item.device = new Modem( def.subscribe, def.publish, {} );
                     break;
             }
 
             return item;
         }
-    }
-        };
+            
 /*
         var service = {
             data: [

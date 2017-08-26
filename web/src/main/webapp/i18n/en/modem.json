@@ -1,0 +1,18 @@
+{
+    "modem": {
+        "state": {
+            "registered": "Registered",
+            "disabled": "Disabled",
+            "enabling": "Enabling"
+        },
+        "info": {
+            "id": "Id",
+            "hardware": "Hardware",
+            "state": "State",
+            "power": "Power",
+            "mode": "Mode",
+            "imei": "Imei",
+            "operator": "Operator"
+        }
+    }
+}

@@ -5,15 +5,15 @@
         .module('eHomeApp')
         .factory('Server', Server);
 
-    Server.$inject = [ 'MqttServer', 'XmppServer', 'ServerConnection', 'HouseConfiguration' ];
+    Server.$inject = [ 'MqttServer', 'XmppServer', 'ServerConnection', 'ServerConfiguration' ];
 
-    function Server( MqttServer, XmppServer, ServerConnection, HouseConfiguration ) {
+    function Server( MqttServer, XmppServer, ServerConnection, ServerConfiguration ) {
 
         return {
             init: init
         };
 
-        function init( server, updateConfiguration, removeHouses, failover, connectionDevice, configurationDevice )
+        function init( server, updateConfiguration, removeConf, removeHouses, failover, connectionDevice, configurationDevice )
         {
             server.connectionStatus = 'DISCONNECTED'; //CONNECTING, CONNECTED            
             
@@ -21,7 +21,7 @@
             server.connectionDevice.disconnected();
             // console.log( 'server.connectionDevice: ', server.connectionDevice );
 
-            server.configurationDevice = (typeof configurationDevice !== 'undefined' ) ? configurationDevice : new HouseConfiguration( server, server.settings.configuration.subscribeTopic, {}, updateConfiguration );
+            server.configurationDevice = (typeof configurationDevice !== 'undefined' ) ? configurationDevice : new ServerConfiguration( server, server.settings.configuration.subscribeTopic, {}, updateConfiguration );
             
             server.observerDevices = [];
             server.observerDevices.push( server.connectionDevice );
@@ -41,6 +41,30 @@
                 {
                     this.failover.setHouses( houses );
                 }
+            }
+
+            server.setConf = function( configuration, removeExisting )
+            {
+                if( removeExisting )
+                {
+                    this.unsubscribeConf();
+                    this.removeConf();
+                }
+                this.conf = configuration;
+                if( this.failover )
+                {
+                    this.failover.setConf( configuration );
+                }
+            }
+
+            server.baseUnsubscribeConf = function( configuration )
+            {
+                console.log( 'unsubscribeConf for server: ', this.type );
+                for( var i = 0 ; i < configuration.items.length ; i++ )
+                {
+                    this.baseUnsubscribeItem( server, configuration.items[i] );
+                }
+                this.baseUnsubscribeHouses( configuration.houses );
             }
 
             server.baseUnsubscribeHouses = function( houses )
@@ -78,9 +102,19 @@
                 // server.observerDevices = [];
             }
     
+            server.subscribeConf = function()
+            {
+                for( var i = 0 ; i < this.conf.items.length ; i++ )
+                {
+                    this.baseSubscribeItem( this.conf.items[i] );
+                }
+
+                this.subscribeHouses();
+            }
+
             server.subscribeHouses = function ()
             {
-                var houses = this.houses;
+                var houses = this.conf.houses;
                 console.log( 'subscribing ', houses.length, ' houses to server: ', this.type );
                 // subscribe to all topics
                 for( var h = 0 ; h < houses.length ; h++ )
@@ -118,51 +152,17 @@
             {
                 var server = this;
                 // console.log( '\t\titem:', item );
-                switch( item.type )
+                if( item.device )
                 {
-                    case 'ALARM':
-                    case 'NET':
-                    case 'DOOR1':
-                    case 'DOOR2R':
-                    case 'LIGHT1':
-                    case 'LIGHT2':
-                    case 'MOTIONCAMERA':
-                    case 'MOTIONCAMERAPANTILT':
-                    case 'ROLLER1':
-                    case 'ROLLER1_AUTO':
-                    case 'TEMPERATURE_HUMIDITY':
-                    case 'WINDOW1':
-                    case 'WINDOW1R':
-                    case 'WINDOW2R':
-                        if( !item.device )
-                        {
-                            // console.log( 'No device property found!' );
-                        }
-                        else if( item.device.mqtt_subscribe_topic )
-                        {
-                            // console.log( 'Subscribing ', item.device );        
-                            this.subscribeDevice( item.device, item.device.mqtt_subscribe_topic );
-                        }
-                        break;
-                    default: 
-                        // console.log( 'Unknown item type [', item.type, ']' );
-                        break;
-                }
-                switch( item.type )
-                {
-                    case 'ALARM':
-                    case 'LIGHT1':
-                    case 'LIGHT2':
-                    case 'MOTIONCAMERA':
-                    case 'MOTIONCAMERAPANTILT':
-                    case 'ROLLER1_AUTO':
-                        if( item.device )
-                        {
-                            item.device.setPublisher( this );
-                        }
-                        break;
-                    default:
-                        break;
+                    if( item.device.mqtt_subscribe_topic )
+                    {
+                        // console.log( 'Subscribing ', item.device );        
+                        this.subscribeDevice( item.device, item.device.mqtt_subscribe_topic );
+                    }
+                    if( item.device.mqtt_publish_topic )
+                    {
+                        item.device.setPublisher( this );
+                    }
                 }
             }
     
@@ -170,35 +170,10 @@
             {
                 var server = this;
                 // console.log( '\t\titem:', item );
-                switch( item.type )
+                if( item.device && item.device.mqtt_subscribe_topic )
                 {
-                    case 'ALARM':
-                    case 'NET':
-                    case 'DOOR1':
-                    case 'DOOR2R':
-                    case 'LIGHT1':
-                    case 'LIGHT2':
-                    case 'MOTIONCAMERA':
-                    case 'MOTIONCAMERAPANTILT':
-                    case 'ROLLER1':
-                    case 'ROLLER1_AUTO':
-                    case 'TEMPERATURE_HUMIDITY':
-                    case 'WINDOW1':
-                    case 'WINDOW1R':
-                    case 'WINDOW2R':
-                        if( !item.device )
-                        {
-                            // console.log( 'No device property found!' );
-                        }
-                        else if( item.device.mqtt_subscribe_topic )
-                        {
-                            // console.log( 'Unsubscribing ', item.device, ' from server: ', server.type );
-                            this.unsubscribeDevice( item.device, item.device.mqtt_subscribe_topic );
-                        }
-                        break;
-                    default: 
-                        // console.log( 'Unknown item type [', item.type, ']' );
-                        break;
+                    // console.log( 'Unsubscribing ', item.device, ' from server: ', server.type );
+                    this.unsubscribeDevice( item.device, item.device.mqtt_subscribe_topic );
                 }
             }
             
@@ -206,11 +181,11 @@
             {
                 case 'mqtt':
                     // initMqttServer( server );
-                    MqttServer.init( server, updateConfiguration, removeHouses, init );
+                    MqttServer.init( server, updateConfiguration, removeConf, removeHouses, init );
                     break;
                 case 'xmpp':
                     // initXmppServer( server, failover );
-                    XmppServer.init( server, removeHouses, failover );
+                    XmppServer.init( server, removeConf, removeHouses, failover );
                     break;
                 default:
                     console.log( 'Unknown server type [', server.type, ']: ', server );

@@ -1,0 +1,18 @@
+{
+    "modem": {
+        "state": {
+            "registered": "Ενεργό",
+            "disabled": "Ανενεργό",
+            "enabling": "Ενεργοποιείται"
+        },
+        "info": {
+            "id": "Id",
+            "hardware": "Hardware",
+            "state": "State",
+            "power": "Power",
+            "mode": "Mode",
+            "imei": "Imei",
+            "operator": "Operator"
+        }
+    }
+}

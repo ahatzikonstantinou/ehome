@@ -1,0 +1,2 @@
+last_sms=9
+last_state=received

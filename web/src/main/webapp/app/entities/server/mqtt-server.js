@@ -13,12 +13,12 @@
             init: init
         };
 
-        function init( server, updateConfiguration, removeHouses, baseInit )
+        function init( server, updateConfiguration, removeConf, removeHouses, baseInit )
         {
             if( server.failover )
             {
                 console.log( 'Initialising failover of server ', server.name );
-                baseInit( server.failover, updateConfiguration, removeHouses, true, server.connectionDevice, server.configurationDevice );
+                baseInit( server.failover, updateConfiguration, removeConf, removeHouses, true, server.connectionDevice, server.configurationDevice );
                 // switch( server.failover.type )
                 // {
                 //     case 'xmpp':                    
@@ -35,7 +35,16 @@
             // server.observerDevices = [];
 
             client.init( server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, server.settings.mqtt_client_id );
-    
+
+            server.unsubscribeConf = function()
+            {
+                this.baseUnsubscribeConf( this.conf );
+                if( this.failover )
+                {
+                    this.failover.unsubscribeConf();
+                }
+            }
+
             server.unsubscribeHouses = function()
             {
                 // unsubscribeHouses( this, this.houses );
@@ -43,6 +52,15 @@
                 if( this.failover )
                 {
                     this.failover.unsubscribeHouses();
+                }
+            }
+
+            server.removeConf = function()
+            {
+                removeConf( this.conf );
+                if( this.failover )
+                {
+                    removeConf( this.failover.conf );
                 }
             }
 

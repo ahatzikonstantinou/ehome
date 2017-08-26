@@ -25,6 +25,7 @@
                 translatePartialLoader: ['$translate', '$translatePartialLoader', function ($translate,$translatePartialLoader) {
                     $translatePartialLoader.addPart('home');
                     $translatePartialLoader.addPart('server');
+                    $translatePartialLoader.addPart('modem');
                     return $translate.refresh();
                 }]
             }

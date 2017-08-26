@@ -49,10 +49,20 @@
             var client = server.client;
             client.server = server;            
 
+            server.unsubscribeConf = function()
+            {
+                this.baseUnsubscribeConf( this.conf );
+            }
+
             server.unsubscribeHouses = function()
             {
                 // unsubscribeHouses( server, server.houses );
                 this.baseUnsubscribeHouses( this.houses );
+            }
+
+            server.removeConf = function()
+            {
+                removeConf( this.conf );
             }
 
             server.removeHouses = function()

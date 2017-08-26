@@ -33,6 +33,7 @@
         //     $state.go('register');
         // }
 
+        vm.items = [];
         vm.houses = [];
         
         // console.log( vm.houses );
@@ -92,7 +93,7 @@
         
         // console.log( vm.isCollapsed );
 
-        Server.init( vm.server, updateConfiguration, removeHouses );
+        Server.init( vm.server, updateConfiguration, removeConf, removeHouses );
 /*        
         initServer( vm.server );
         function initServer( server, failover, connectionDevice, configurationDevice )
@@ -708,16 +709,17 @@
             if( ( server.houses && server.houses.length > 0 ) || ( vm.houses && vm.houses.length > 0 ) )
             {
                 console.log( 'before unsubscribing server: ', server.type, ' has ', server.observerDevices.length, ' observerDevices: ', server.observerDevices );
-                server.unsubscribeHouses(); //unsubscribeHouses( server, server.houses );
+                server.unsubscribeConf(); //server.unsubscribeHouses(); //unsubscribeHouses( server, server.houses );
                 console.log( 'after unsubscribing server: ', server.type, ' has ', server.observerDevices.length, ' observerDevices: ', server.observerDevices );
-                server.removeHouses(); //removeHouses( server.houses );
+                server.removeConf; //server.removeHouses(); //removeHouses( server.houses );
             }
 
-            server.setHouses( Configuration.generateHousesList( angular.fromJson( messagePayloadString ) ) );
-            console.log( 'generated ', server.houses.length, ' houses' );
+            // server.setHouses( Configuration.generateList( angular.fromJson( messagePayloadString ) ).houses );
+            server.setConf( Configuration.generateList( angular.fromJson( messagePayloadString ) ) );
+            console.log( 'generated ', server.conf.items.length, ' items and ',  server.conf.houses.length, ' houses' );
 
-            $scope.$apply( addHouses( server.houses ) );
-            console.log( vm.houses.length + ' houses should be rendered for server ', server );
+            $scope.$apply( addConf( server.conf ) ); //$scope.$apply( addHouses( server.conf.houses ) );
+            console.log( vm.items.length + ' items and ' + vm.houses.length + ' houses should be rendered for server ', server );
             
             console.log( 'before subscribing server: ', server.type, ' has ', server.observerDevices.length, ' observerDevices: ', server.observerDevices );
             if( server.failover )
@@ -725,7 +727,7 @@
                 console.log( 'before subscribing server.failover: ', server.failover.type, ' has ', server.failover.observerDevices.length, ' observerDevices: ', server.failover.observerDevices );
             }
             // subscribeHouses( server, server.houses );
-            server.subscribeHouses( server.houses );
+            server.subscribeConf(); //server.subscribeHouses( server.houses );
             
             console.log( 'after subscribing server: ', server.type, ' has ', server.observerDevices.length, ' observerDevices: ', server.observerDevices );
             if( server.failover )
@@ -890,6 +892,17 @@
             }
         }
 */
+
+        function removeConf( conf )
+        {
+            for( var i = 0 ; i < conf.items.legth ; i++ )
+            {
+                vm.items.splice( i, 1 );
+            }
+
+            removeHouses( conf.houses );
+        }
+
         function removeHouses( houses )
         {
             console.log( 'removing ', houses.length, ' houses' );
@@ -905,6 +918,30 @@
                     }
                 }
             }
+        }
+
+        function addConf( conf )
+        {
+            var items = conf.items.sort( function( a, b ) { return a.name.localeCompare( b.name ); } );
+            for( var i = 0 ; i < items.length ; i++ )
+            {
+                var added = false;
+                for( var a = 0 ; a < vm.items ; a++ )
+                {
+                    if( a.name.localeCompare( vm.items[a].name ) > 0 )
+                    {
+                        vm.items.splice( a, 0, items[i] );
+                        added = true;
+                        break;
+                    }
+                }
+                if( !added )
+                {
+                    vm.items.push( items[i] );
+                }
+                console.log( 'added item ', items[i] );
+            }
+            addHouses( conf.houses );
         }
 
         function addHouses( houses )

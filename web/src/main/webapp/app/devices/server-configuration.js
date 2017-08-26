@@ -3,13 +3,13 @@
 
     angular
         .module('eHomeApp')
-        .factory('HouseConfiguration', HouseConfiguration);
+        .factory('ServerConfiguration', ServerConfiguration);
 
-    HouseConfiguration.$inject = [];
+    ServerConfiguration.$inject = [];
 
-    function HouseConfiguration() {
+    function ServerConfiguration() {
         //Constructor
-        function HouseConfiguration( server, mqtt_subscribe_topic, state, guiUpdateCb )
+        function ServerConfiguration( server, mqtt_subscribe_topic, state, guiUpdateCb )
         {
             MqttDevice.call( this, mqtt_subscribe_topic, state );
             this.server = server;
@@ -17,17 +17,17 @@
             this.guiUpdateCb = guiUpdateCb;
         }
         
-        HouseConfiguration.prototype = Object.create( MqttDevice.prototype );
-        HouseConfiguration.prototype.constructor = HouseConfiguration;
+        ServerConfiguration.prototype = Object.create( MqttDevice.prototype );
+        ServerConfiguration.prototype.constructor = ServerConfiguration;
 
-        HouseConfiguration.prototype.update = function( topic, message )
+        ServerConfiguration.prototype.update = function( topic, message )
         {
             if( topic == this.mqtt_subscribe_topic )
             {
                 try
                 {
                     var data = angular.fromJson( message );
-                    console.log( 'HouseConfiguration data: ',  data );
+                    console.log( 'ServerConfiguration data: ',  data );
                     this.state = data;
                     this.lastUpdate = Date.now();
                     if( typeof data.main !== 'undefined' )
@@ -48,6 +48,6 @@
             }
         }
 
-        return HouseConfiguration;
+        return ServerConfiguration;
     }
 })();

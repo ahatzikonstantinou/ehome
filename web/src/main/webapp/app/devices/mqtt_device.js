@@ -30,7 +30,9 @@ MqttDevice.prototype.update = function( topic, message )
         // console.log( 'MqttDevice[' + this.mqtt_subscribe_topic +']: this message is for me.' );
         this.state = angular.fromJson( message );
         this.lastUpdate = Date.now();
+        return true;
     }
+    return false;
 }
 
 MqttDevice.prototype.setPublisher = function( publisher )

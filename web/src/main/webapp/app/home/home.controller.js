@@ -155,9 +155,9 @@
                             primary: false,
                             protocol: 'Xmpp'
                         },    
-                        houses: []
+                        conf: { items:[], houses:[] }
                     },
-                    houses: []
+                    conf: { items:[], houses:[] }
                 },
                 // {
                 //     name: 'Antonis Alyki',
@@ -193,7 +193,7 @@
                 //         primary: true,
                 //         protocol: 'Mqtt' // 'UNAVAILABLE'
                 //     },
-                //     houses: []
+                //     conf: { items:[], houses:[] }
                 // }
             ];
         }

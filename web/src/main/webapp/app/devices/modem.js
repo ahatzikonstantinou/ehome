@@ -1,0 +1,107 @@
+(function() {
+    'use strict';
+
+    angular
+        .module('eHomeApp')
+        .factory('Modem', Modem);
+
+    Modem.$inject = [];
+
+    function Modem() {
+        //Constructor
+        function Modem( mqtt_subscribe_topic, mqtt_publish_topic, state )
+        {
+            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic );
+            this.listCmd = '{"cmd":"list"}';
+            this.modems = [];
+        }
+        
+        Modem.prototype = Object.create( MqttDevice.prototype );
+        Modem.prototype.constructor = Modem;
+
+        Modem.prototype.update = function( topic, message )
+        {
+            if( MqttDevice.prototype.update.call( this, topic, message ) )
+            {
+                var data = angular.fromJson( this.state );
+                if( data.modem_list )
+                {
+                    this.modems = data.modem_list
+                }
+                else if( data.modem )
+                {
+                    var modem = data.modem;
+                    var updated = false;
+                    for( var i = 0 ; i < this.modems.length ; i++ )
+                    {
+                        if( this.modems[i].id == modem.id )
+                        {
+                            this.modems[i] = modem;
+                            updated = true;
+                            console.log( 'Updated modem ', modem, ' in list of modems: ', this.modems );
+                            break;
+                        }
+                    }
+                    if( !updated )
+                    {
+                        this.modems.push( modem );
+                        console.log( 'Added modem ', modem, ' to list of modems: ', this.modems );
+                    }
+                }
+            }
+        }
+
+        Modem.prototype.setPublisher = function( publisher )
+        {
+            MqttDevice.prototype.setPublisher.call( this, publisher );
+
+            //send a message to retrieve modem list as soon as we are assigned a publisher
+            var message = new Paho.MQTT.Message( this.listCmd );
+            message.destinationName = this.mqtt_publish_topic ;
+            console.log( 'Modem sending message: ', message );
+            this.publisher.send( message );
+        }
+
+        Modem.prototype.enable = function( modemId )
+        {
+            this._enable( modemId, true );
+        }
+
+        Modem.prototype.disable = function( modemId )
+        {
+            this._enable( modemId, false );
+        }
+
+        Modem.prototype._enable = function( modemId, enable )
+        {
+            var payload = '{"cmd":"' + ( enable ? 'enable': 'disable' ) + '", "params":' + modemId + '}';
+            console.log( 'Modem (', this, ') will send payload ', payload, ' to topic ', this.mqtt_publish_topic );
+            if( this.publisher )
+            {                
+                var message = new Paho.MQTT.Message( payload );
+                message.destinationName = this.mqtt_publish_topic ;
+                console.log( 'Modem sending message: ', message );
+                this.publisher.send( message );
+
+                // this.state.main = value;//debugging
+            }
+        }
+
+        Modem.prototype.refresh = function( modemId )
+        {
+            var payload = '{"cmd":"status", "params":' + modemId + '}';
+            console.log( 'Modem (', this, ') will send payload ', payload, ' to topic ', this.mqtt_publish_topic );
+            if( this.publisher )
+            {                
+                var message = new Paho.MQTT.Message( payload );
+                message.destinationName = this.mqtt_publish_topic ;
+                console.log( 'Modem sending message: ', message );
+                this.publisher.send( message );
+
+                // this.state.main = value;//debugging
+            }            
+        }
+
+        return Modem;
+    }
+})();
