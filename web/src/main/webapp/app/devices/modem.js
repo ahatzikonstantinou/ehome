@@ -14,6 +14,17 @@
             MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic );
             this.listCmd = '{"cmd":"list"}';
             this.modems = [];
+            this.modems = [{
+                id: "2",
+                manufacturer: "ZTE Incorporated",
+                model: "MF195",
+                hardware: "gsm-umts",
+                state: "registered",
+                power: "on",
+                mode: "allowed: 2g, 3g; preferred: 3g",
+                imei: "861302000722445",
+                operator: "GR COSMOTE"
+                }];
         }
         
         Modem.prototype = Object.create( MqttDevice.prototype );
@@ -36,7 +47,14 @@
                     {
                         if( this.modems[i].id == modem.id )
                         {
-                            this.modems[i] = modem;
+                            // update individual properties instead of [this.modems[i] = modem] in order not to re-initialise showModemInfo in modem.html
+                            this.modems[i].id = modem.id;
+                            this.modems[i].hardware = modem.hardware;
+                            this.modems[i].state = modem.state;
+                            this.modems[i].power = modem.power;
+                            this.modems[i].mode = modem.mode;
+                            this.modems[i].imei = modem.imei;
+                            this.modems[i].operator = modem.operator;
                             updated = true;
                             console.log( 'Updated modem ', modem, ' in list of modems: ', this.modems );
                             break;

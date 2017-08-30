@@ -1,0 +1,1 @@
+declare -A smsList='([62]="received" [63]="received" [66]="received" [67]="received" [64]="received" [65]="received" )'

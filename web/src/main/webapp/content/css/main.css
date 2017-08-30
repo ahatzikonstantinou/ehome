@@ -1,3 +1,8 @@
+.modem-info label {
+    width:10%; 
+    text-align:right;
+}
+
 server .items {
     /* background-color: red; */
     margin-left: 5px;
@@ -56,6 +61,7 @@ a.dropdown-toggle.ng-scope
 
 .last-update
 {
+    top: -8px;
     font-family: Courier New, Courier, monospace;
     font-size: 12px;
     color: gray;
@@ -70,6 +76,7 @@ a.dropdown-toggle.ng-scope
 /*ahat: switch-xx classes are used with buttons e.g. in light devices*/
 .switch-on
 {
+    top:-8px;
     width: 78px;
     position:relative;
     padding-right: 10px;
@@ -77,6 +84,7 @@ a.dropdown-toggle.ng-scope
 
 .switch-off
 {
+    top:-8px;
     width: 78px;
     position:relative;
     padding-left: 10px;

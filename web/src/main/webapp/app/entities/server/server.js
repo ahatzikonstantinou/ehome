@@ -13,8 +13,9 @@
             init: init
         };
 
-        function init( server, updateConfiguration, removeConf, removeHouses, failover, connectionDevice, configurationDevice )
+        function init( server, updateConfiguration, removeConf, removeHouses, failover, primaryServer, connectionDevice, configurationDevice )
         {
+            server.lastUpdate = null;
             server.connectionStatus = 'DISCONNECTED'; //CONNECTING, CONNECTED            
             
             server.connectionDevice = (typeof connectionDevice !== 'undefined' ) ? connectionDevice : new ServerConnection( server, server.settings.connection.subscribeTopic, server.settings.connection.publishTopic, {} );
@@ -28,6 +29,15 @@
             server.observerDevices.push( server.configurationDevice );
             
             server.configurationStatus = 'NOT_SET'; //'UNAVAILABLE'; //AVAILABLE
+
+            server.updateLast = function()
+            {
+                server.lastUpdate = Date.now();
+                if( server.isFailover )
+                {
+                    server.primaryServer.updateLast();
+                }
+            }
 
             server.setHouses = function( houses, removeExisting )
             {

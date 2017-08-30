@@ -13,10 +13,14 @@
             init: init
         };
 
-        function init( server, removeHouses, failover )
+        function init( server, removeHouses, primaryServer, failover )
         {
             console.log( 'initXmppServer( server: ', server, ',\n failover ): ', failover );
             server.isFailover = ( typeof failover !== 'undefined' ) ? failover : false;
+            if( typeof failover !== 'undefined' )
+            {
+                server.primaryServer = primaryServer;
+            }
             server.messageQueue = new Queue();            
 
             if( server.settings.host.startsWith( "https" ) )
@@ -256,6 +260,9 @@
                 // console.log( 'received xmpp message: ', msg );
                 var text = pako.inflate( atob( msg.body ), { to: 'string' } );
                 console.log( 'received xmpp message from ', msg.from, ': ', text );
+
+                server.updateLast();
+                
                 var message = angular.fromJson( text );
                 // if( message.topic == server.settings.configuration.subscribeTopic )
                 // {

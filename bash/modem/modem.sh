@@ -186,7 +186,7 @@ declare -A modems
 #monitor modems in case a modem changes state or disappears, or a new modem appears
 while true; do
     declare currentModems=()
-    for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9*] " | grep -o "[0-9]"); do
+    for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9]* " | grep -o "[0-9]*"); do
         currentModems+=($modem)
         getModemInfo $modem
         if [ ${modems[$modem]+_} ]; then 

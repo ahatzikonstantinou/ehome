@@ -2,10 +2,9 @@
     <span class="mdi mdi-server"/>
     <label class="server">{{server.name}}</label>
     <span class="summary" ng-if="server.connection.connecting" translate="server.connection.CONNECTING" translate-values="{ protocol: server.connection.connectingProtocol }"/>
-    <span class="summary" ng-if="server.configurationDevice.status == 'UNAVAILABLE' || server.configurationDevice.status == 'ERROR'" data-translate="{{'server.configurationStatus.' + server.configurationDevice.status}}"/>
-    <span class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
-    <span class="last-update">{{server.connectionDevice.lastUpdate ? ( server.connectionDevice.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
+    <span class="summary" ng-if="server.configurationDevice.status == 'UNAVAILABLE' || server.configurationDevice.status == 'ERROR'" data-translate="{{'server.configurationStatus.' + server.configurationDevice.status}}"/>    
     <div class="state-container">
+        <span class="last-update">{{server.lastUpdate ? ( server.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
         <span class="state connection" ng-click="server.connectionDevice.refresh()" ng-class="{ 
             'danger': server.connection.type == 'NOT_CONNECTED',
             'info': server.connection.type != 'NOT_CONNECTED' && server.connection.primary, 

@@ -18,7 +18,7 @@
             if( server.failover )
             {
                 console.log( 'Initialising failover of server ', server.name );
-                baseInit( server.failover, updateConfiguration, removeConf, removeHouses, true, server.connectionDevice, server.configurationDevice );
+                baseInit( server.failover, updateConfiguration, removeConf, removeHouses, true, server, server.connectionDevice, server.configurationDevice );
                 // switch( server.failover.type )
                 // {
                 //     case 'xmpp':                    
@@ -266,6 +266,8 @@
                 //         updateConfiguration( server, message.payloadString );
                 //     }
                 // }
+
+                server.updateLast();
 
                 // if this is not a new houses-configuration message then it must be a message for the subscribed devices of the current house configuration
                 for( var i = 0 ; i < server.observerDevices.length ; i++ )
