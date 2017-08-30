@@ -1,24 +1,36 @@
 #!/usr/bin/env bash
 
+#TODO: add code for sms command status
+#      update the mqtt message for alarm disarm to use the alarm disarm pin
+#
 #requires modemmanager, mmcli, jq
 #
 #supported mqtt commands
 #   send: send an sms, 
-#         e.g. {"cmd":"send", "params":{ "to":"123456789", "text": "testing δοκιμή"} }
+#         e.g. {"cmd":"send", "params":{ "modem": 2, to":"123456789", "text": "testing δοκιμή"} } Note: The modem id number is not included in quotes.
+#         Note: sms messages will be sent with delivery-report=yes. This is the only way to get a time indication regarding when they were sent. The indication will be the timestamp of the corresponding delivery-report. Also note that more than one delivery reports may arrive for the same transmitted sms. They seem to contail the exactly same information, so consider only the latest one.
 #   list: list existing sms messages. params: lastSms:the last sms known to the client, updates: sms numbers to publish
-#            e.g. {"cmd":"list", "params":{ "lastSms":8, "updates": [6,8]} }
-#         It is expected that clients (web app) will ask updates for SMS that have been listed with state "receiving"
-#         or "sending" and their state is expected to change to "received" or "sent"
+#         e.g. {"cmd":"list", "params":{ "lastSms":8, "updates": [6,8]} } Note: The sms id numbers are not included in quotes.
+#         Note: It is expected that clients (web app) will ask updates for SMS that have been listed with state "receiving"
+#         or "sending" or "unknown" and their state is expected to change to "received" or "sent"
+#         Note: field "delivery" will have a value only for sms of type "status-report"
+#               field "reference" will have a value (used to associate sms with the same reference value) only for sms of type "status-report" and "submit"
+#               field "timestamp" will have a value only for sms of type "deliver" and "status-report"
+#         Note: "type": "submit" indicates sms sent by the device, "type": "deliver" indicates sms received by the device (field number must be accordingly interpreted as source/destination), "type": "status-report" indicates sms delivery-report
+#   delete: deletes the specified sms
+#           e.g. {"cmd": "delete", "params":{ "smsId": 8 } } Note: The smsId number is not included in quotes.
 #
 #supported commands in sms text from admins
-#   status: sends an sms containing a summary of the system status (TODO)
-#   reboot: reboots the computer
+#   status:     sends an sms containing a summary of the system status (TODO)
+#   reboot:     reboots the computer
 #   shutdown:   shuts down the computer
+#   arm:        arms the alarm
+#   disarm:     disarms the alarm
 
 # set -x
 
 # lastSmsFile=lastSms.txt
-processedSmsFile=processedSmsFile.txt
+processedSmsFile=processedSms.txt
 
 #read configuration parameters
 . "./sms.conf"
@@ -47,12 +59,30 @@ function getState {
     echo "$s"
 }
 
+function getType {
+    y=$(mmcli -s "$1" | grep -o "PDU type: '[^']*" | cut -c12-)
+    echo "$y"
+}
+
+function getReference {
+    r=$(mmcli -s "$1" | grep -o "message reference: '[^']*" | cut -c21-)
+    echo "$r"
+}
+
+function getDelivery {
+    d=$(mmcli -s "$1" | grep -o "delivery state: '[^']*" | cut -c18-)
+    echo "$d"
+}
+
 function getJson {
     timestamp=$( getTimestamp "$1" )
     number=$( getNumber "$1" )
     text=$( getText "$1" )
     state=$( getState "$1" )
-    j=$(jq -n --arg index "$1" --arg modem $2 --arg timestamp "$timestamp" --arg number "$number" --arg state "$state" --arg text "$text" '{modem: $modem, index:$index, timestamp:$timestamp, number: $number, state: $state, text: $text}')
+    type=$( getType "$1" )
+    reference=$( getReference "$1" )
+    delivery=$( getDelivery "$1" )
+    j=$(jq -n --arg index "$1" --arg modem $2 --arg timestamp "$timestamp" --arg number "$number" --arg state "$state" --arg text "$text" --arg type "$type" --arg reference "$reference" --arg delivery "$delivery" '{modem: $modem, index:$index, timestamp:$timestamp, number: $number, state: $state, text: $text, type: $type, reference: $reference, delivery: $delivery}')
     echo "$j"
 }
 
@@ -63,15 +93,23 @@ function updateLastSms {
 }
 
 function send {
-    echo "sms send $1"
+    # echo "sms send $1"
+    modem=$( echo "$1" | jq .modem )
     to=$( echo "$1" | jq .to )
     to="${to:1:-1}"
     text=$( echo "$1" | jq .text )
     text="${text:1:-1}"
     for a in "${allowed_destinations[@]}"; do
         if [[ "$a" == "$to" ]]; then
-            echo "Sending to $to text:$text"
-            
+            echo "Modem $modem will send to $to text: $text"
+            smsParams="text='""$text""', number='""$to""', delivery-report-request=yes"
+            echo "smsParams: $smsParams"
+            s=$(mmcli -m $modem --messaging-create-sms="$smsParams" | grep -o "SMS\/[0-9]* " | grep -o "[0-9]*")
+            if [ -n "$s" ]; then
+                mmcli -s "$s" --send
+            else
+                echo "Failed sending sms $s"
+            fi
             return 0
         fi
     done
@@ -95,9 +133,9 @@ function list {
             #if the current sms index is larger than lastSms or is among the ones in 'updates'
             if [[ "$s" -gt "$lastSms" ]] || [[ " ${updates[@]} " =~ " ${s} " ]]; then
                 if [ -z "$json" ]; then
-                    json="$( getJson $s $1 )"
+                    json="$( getJson $s $modem )"
                 else    
-                    json="${json},$( getJson $s $1 )"
+                    json="${json},$( getJson $s $modem )"
                 fi
             fi
         done
@@ -111,23 +149,60 @@ function status {
 }
 
 function delete {
-    #TODO
-    echo "deleting sms $1"    
+    local smsId=$( echo "$1" | jq .smsId )
+    echo "attempting to find and delete sms: $smsId"
+    for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9]* " | grep -o "[0-9]*"); do
+        for s in $(mmcli -m "$modem" --messaging-list-sms | grep -o "SMS\/[0-9]* " | grep -o "[0-9]*"); do
+            if [[ "$s" -eq "$smsId" ]]; then
+                echo "deleting sms $smsId"
+                # mmcli -m "$modem" --messaging-delete-sms="$smsId"
+                return 0
+            fi
+        done
+    done
+    echo "sms $smsId not found"
+    return 1
 }
 
 function reboot {
-    #TODO
     echo "rebooting..."
+    # shutdown -r now
 }
 
 function shutdown {
-    #TODO
     echo "shutting down..."
+    # shutdown -h now
+}
+
+function armHome {
+    echo 'arming (ARM_HOME) the alarm'
+    mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_alarm_publish_topic" -m "$mqtt_alarm_arm_home" -q 2
+}
+
+function armAway {
+    echo 'arming (ARM_AWAY) the alarm'
+    mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_alarm_publish_topic" -m "$mqtt_alarm_arm_away" -q 2
+}
+
+function arm {
+    echo 'arming (ARM) the alarm'
+    armAway
+}
+
+function disarm {    
+    echo 'disarming the alarm. The mqtt message will need to change when the disarm code changes in alarm.py'
+    mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_alarm_publish_topic" -m "$mqtt_alarm_disarm" -q 2
 }
 
 function unknownCommand {
-    #TODO
-    echo "replying to $1 with sms reporting unkown command $2"
+    echo "replying to $2 with sms via modem $1 reporting unkown command $3"
+    local sendParams='{ "modem":'"$1"', "to":"'"$2"'", "text":"'"$3"'"}'
+    echo "Send params: $sendParams"
+    #ATTENTION! Uncommenting the below line with an empty proccessedSms file
+    #i.e. the system is just starting may result in sending a lot of sms!
+    #This will happen if there are sms from admins with irrelevant text.
+    #Please first check with mmcli -m $modem --messaging-list-sms and mmcli -s $sms to make sure there are no residual sms and delete them or first run this script once with the below line commented out in order to populate proccessedSms file with these sms so that they will not be considered in any next runs. Only then uncomment the following line.
+    # send "$sendParams"
 }
 
 # if [ ! -e "$lastSmsFile" ]; then
@@ -221,17 +296,25 @@ while true; do
                 if [[ "$state" == "received" ]] && [[ " ${admins[@]} " =~ " $number " ]]; then
                     echo "message from admin $number"
                     text=$(getText "$s" )
-                    text="${text,,}"    #convert to lowercase
+                    textLow="${text,,}"    #convert to lowercase
                     # echo "lower text: ${text,,}"
                     # echo "upper text: ${text^^}"
-                    if [[ " ${text[@]} " =~ " status " ]]; then
+                    if [[ " ${textLow[@]} " =~ " status " ]]; then
                         reportStatus "$number"
-                    elif [[ " ${text[@]} " =~ " reboot " ]]; then
+                    elif [[ " ${textLow[@]} " =~ " reboot " ]]; then
                         reboot
-                    elif [[ " ${text[@]} " =~ " shutdown " ]]; then
+                    elif [[ " ${textLow[@]} " =~ " shutdown " ]]; then
                         shutdown
+                    elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "away " ]]; then
+                        armAway
+                    elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "home " ]]; then
+                        armHome
+                    elif [[ " ${textLow[@]} " =~ " arm " ]]; then
+                        arm
+                    elif [[ " ${textLow[@]} " =~ " disarm " ]]; then
+                        disarm
                     else
-                        unknownCommand "$number" "$text"
+                        unknownCommand "$modem" "$number" "$text"
                     fi
                 fi
             fi
