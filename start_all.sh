@@ -4,7 +4,7 @@ cd /home/antonis/Projects/ehome/bash
 
 cd check_net_int; if ( ./check_interface.sh > /dev/null 2>&1 & ); then echo "Started check_interface successfully"; else echo "Failed to start check_interface"; fi
 cd ../modem; if ( ./modem.sh > /dev/null 2>&1 & ); then echo "Started modem successfully"; else echo "Failed to start modem"; fi
-cd ../sms; if ( ./sms.sh > /dev/null 2>&1 & ); then echo "Started sms successfully"; else echo "Failed to start sms"; fi
+#cd ../sms; if ( ./sms.sh > /dev/null 2>&1 & ); then echo "Started sms successfully"; else echo "Failed to start sms"; fi
 
 
 cd /home/antonis/Projects/ehome/python

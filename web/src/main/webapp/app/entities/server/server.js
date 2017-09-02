@@ -15,6 +15,30 @@
 
         function init( server, updateConfiguration, removeConf, removeHouses, failover, primaryServer, connectionDevice, configurationDevice )
         {
+            server.showXmppError = false; //used in order to display a message when xmpp cannot connect
+            server.showXmppErrorFn = function( show )
+            {
+                server.showXmppError = show;
+                if( server.isFailover )
+                {
+                    server.primaryServer.showXmppErrorFn( show );
+                }
+                console.log( 'Server: server.showXmppError=', server.showXmppError );
+            }
+            server.getXmmpHost = function()
+            {
+                if( this.type == 'xmpp' && this.settings.host )
+                {
+                    return this.settings.host;
+                }
+                else if( this.failover )
+                {
+                    return this.failover.getXmmpHost();
+                }
+
+                return '';
+            }
+
             server.lastUpdate = null;
             server.connectionStatus = 'DISCONNECTED'; //CONNECTING, CONNECTED            
             
@@ -27,6 +51,20 @@
             server.observerDevices = [];
             server.observerDevices.push( server.connectionDevice );
             server.observerDevices.push( server.configurationDevice );
+
+            server.modemObservers = []; // this holds all devices i.e. Sms that need to know which modems are available
+            server.addModemObserver = function( observer )
+            {
+                this.modemObservers.push( observer );
+            }
+            server.updateModems = function( modems )
+            {
+                for( var m = 0 ; m < this.modemObservers.length ; m++ )
+                {
+                    // console.log( 'Server updating modem observer ', this.modemObservers[m], ', modems: ', modems );
+                    this.modemObservers[m].updateModems( modems );
+                }
+            }
             
             server.configurationStatus = 'NOT_SET'; //'UNAVAILABLE'; //AVAILABLE
 
@@ -173,6 +211,16 @@
                     {
                         item.device.setPublisher( this );
                     }
+                    if( item.device.setModemUpdater )   // devices such as Sms
+                    {
+                        console.log( 'Device ', item.device, ' is a modem observer' );
+                        item.device.setModemUpdater( this );
+                    }
+                    if( item.device.addModemObserver )  // devices such as Modem
+                    {
+                        console.log( 'Device ', item.device, ' is a modem updater' );
+                        item.device.addModemObserver( this );
+                    }
                 }
             }
     
@@ -185,7 +233,7 @@
                     // console.log( 'Unsubscribing ', item.device, ' from server: ', server.type );
                     this.unsubscribeDevice( item.device, item.device.mqtt_subscribe_topic );
                 }
-            }
+            }            
             
             switch( server.type )
             {
@@ -195,7 +243,7 @@
                     break;
                 case 'xmpp':
                     // initXmppServer( server, failover );
-                    XmppServer.init( server, removeConf, removeHouses, failover );
+                    XmppServer.init( server, removeConf, removeHouses, primaryServer, failover );
                     break;
                 default:
                     console.log( 'Unknown server type [', server.type, ']: ', server );

@@ -199,6 +199,7 @@ class MqttAlarm( object ):
         self.client.loop_start()
         #go in infinite loop
         while( True ):
+            time.sleep( 1 )
             pass
 
     def __signalHandler( self, signal, frame ):

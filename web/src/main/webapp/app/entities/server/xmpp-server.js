@@ -13,7 +13,7 @@
             init: init
         };
 
-        function init( server, removeHouses, primaryServer, failover )
+        function init( server, removeConf, removeHouses, primaryServer, failover )
         {
             console.log( 'initXmppServer( server: ', server, ',\n failover ): ', failover );
             server.isFailover = ( typeof failover !== 'undefined' ) ? failover : false;
@@ -156,8 +156,10 @@
                 console.log( 'session:started so i must be connected!' );
                 client.getRoster();
                 client.sendPresence();
+                client.enableCarbons(); // This is useful if you want to receive a copy of a message that you sent from one device, and receive on all other logged devices.
 
                 server.connectionStatus = 'CONNECTED';
+                server.showXmppErrorFn( false );
 
                 // before doing any subscriptions, set active status so that if inactive, the xmpp_proxy will not
                 // send received mqtt messages that arrive after the subscriptions
@@ -226,17 +228,24 @@
                 }
             });
 
-            client.on( 'disconnected', function(){
+            client.on( 'disconnected', function( params ){
                 console.log( 'disconnected from ', server.settings.host );
                 server.connectionStatus = 'DISCONNECTED';
-                
+                server.showXmppErrorFn( true );
                 // if this is a failover server, the connectionDevice belongs to the main server
                 if( !server.isFailover || server.active )
                 {
                     server.connectionDevice.disconnected();
                     server.connectionDevice.connecting( server.type );
                 }
-                client.connect();
+                // try
+                // {
+                //     client.connect();
+                // }
+                // catch( error )
+                // {
+                //     console.log( 'Xmpp-server error trying to connect: ', error );
+                // }
             });
 
             // ahat: Note. It seems that whatever arrives as a chat also arrives as a message
@@ -285,11 +294,14 @@
             });
 
             client.connect();
+            // client.server.showXmppErrorFn( true );
 
             $interval( function() {
                 if( !client.sessionStarted )
                 {
                     console.log( 'Xmpp client still not connected. Attempting reconnection' );
+                    // console.log( server );
+                    client.server.showXmppErrorFn( true );
                     server.connectionStatus = 'CONNECTING';
                     if( !server.isFailover || server.active )
                     {

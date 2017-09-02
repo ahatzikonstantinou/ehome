@@ -8,6 +8,7 @@
         "configurationStatus": {
             "UNAVAILABLE": "Configuration unavailable",
             "ERROR": "Configuration error"
-        }
+        },
+        "xmpp-error": "xmpp is not able to connect. Please try visiting <a class=\"alert-link\" target=\"_blank\" href=\"{{xmppUrl}}\">{{xmppUrl}}</a> to add a security exception and then reload this screen, in case the error is due to a self-signed ssl certificate."
     }
 }

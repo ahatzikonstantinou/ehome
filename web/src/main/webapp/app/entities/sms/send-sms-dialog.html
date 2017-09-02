@@ -6,29 +6,45 @@
                 ng-click="vm.clear()">&times;</button>
         <h4 class="modal-title" id="sendSmsLabel" data-translate="sms.send-sms.title">Send sms</h4>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" ng-inti="to=[];">
         <jhi-alert-error></jhi-alert-error>
-        <div class="form-group" ng-show="vm.mqttItem.id">
-            <label for="id" data-translate="global.field.id">ID</label>
-            <input type="text" class="form-control" id="id" name="id"
-                    ng-model="vm.mqttItem.id" readonly />
-        </div>
         <div class="form-group">
-            <label class="control-label" data-translate="eHomeApp.mqttItem.topic" for="field_topic">Topic</label>
-            <input type="text" class="form-control" name="topic" id="field_topic"
-                    ng-model="vm.mqttItem.topic"
-                    required/>
-            <div ng-show="editForm.topic.$invalid">
+            <label class="control-label" data-translate="sms.send-sms.modem" for="field_modem">Modem</label>
+            <select name="modem" id="field_modem" ng-model="vm.modem" ng-options="m.manufacturer + ' - ' + m.model for m in vm.smsDevice.modems" required>
+            </select>
+            <div ng-show="editForm.modem.$invalid">
                 <p class="help-block"
-                    ng-show="editForm.topic.$error.required" data-translate="entity.validation.required">
+                    ng-show="editForm.modem.$error.required" data-translate="entity.validation.required">
                     This field is required.
                 </p>
             </div>
         </div>
         <div class="form-group">
+            <label class="control-label" style="vertical-align: top; margin-right:4px;" data-translate="sms.send-sms.to" for="field_to">To</label>
+            <!-- <ul class="sms-send allowed-destinations">
+                <li ng-repeat="d in vm.allowedDestinations">
+                    <input type="checkbox" ng-model="to[d]"/>
+                    <span>{{d}}</span>
+                </li>
+            </ul> -->
+            <div style="display: inline-block;">
+                <div ng-repeat="d in vm.smsDevice.allowedDestinations">
+                    <input name="to" id="field_to" type="radio" ng-model="vm.to" ng-value="d" required/>
+                    <span>{{d}}</span>
+                </div>
+            </div>
+            <div ng-show="editForm.to.$invalid">
+                <p class="help-block"
+                    ng-show="editForm.to.$error.required" data-translate="entity.validation.required">
+                    This field is required.
+                </p>
+            </div>
+        </div>        
+        <div class="form-group">
             <label class="control-label" data-translate="sms.send-sms.text" for="field_text">Text</label>
-            <span class="">{{160-(vm.sms.text.length%160)}}/{{vm.countSms()}}
-            <textarea class="form-control" name="state" id="field_text" ng-model="vm.sms.text" rows="3" required/>
+            <span class="sms-send char-count">{{vm.countRemainingChars()}}/{{vm.countSms()}}
+            <span class="sms-send note" translate="sms.send-sms.dotNote"/>
+            <textarea class="form-control" name="state" id="field_text" ng-model="vm.text" rows="3" required/>
             <div ng-show="editForm.state.$invalid">
                 <p class="help-block"
                     ng-show="editForm.state.$error.required" data-translate="entity.validation.required">

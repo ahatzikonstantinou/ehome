@@ -1,9 +1,12 @@
-<div ng-init="collapsed=false">
+<div ng-init="collapsed=false;" ng-init="showXmppErrorFlag=false;">
     <span class="mdi mdi-server"/>
     <label class="server">{{server.name}}</label>
     <button type="button" class="btn btn-default btn-xs" ng-click="collapsed = !collapsed">
         <span class="mdi mdi-chevron-down" ng-if="collapsed"></span>
         <span class="mdi mdi-chevron-up" ng-if="!collapsed"></span>
+    </button>
+    <button ng-show="server.showXmppError" type="button" class="btn btn-default btn-xs" ng-click="showXmppErrorFlag = !showXmppErrorFlag">
+        <span class="glyphicon glyphicon-warning-sign"></span>
     </button>
     <span class="summary" ng-if="server.connection.connecting" translate="server.connection.CONNECTING" translate-values="{ protocol: server.connection.connectingProtocol }"/>
     <span class="summary" ng-if="server.configurationDevice.status == 'UNAVAILABLE' || server.configurationDevice.status == 'ERROR'" data-translate="{{'server.configurationStatus.' + server.configurationDevice.status}}"/>
@@ -20,6 +23,8 @@
         <span class="state protocol" ng-class="{ 'info': server.connection.protocol != 'UNAVAILABLE', 'unavailable': server.connection.protocol == 'UNAVAILABLE' }">
             <span ng-if="server.connection.protocol == 'UNAVAILABLE'" data-translate="{{'server.connection.' + server.connection.protocol}}"/>
             <span ng-if="server.connection.protocol != 'UNAVAILABLE'">{{server.connection.protocol}}</span>        
+    </div>
+    <div ng-if="showXmppErrorFlag" class="alert alert-dismissable alert-danger" role="alert" data-translate="server.xmpp-error" translate-values="{xmppUrl: '{{server.getXmmpHost().replace( 'wss', 'https' )}}'}">
     </div>
     <div ng-repeat="i in vm.items" ng-init="showMqttTopics = false" ng-show="!collapsed">
         <div class="items">            

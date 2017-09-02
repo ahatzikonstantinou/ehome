@@ -6,7 +6,10 @@
         "send-sms": {
             "title": "Send sms",
             "send": "Send",
-            "text": "Text"
+            "text": "Text",
+            "modem": "Modem",
+            "to": "To",
+            "dotNote": "Please do not use the single quote character (') in the text as it is not supported in the current version and will be automatically removed."
         }
     }
 }

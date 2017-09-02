@@ -14,13 +14,16 @@
         <button style="float:left;" type="button" class="btn btn-xs btn-default" ng-click="i.device.refresh()">
             <span class="glyphicon glyphicon-transfer"/>
         </button>
-        <button style="float:left;" type="button" class="btn btn-xs btn-default" ng-click="i.device.openSendDialog()">
+        <button style="float:left;" type="button" class="btn btn-xs btn-default" ng-click="i.device.openSendDialog( i.device )">
             <span class="glyphicon glyphicon-send"/>
         </button>
         <button style="float:left;" type="button" class="btn btn-xs btn-default" ng-click="i.device.delete()" ng-disabled="i.device.deleteSmsList.length == 0">
             <span class="glyphicon glyphicon-trash"/>
         </button>
-    </div>
+        <button style="float:left;" type="button" class="btn btn-xs btn-default" ng-click="i.device.cleanRefresh()">
+            <span class="glyphicon glyphicon-refresh"/>
+        </button>
+        </div>
     <div class="state-container" style="margin-top:-2px;">
         <!-- <div > -->
             <span class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
@@ -45,7 +48,8 @@
                 </td>
                 <td>
                     <div>
-                        <span class="sms-type" ng-class="{ 'glyphicon glyphicon-arrow-right incoming': sms.type == 'deliver', 'glyphicon glyphicon-arrow-left outgoing': sms.type == 'submit', 'glyphicon glyphicon-ok-circle report-success': sms.type == 'status-report' && sms.delivery.indexOf( 'completed' ) != -1,  'glyphicon glyphicon-ban-circle report-error': sms.type == 'status-report' && sms.delivery.indexOf( 'completed' ) == -1 }"/>                        
+                        <span class="sms-type" ng-class="{ 'glyphicon glyphicon-arrow-right incoming': sms.type == 'deliver', 'glyphicon glyphicon-arrow-left outgoing': sms.type == 'submit', 'glyphicon glyphicon-ok-circle report-success': sms.type == 'status-report' && sms.delivery.indexOf( 'completed' ) != -1,  'glyphicon glyphicon-ban-circle report-error': sms.type == 'status-report' && sms.delivery.indexOf( 'completed' ) == -1 }"/>
+                        <span class="glyphicon glyphicon-envelope sms-new" ng-if="sms.new"/>
                         <span class="sms-number">{{sms.number}}</span>
                         <span style="float:left;margin-left:15%;margin-top:-4px;">
                             <span class="sms-delivery label" ng-if="sms.type == 'status-report'" data-translate="sms.report-label"/>
@@ -61,33 +65,3 @@
         </tbody>
     </table>
 </div>
-        
-<!-- <div ng-repeat="(id,m) in i.device.messages"> -->
-    <!--ahat. Note: 
-        margin-top:1px; is required or else the button is not displayed at the far left
-        padding-top:5px; is required or else the top border of the device-icon is not displayed
-    -->
-    <!-- <div style="overflow: auto; margin-top:1px; padding-top:5px;" ng-init="showMessages=false;">
-            <div style="float:left;margin-right:5px;"><span class="mdi mdi-envelope device-icon"/>{{m.manufacturer}} - {{m.model}}</div>
-            <button style="float:left;" type="button" class="btn btn-xs btn-default" ng-click="showMessages=!showMessages">
-                <span class="glyphicon glyphicon-collapse-up" ng-if="showMessages"/>
-                <span class="glyphicon glyphicon-collapse-down" ng-if="!showMessages"/>
-            </button>
-            <button style="float:left;" type="button" class="btn btn-xs btn-default" ng-click="i.device.refresh( m.id )">
-                <span class="glyphicon glyphicon-transfer"/>
-            </button>
-            <button style="float:left;" type="button" class="btn btn-xs btn-default" ng-click="i.device.new( m.id )">
-                <span class="glyphicon glyphicon-pencil"/>
-            </button>
-            <button style="float:left;" type="button" class="btn btn-xs btn-default" ng-click="i.device.delete( m.id )">
-                <span class="glyphicon glyphicon-trash"/>
-            </button>
-                                                                
-        <div class="state-container">
-            <span class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
-            <button type="button" class="btn btn-xs state" ng-class="{ 'btn-warning switch-on': m.state == 'registered', 'btn-info switch-off': m.state == 'disabled' || m.state == 'enabling' }" ng-click="m.state == 'registered' ? i.device.disable( m.id ) : ( m.state == 'disabled' ? i.device.enable( m.id ) : null )" data-translate="{{'modem.state.' + m.state}}" ng-disabled="m.state == 'enabling'">
-                {{m.state}}
-            </button>
-        </div>
-    </div> -->
-<!-- </div> -->

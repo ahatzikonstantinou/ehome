@@ -5,16 +5,29 @@
         .module('eHomeApp')
         .controller('SendSmsDialogController', SendSmsDialogController);
 
-    SendSmsDialogController.$inject = ['$timeout', '$scope', '$stateParams', '$uibModalInstance', 'modems'];
+    SendSmsDialogController.$inject = ['$timeout', '$scope', '$stateParams', '$uibModalInstance', 'smsDevice' ];
 
-    function SendSmsDialogController ($timeout, $scope, $stateParams, $uibModalInstance, modems) {
+    function SendSmsDialogController ($timeout, $scope, $stateParams, $uibModalInstance, smsDevice ) {
         var vm = this;
 
+        var MAX_SMS_CHARS = 160;
+        vm.smsDevice = smsDevice;
+        console.log( vm.smsDevice );
+
+        vm.modem = null;
+        if( vm.smsDevice.modems.length > 0 )
+        {
+            vm.modem = vm.smsDevice.modems[0];
+        }
+
+        vm.to = '';
+        vm.text = '';
+        
         vm.clear = clear;
         vm.send = send;
         vm.countSms = countSms;
+        vm.countRemainingChars = countRemainingChars;
 
-        vm.sms = { text: '' };
 
         $timeout(function (){
             angular.element('.form-group:eq(1)>input').focus();
@@ -26,26 +39,30 @@
 
         function send () {
             vm.isSending = true;
-            // if (vm.mqttItem.id !== null) {
-            //     MqttItem.update(vm.mqttItem, onSaveSuccess, onSaveError);
-            // } else {
-            //     MqttItem.save(vm.mqttItem, onSaveSuccess, onSaveError);
-            // }
-        }
-
-        function onSaveSuccess (result) {
-            $scope.$emit('eHomeApp:sendSms', result);
-            $uibModalInstance.close(result);
+            vm.smsDevice.sendSms( vm.modem, vm.to, vm.text );
+            $uibModalInstance.close();
             vm.isSending = false;
         }
 
-        function onSaveError () {
-            vm.isSending = false;
+        function countRemainingChars()
+        {
+            // console.log( 'vm.text: ', vm.text );
+            if( ! vm.text || vm.text.length == 0 )
+            {
+                return MAX_SMS_CHARS;
+            }
+            return MAX_SMS_CHARS - ( vm.text.length % MAX_SMS_CHARS );
         }
 
         function countSms()
         {
-            return Math.floor( vm.sms.text.length / 160 );
+            if( ! vm.text || vm.text.length == 0 )
+            {
+                return 0;
+            }
+
+            return Math.floor( vm.text.length / MAX_SMS_CHARS );
         }
+
     }
 })();

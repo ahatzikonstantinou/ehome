@@ -1,3 +1,35 @@
+/* the folowing two classes were not used after all because they don't look nice on smpartphone
+.sms-send.allowed-destinations {
+    height: 100px; 
+    -webkit-column-count: 2;
+    -moz-column-count: 2;
+    column-count: 2;
+    display: inline-block;
+}
+
+.sms-send.allowed-destinations li {
+    display: inline-block;
+}
+*/
+.sms-send.char-count {
+    color: #555;
+}
+
+.sms-send.note {
+    display: inline-block;
+    color: #555;
+    font-style: oblique;
+    font-size: small;
+}
+
+.sms-new {
+    float: left;
+    color: orangered;
+    /* background-color: orange; */
+    /* padding: 2px; */
+    margin-right: 4px;
+}
+
 .sms-delivery.label {
     font-weight: normal;
     font-size: smaller;

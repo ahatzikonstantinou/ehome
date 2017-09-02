@@ -29,19 +29,15 @@ Done (with eth and wifi, must also test with ppp). Develop eth0 monitor:
 
 Done. Web app: add refresh button for server connection, in order to get latest value.
 
-Develop mqtt_smscentre
+Done. Develop mqtt_smscentre
     process incoming sms
     receive mqtt messages to send as sms
 
-Store incoming messages and mark them as unread. 
-    Show the latest unread source + datetime next to the house name.
-    Add a display filter at house level as dropdown with for 'all', 'unread', last 1 minute, last 10 minutes, last hour, last day
-    Add button 'mark all read'.
-    To mark individual mqtt message as read, click on the corresponding items name.
-    Item names for unread mqtt messages must be bold, for read must be normal.
-    Display list of incoming mqtt messages with history button next to house.
-    Add "clear" button with dropdown "all", older than 1 minute, older than 10 minutes, older than 1 hour, older than 1 day
-    Perhaps also add auto clear for mqtt messages older than 1 week 
+Done. Store incoming sms messages and mark them as unread. 
+
+Debug: if xmpp_proxy is active while mqtt is also working, duplicate configurations arreive at the web app and double the items and houses are displayed.
+
+Create a mqtt_server that accepts requests and publishes replies regarding server reboot, shutdown, cpu and memory load, top 5 processes per CPU,top 5 processes per MEM.
 
 Investigate camera usage for xmpp servers. If video stream is not possible replace with picture and add button to take snapshot and send (use the motion web interface e.g. curl -s -o /dev/null http://192.168.1.11:8080/1/action/snapshot).
 Check motion's web api http://192.168.1.11:8080/1/detection/connection to see if it works for camera lost an camera re-activated.

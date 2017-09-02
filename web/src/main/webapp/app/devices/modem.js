@@ -13,6 +13,7 @@
         {
             MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic );
             this.listCmd = '{"cmd":"list"}';
+            this.observers = [];
             this.modems = [];
             // this.modems = [{
             //     id: "2",
@@ -66,6 +67,12 @@
                         console.log( 'Added modem ', modem, ' to list of modems: ', this.modems );
                     }
                 }
+
+                for( var o = 0 ; o < this.observers.length ; o++ )
+                {
+                    // console.log( 'Modem updating observer ', this.observers[o], ', modems: ', this.modems );
+                    this.observers[o].updateModems( this.modems );
+                }
             }
         }
 
@@ -118,6 +125,11 @@
 
                 // this.state.main = value;//debugging
             }            
+        }
+
+        Modem.prototype.addModemObserver = function( observer )
+        {
+            this.observers.push( observer );
         }
 
         return Modem;

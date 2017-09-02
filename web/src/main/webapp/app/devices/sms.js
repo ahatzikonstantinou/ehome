@@ -9,16 +9,27 @@
 
     function Sms( $uibModal ) {
         //Constructor
-        function Sms( mqtt_subscribe_topic, mqtt_publish_topic, state )
+        function Sms( mqtt_subscribe_topic, mqtt_publish_topic, state, $timeout )
         {
             MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic );
             this.listCmd = '{"cmd":"list", "params":{ "lastSms":#lastSms#, "updates": []} }';
+            this.allowedDestinationsCmd = '{"cmd":"allowed_destinations"}';
+            this.modems = [];
             this.deleteSmsList=[];
             this.messages = [];
+            this.allowedDestinations = [];
+
             var smsList = localStorage.getItem( 'smsList' );
             if( smsList )
             {
-                this.messages = angular.fromJson( smsList );
+                try
+                {
+                    this.messages = angular.fromJson( smsList );
+                }
+                catch( error )
+                {
+                    console.log( 'Error json-parsing raw sms list:', rawSmsList, '. Error:', error );
+                }
             }
             /*
             this.messages = [{
@@ -123,16 +134,17 @@
                 "delivery": ""
               }];
             */
-            var rawSmsList = localStorage.getItem( 'sms' );
-            if( rawSmsList )
+            
+            var allowedDestinations = localStorage.getItem( 'smsAllowedDestinations' );
+            if( allowedDestinations )
             {
                 try
                 {
-                    this.messages = angular.fromJson( rawSmsList );
+                    this.allowedDestinations = angular.fromJson( allowedDestinations );
                 }
                 catch( error )
                 {
-                    console.log( 'Error json-parsing raw sms:', rawSmsList, '. Error:', error );
+                    console.log( 'Error json-parsing raw sms allowedDestinations:', rawSmsList, '. Error:', error );
                 }
             }
         }
@@ -144,6 +156,10 @@
         {
             MqttDevice.prototype.setPublisher.call( this, publisher );
             this.refresh();
+            
+            //ahat Note: if i try to send another mqtt message here, immediately after the refresh message
+            // e.g. getAllowedDestinations, the second mqtt message seems to somehow get lost or be ignored by the sms.sh script
+            // which is obviously related with the sleep delay of the while true loop that listens for incoming mqtt messages
         }
 
         Sms.prototype.newSmsCount = function()
@@ -208,24 +224,53 @@
                         var found = false;
                         for( var m = 0 ; m < this.messages.length ; m++ )
                         {
-                            if( this.messages[m].id == data.existing[i].id )
+                            if( this.messages[m].id == data.deleted[i].id )
                             {
-                                this.messages.splice( m, 1 );
+                                console.log( 'Sms deleting sms: ', this.messages[m] );
+                                this.messages.splice( m, 1 );                                
                                 break;
                             }
                         }
                     }
                 }
 
-                localStorage.setItem( 'smsList', JSON.stringify( this.messages ) );
+                if( data.existing || data.deleted )
+                {
+                    localStorage.setItem( 'smsList', JSON.stringify( this.messages ) );
+                }
+
+                if( data.allowed_destinations )
+                {
+                    this.allowedDestinations = data.allowed_destinations;
+                    console.log( 'Sms allowedDestinations: ', this.allowedDestinations );
+                    localStorage.setItem( 'smsAllowedDestinations', JSON.stringify( this.allowedDestinations ) );
+                }
             }
         }
 
+        Sms.prototype.getAllowedDestinations = function()
+        {
+            //send a message to retrieve sms list
+            var message = new Paho.MQTT.Message( this.allowedDestinationsCmd );
+            message.destinationName = this.mqtt_publish_topic ;
+            message.qos = 2;
+            console.log( 'Sms sending getAllowedDestinations message: ', message );
+            this.publisher.send( message );
+        }
+
+        Sms.prototype.cleanRefresh = function()
+        {
+            this.messages = [];
+            localStorage.setItem( 'smsList', JSON.stringify( this.messages ) );
+            this.refresh();
+        }
+        
         Sms.prototype.refresh = function()
         {
-            //send a message to retrieve modem list as soon as we are assigned a publisher
+            //send a message to retrieve sms list
             var message = new Paho.MQTT.Message( this.listCmd.replace( '#lastSms#', this._lastSmsId() ).replace( '[]', '['+ this._getPendingSmsIds() + ']' ) );
             message.destinationName = this.mqtt_publish_topic ;
+            message.qos = 2;
             console.log( 'Sms sending message: ', message );
             this.publisher.send( message );
         }
@@ -307,8 +352,14 @@
             }
         }
 
-        Sms.prototype.openSendDialog = function( modems )
+        Sms.prototype.openSendDialog = function( smsDevice )
         {
+            // console.log( 'openSendDialog modems: ', modems, ' this.modems: ', this.modems );
+            if( this.publisher )
+            {
+                this.getAllowedDestinations();
+            }
+
             $uibModal.open({
                 templateUrl: 'app/entities/sms/send-sms-dialog.html',
                 controller: 'SendSmsDialogController',
@@ -316,7 +367,8 @@
                 backdrop: 'static',
                 size: 'lg',
                 resolve: {
-                    modems: function(){ return modems; },
+                    smsDevice: function() { return smsDevice; },
+                    
                     translatePartialLoader: ['$translate', '$translatePartialLoader', function ($translate,$translatePartialLoader) {
                         $translatePartialLoader.addPart('sms');
                         return $translate.refresh();
@@ -327,6 +379,29 @@
             }, function() {
                 console.log( 'failure' );
             });
+        }
+
+        Sms.prototype.sendSms = function( modem, to, text )
+        {
+            // var cmd = '{"cmd":"send", "params":{ "modem": ' + modem.id + ', "to":"' + to + '", "text": ' + JSON.stringify( text ) + ' } }'
+            var cmd = '{"cmd":"send", "params":{ "modem": ' + modem.id + ', "to":"' + to + '", "text": ' + angular.toJson( text ) + ' } }'
+            console.log( 'Sms will send the mqtt command: ', cmd );
+
+            var message = new Paho.MQTT.Message( cmd );
+            message.destinationName = this.mqtt_publish_topic ;
+            message.qos = 2;
+            console.log( 'Sms sending message: ', message );
+            this.publisher.send( message );
+        }
+
+        Sms.prototype.setModemUpdater = function( modemUpdater )
+        {
+            modemUpdater.addModemObserver( this );
+        }
+
+        Sms.prototype.updateModems = function( modems )
+        {
+            this.modems = modems;
         }
 
         return Sms;

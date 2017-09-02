@@ -19,6 +19,9 @@
 #         Note: "type": "submit" indicates sms sent by the device, "type": "deliver" indicates sms received by the device (field number must be accordingly interpreted as source/destination), "type": "status-report" indicates sms delivery-report
 #   delete: deletes the specified sms
 #           e.g. {"cmd": "delete", "params":{ "smsIdList": [8] } } Note: The smsId number is not included in quotes.
+#   allowed_destinations: ask for the allowed sms destinations to be published
+#           e.g.: {"cmd":"allowed_destinations"}
+#           the reply is e.g. {"allowed_destinations":["+306974931327","6974931327","1202"]}
 #
 #supported commands in sms text from admins
 #   status:     sends an sms containing a summary of the system status (TODO)
@@ -97,7 +100,8 @@ function send {
     modem=$( echo "$1" | jq .modem )
     to=$( echo "$1" | jq .to )
     to="${to:1:-1}"
-    text=$( echo "$1" | jq .text )
+    echo "With sed: $1" | sed "s/'/_/g" 
+    text=$( echo "$1" | sed "s/'/_/g" | jq '.text' )
     text="${text:1:-1}"
     for a in "${allowed_destinations[@]}"; do
         if [[ "$a" == "$to" ]]; then
@@ -154,23 +158,43 @@ function delete {
     smsIdListEval="declare smsIdList=$smsIdList"
     # echo "smsIdListEval:$smsIdListEval"
     eval $smsIdListEval
+    local json=""
     for smsId in "${smsIdList[@]}" ; do
         echo "attempting to find and delete sms: $smsId"
         for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9]* " | grep -o "[0-9]*"); do
             for s in $(mmcli -m "$modem" --messaging-list-sms | grep -o "SMS\/[0-9]* " | grep -o "[0-9]*"); do
                 if [[ "$s" -eq "$smsId" ]]; then
                     echo "deleting sms $smsId"
-                    # mmcli -m "$modem" --messaging-delete-sms="$smsId"                    
+                    mmcli -m "$modem" --messaging-delete-sms="$smsId"
+                    if [ -z "$json" ]; then
+                        json="$s"
+                    else    
+                        json="${json},$s"
+                    fi
+                    break
                 fi
             done
         done
-        echo "sms $smsId not found"
     done
 
-    message='{"deleted":'$( echo "$1" | jq .smsIdList )'}'
+    message='{"deleted":['"$json"']}'
     mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m "$message" -q 2
     echo "$message"
     return 0
+}
+
+function allowed_destinations {
+    local json=""
+    for d in "${allowed_destinations[@]}"; do
+        if [ -z "$json" ]; then
+            json='"'"$d"'"'
+        else    
+            json="${json},"'"'"$d"'"'
+        fi
+    done
+    message='{"allowed_destinations":['"$json"']}'
+    mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m "$message" -q 2
+    echo "$message"
 }
 
 function reboot {
@@ -239,11 +263,14 @@ function unknownCommand {
             delete)
                 delete "$params"
                 ;;
+            allowed_destinations)
+                allowed_destinations
+                ;;
             *)
                 echo "Invalid command"
                 ;;
         esac
-        sleep 5
+        sleep 1
     done
 )&
 
