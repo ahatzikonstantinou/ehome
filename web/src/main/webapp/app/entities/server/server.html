@@ -1,8 +1,12 @@
-<div>
+<div ng-init="collapsed=false">
     <span class="mdi mdi-server"/>
     <label class="server">{{server.name}}</label>
+    <button type="button" class="btn btn-default btn-xs" ng-click="collapsed = !collapsed">
+        <span class="mdi mdi-chevron-down" ng-if="collapsed"></span>
+        <span class="mdi mdi-chevron-up" ng-if="!collapsed"></span>
+    </button>
     <span class="summary" ng-if="server.connection.connecting" translate="server.connection.CONNECTING" translate-values="{ protocol: server.connection.connectingProtocol }"/>
-    <span class="summary" ng-if="server.configurationDevice.status == 'UNAVAILABLE' || server.configurationDevice.status == 'ERROR'" data-translate="{{'server.configurationStatus.' + server.configurationDevice.status}}"/>    
+    <span class="summary" ng-if="server.configurationDevice.status == 'UNAVAILABLE' || server.configurationDevice.status == 'ERROR'" data-translate="{{'server.configurationStatus.' + server.configurationDevice.status}}"/>
     <div class="state-container">
         <span class="last-update">{{server.lastUpdate ? ( server.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
         <span class="state connection" ng-click="server.connectionDevice.refresh()" ng-class="{ 
@@ -17,7 +21,7 @@
             <span ng-if="server.connection.protocol == 'UNAVAILABLE'" data-translate="{{'server.connection.' + server.connection.protocol}}"/>
             <span ng-if="server.connection.protocol != 'UNAVAILABLE'">{{server.connection.protocol}}</span>        
     </div>
-    <div ng-repeat="i in vm.items" ng-init="showMqttTopics = false">
+    <div ng-repeat="i in vm.items" ng-init="showMqttTopics = false" ng-show="!collapsed">
         <div class="items">            
             <item item="i" filter="filter" show-mqtt-topics="showMqttTopics"/>
         </div>

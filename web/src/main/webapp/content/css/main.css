@@ -1,3 +1,65 @@
+.sms-delivery.label {
+    font-weight: normal;
+    font-size: smaller;
+    color: #333;
+}
+
+.sms-delivery.value {
+    font-weight: bolder;
+    font-size: smaller;
+}
+
+.sms-type {
+    float:left;
+    margin-right: 10px;
+}
+
+.sms-type.incoming {
+    color: #66d;
+}
+
+.sms-type.outgoing {
+    color: #d66;
+}
+
+.sms-type.report-success {
+    color: #151;
+}
+
+.sms-type.report-error {
+    color: #e44;
+}
+
+.sms-text{
+    /* font-size: small; */
+    font-family: 'Times New Roman', Times, serif;
+    display: block;
+}
+
+.sms-text.new {
+    font-weight: bolder;
+}
+
+.sms-time {
+    font-weight: bolder;
+    float:right;
+    font-size: smaller;
+}
+
+.sms-number{
+    font-weight: bolder;
+    float:left;
+    /* font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif; */
+    font-size: smaller;
+}
+
+.sms-id{
+    /* font-weight: bolder; */
+    float:left;
+    font-size: smaller;
+    margin-right: 10px;
+}
+
 .modem-info label {
     width:10%; 
     text-align:right;
@@ -61,7 +123,7 @@ a.dropdown-toggle.ng-scope
 
 .last-update
 {
-    top: -8px;
+    top: 10px;
     font-family: Courier New, Courier, monospace;
     font-size: 12px;
     color: gray;

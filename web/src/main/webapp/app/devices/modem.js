@@ -14,17 +14,17 @@
             MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic );
             this.listCmd = '{"cmd":"list"}';
             this.modems = [];
-            this.modems = [{
-                id: "2",
-                manufacturer: "ZTE Incorporated",
-                model: "MF195",
-                hardware: "gsm-umts",
-                state: "registered",
-                power: "on",
-                mode: "allowed: 2g, 3g; preferred: 3g",
-                imei: "861302000722445",
-                operator: "GR COSMOTE"
-                }];
+            // this.modems = [{
+            //     id: "2",
+            //     manufacturer: "ZTE Incorporated",
+            //     model: "MF195",
+            //     hardware: "gsm-umts",
+            //     state: "registered",
+            //     power: "on",
+            //     mode: "allowed: 2g, 3g; preferred: 3g",
+            //     imei: "861302000722445",
+            //     operator: "GR COSMOTE"
+            //     }];
         }
         
         Modem.prototype = Object.create( MqttDevice.prototype );

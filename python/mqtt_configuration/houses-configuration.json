@@ -1,6 +1,7 @@
 {
     "items": [
-        { "name": "Modems", "domain": "MODEM", "type": "MODEM", "protocol": "mqtt", "subscribe": "modem", "publish": "modem/cmd" }
+        { "name": "SMS", "domain": "SMS", "type": "SMS", "protocol": "mqtt", "subscribe": "sms", "publish": "sms/cmd" },
+        { "name": "Modems", "domain": "MODEM", "type": "MODEM", "protocol": "mqtt", "subscribe": "modem", "publish": "modem/cmd" }        
     ],
     "houses": [    
         { 

@@ -5,9 +5,9 @@
         .module('eHomeApp')
         .factory('Configuration', Configuration);
 
-    Configuration.$inject = [ 'Door1', 'Window1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', '$resource', 'Modem' ];
+    Configuration.$inject = [ 'Door1', 'Window1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', '$resource', 'Modem', 'Sms' ];
 
-    function Configuration( Door1, Window1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, $resource, Modem ) 
+    function Configuration( Door1, Window1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, $resource, Modem, Sms )
     {
         return {
             generateList: function( data )
@@ -76,7 +76,6 @@
                 type: def.type,
                 protocol: def.protocol,
                 device: {}
-
             }
             switch( item.type )
             {
@@ -130,6 +129,9 @@
                     break;
                 case 'MODEM':
                     item.device = new Modem( def.subscribe, def.publish, {} );
+                    break;
+                case 'SMS':
+                    item.device = new Sms( def.subscribe, def.publish, {} );
                     break;
             }
 

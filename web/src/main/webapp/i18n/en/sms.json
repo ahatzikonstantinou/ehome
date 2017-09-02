@@ -1,0 +1,12 @@
+{
+    "sms": {
+        "new": "New",
+        "total": "Total",
+        "report-label": "Delivery report:",
+        "send-sms": {
+            "title": "Send sms",
+            "send": "Send",
+            "text": "Text"
+        }
+    }
+}

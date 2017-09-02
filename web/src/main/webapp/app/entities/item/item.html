@@ -1,6 +1,7 @@
 <div>
+    <sms class="item" item='i' ng-if="i.type == 'SMS'" show-mqtt-topics="showMqttTopics"/>
     <modem class="item" item='i' ng-if="i.type == 'MODEM'" show-mqtt-topics="showMqttTopics"/>
-
+        
     <alarm class="item" item='i' ng-if="i.type == 'ALARM' && filter.ALARM" show-mqtt-topics="showMqttTopics"/>
     <door1 class="item" item='i' ng-if="i.type == 'DOOR1' && filter.DOOR" show-mqtt-topics="showMqttTopics"/>
     <door2r class="item" item='i' ng-if="i.type == 'DOOR2R' && filter.DOOR" show-mqtt-topics="showMqttTopics"/>

@@ -18,7 +18,7 @@
 #               field "timestamp" will have a value only for sms of type "deliver" and "status-report"
 #         Note: "type": "submit" indicates sms sent by the device, "type": "deliver" indicates sms received by the device (field number must be accordingly interpreted as source/destination), "type": "status-report" indicates sms delivery-report
 #   delete: deletes the specified sms
-#           e.g. {"cmd": "delete", "params":{ "smsId": 8 } } Note: The smsId number is not included in quotes.
+#           e.g. {"cmd": "delete", "params":{ "smsIdList": [8] } } Note: The smsId number is not included in quotes.
 #
 #supported commands in sms text from admins
 #   status:     sends an sms containing a summary of the system status (TODO)
@@ -40,7 +40,7 @@ processedSmsFile=processedSms.txt
 
 #command to print the timestamp of an sms
 function getTimestamp {
-    t=$(mmcli -s "$1" | grep  "timestamp" | grep -o "[0-9]*" | { read dt; date -Ins -d "${dt:0:2}-${dt:2:2}-${dt:4:2}T${dt:6:2}:${dt:8:2}:${dt:10:5}";})
+    t=$(mmcli -s "$1" | grep  "timestamp" | grep -o "[0-9]*" | { read dt; date -d "${dt:0:2}-${dt:2:2}-${dt:4:2}T${dt:6:2}:${dt:8:2}:${dt:10:2}" '+%Y-%m-%dT%H:%M:%S%z';})
     echo "$t"
 }
 
@@ -82,7 +82,7 @@ function getJson {
     type=$( getType "$1" )
     reference=$( getReference "$1" )
     delivery=$( getDelivery "$1" )
-    j=$(jq -n --arg index "$1" --arg modem $2 --arg timestamp "$timestamp" --arg number "$number" --arg state "$state" --arg text "$text" --arg type "$type" --arg reference "$reference" --arg delivery "$delivery" '{modem: $modem, index:$index, timestamp:$timestamp, number: $number, state: $state, text: $text, type: $type, reference: $reference, delivery: $delivery}')
+    j=$(jq -n --arg id "$1" --arg modem $2 --arg timestamp "$timestamp" --arg number "$number" --arg state "$state" --arg text "$text" --arg type "$type" --arg reference "$reference" --arg delivery "$delivery" '{modem: $modem, id:$id, timestamp:$timestamp, number: $number, state: $state, text: $text, type: $type, reference: $reference, delivery: $delivery}')
     echo "$j"
 }
 
@@ -149,19 +149,28 @@ function status {
 }
 
 function delete {
-    local smsId=$( echo "$1" | jq .smsId )
-    echo "attempting to find and delete sms: $smsId"
-    for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9]* " | grep -o "[0-9]*"); do
-        for s in $(mmcli -m "$modem" --messaging-list-sms | grep -o "SMS\/[0-9]* " | grep -o "[0-9]*"); do
-            if [[ "$s" -eq "$smsId" ]]; then
-                echo "deleting sms $smsId"
-                # mmcli -m "$modem" --messaging-delete-sms="$smsId"
-                return 0
-            fi
+    local smsId=$( echo "$1" | jq .smsIdList )
+    smsIdList=$(echo $1 | jq .smsIdList | tr -d ' ' | tr -d '\n' | tr '[' '(' | tr ']' ')' | tr ',' ' ' )
+    smsIdListEval="declare smsIdList=$smsIdList"
+    # echo "smsIdListEval:$smsIdListEval"
+    eval $smsIdListEval
+    for smsId in "${smsIdList[@]}" ; do
+        echo "attempting to find and delete sms: $smsId"
+        for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9]* " | grep -o "[0-9]*"); do
+            for s in $(mmcli -m "$modem" --messaging-list-sms | grep -o "SMS\/[0-9]* " | grep -o "[0-9]*"); do
+                if [[ "$s" -eq "$smsId" ]]; then
+                    echo "deleting sms $smsId"
+                    # mmcli -m "$modem" --messaging-delete-sms="$smsId"                    
+                fi
+            done
         done
+        echo "sms $smsId not found"
     done
-    echo "sms $smsId not found"
-    return 1
+
+    message='{"deleted":'$( echo "$1" | jq .smsIdList )'}'
+    mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m "$message" -q 2
+    echo "$message"
+    return 0
 }
 
 function reboot {
@@ -327,9 +336,9 @@ while true; do
             echo "removing sms $sms"
             unset smsList[$sms]
             if [ -z "$deleted" ]; then
-                deleted='{ "index": "'"$sms"'" }'
+                deleted='{ "id": "'"$sms"'" }'
             else    
-                deleted="${deleted},"'{ "index": "'"$sms"'" }'
+                deleted="${deleted},"'{ "id": "'"$sms"'" }'
             fi
             echo "Remaining sms: ${!smsList[@]}"  # Print all keys
         fi

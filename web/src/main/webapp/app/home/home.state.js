@@ -26,6 +26,7 @@
                     $translatePartialLoader.addPart('home');
                     $translatePartialLoader.addPart('server');
                     $translatePartialLoader.addPart('modem');
+                    $translatePartialLoader.addPart('sms');
                     return $translate.refresh();
                 }]
             }
