@@ -23,3 +23,7 @@ class MailParams( object ):
         self.password = password
         self.server = server
         self.port = port
+
+class SmsParams( object ):
+    def __init__( self, publishTopic ):
+        self.publishTopic = publishTopic

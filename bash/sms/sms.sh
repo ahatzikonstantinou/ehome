@@ -7,7 +7,8 @@
 #
 #supported mqtt commands
 #   send: send an sms, 
-#         e.g. {"cmd":"send", "params":{ "modem": 2, to":"123456789", "text": "testing δοκιμή"} } Note: The modem id number is not included in quotes.
+#         e.g. {"cmd":"send", "params":{ "modem": 2, "to":"123456789", "text": "testing δοκιμή"} } Note: The modem id number is not included in quotes.
+#         e.g.2 {"cmd":"send", "params":{ "to":"123456789", "text": "testing δοκιμή"} } If no modem is specified the preferred modem will be used
 #         Note: sms messages will be sent with delivery-report=yes. This is the only way to get a time indication regarding when they were sent. The indication will be the timestamp of the corresponding delivery-report. Also note that more than one delivery reports may arrive for the same transmitted sms. They seem to contail the exactly same information, so consider only the latest one.
 #   list: list existing sms messages. params: lastSms:the last sms known to the client, updates: sms numbers to publish
 #         e.g. {"cmd":"list", "params":{ "lastSms":8, "updates": [6,8]} } Note: The sms id numbers are not included in quotes.
@@ -95,13 +96,35 @@ function updateLastSms {
     cat "$lastSmsFile"
 }
 
+function getPreferredModem {
+    for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9]* " | grep -o "[0-9]*"); do
+        local manufacturer=$(mmcli -m "$modem" | grep -o "manufacturer: '[^']*" | cut -c16-)
+        local model=$(mmcli -m "$modem" | grep -o "model: '[^']*" | cut -c9-)
+        if [[ "$manufacturer" == "${send_preferred_modem[0]}" ]] && [[ "$model" == "${send_preferred_modem[1]}" ]]; then
+            echo "$modem"
+            return 0
+        fi
+    done
+    echo ""
+}
+
 function send {
     # echo "sms send $1"
-    modem=$( echo "$1" | jq .modem )
-    to=$( echo "$1" | jq .to )
+    local modem=$( echo "$1" | jq .modem )
+    echo "Send. initial modem: $modem"
+    if [[ -z "$modem" ]] || [[ "$modem" == "null" ]]; then
+        modem=$( getPreferredModem )
+        if [[ -z "$modem" ]]; then
+            echo "Send does not have a modem, not even a preferred one, send aborted."
+            return 1
+        else
+            echo "Send preferedModem: $modem"
+        fi
+    fi
+    local to=$( echo "$1" | jq .to )
     to="${to:1:-1}"
     echo "With sed: $1" | sed "s/'/_/g" 
-    text=$( echo "$1" | sed "s/'/_/g" | jq '.text' )
+    local text=$( echo "$1" | sed "s/'/_/g" | jq '.text' )
     text="${text:1:-1}"
     for a in "${allowed_destinations[@]}"; do
         if [[ "$a" == "$to" ]]; then
@@ -286,6 +309,9 @@ fi
 
 
 # smsList=( [1]="received" [2]="sent" [64]="receiving" ) #testing
+#ahat. Important note: if the computer is restarted, modems will probably get new id
+#and theis sms too (higher than what they previously had). This means that they may be considered new ones. In order to avoid re-processing old sms after a reboot, no sms will be processed during the first run of the while loop
+firstRun=true
 while true; do
     declare currentSmsList=()
     # . "./$lastSmsFile"  #read last sent
@@ -298,6 +324,7 @@ while true; do
             addUpdate=false
             currentSmsList+=($s)
             state=$( getState "$s" )
+            type=$( getType "$s" )
 
             if [ ${smsList[$s]+_} ] ; then
                 storedState=${smsList[$s]}
@@ -329,28 +356,33 @@ while true; do
 
                 # echo "s:$s, number: $number, state:$state"
                 number=$(getNumber "$s" )
-                if [[ "$state" == "received" ]] && [[ " ${admins[@]} " =~ " $number " ]]; then
+                if [[ "$type" == "deliver" ]] && [[ "$state" == "received" ]] && [[ " ${admins[@]} " =~ " $number " ]]; then
                     echo "message from admin $number"
-                    text=$(getText "$s" )
-                    textLow="${text,,}"    #convert to lowercase
-                    # echo "lower text: ${text,,}"
-                    # echo "upper text: ${text^^}"
-                    if [[ " ${textLow[@]} " =~ " status " ]]; then
-                        reportStatus "$number"
-                    elif [[ " ${textLow[@]} " =~ " reboot " ]]; then
-                        reboot
-                    elif [[ " ${textLow[@]} " =~ " shutdown " ]]; then
-                        shutdown
-                    elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "away " ]]; then
-                        armAway
-                    elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "home " ]]; then
-                        armHome
-                    elif [[ " ${textLow[@]} " =~ " arm " ]]; then
-                        arm
-                    elif [[ " ${textLow[@]} " =~ " disarm " ]]; then
-                        disarm
+                    if [ "$firstRun" = true ]; then
+                        echo 'Will not process because this the first run after restarting.'
                     else
-                        unknownCommand "$modem" "$number" "$text"
+                        echo 'Will process because now first run is false'
+                        text=$(getText "$s" )
+                        textLow="${text,,}"    #convert to lowercase
+                        # echo "lower text: ${text,,}"
+                        # echo "upper text: ${text^^}"
+                        if [[ " ${textLow[@]} " =~ " status " ]]; then
+                            reportStatus "$number"
+                        elif [[ " ${textLow[@]} " =~ " reboot " ]]; then
+                            reboot
+                        elif [[ " ${textLow[@]} " =~ " shutdown " ]]; then
+                            shutdown
+                        elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "away " ]]; then
+                            armAway
+                        elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "home " ]]; then
+                            armHome
+                        elif [[ " ${textLow[@]} " =~ " arm " ]]; then
+                            arm
+                        elif [[ " ${textLow[@]} " =~ " disarm " ]]; then
+                            disarm
+                        else
+                            unknownCommand "$modem" "$number" "$text"
+                        fi
                     fi
                 fi
             fi
@@ -381,6 +413,7 @@ while true; do
         echo "$message"
     fi
 
+    firstRun=false
     # echo "sleeping for 5"
     sleep 5
 done

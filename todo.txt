@@ -33,7 +33,15 @@ Done. Develop mqtt_smscentre
     process incoming sms
     receive mqtt messages to send as sms
 
-Done. Store incoming sms messages and mark them as unread. 
+Done. Store incoming sms messages and mark them as unread.
+
+Finish notifier to use the sms.sh service
+
+Fix alarm.py to use multiple pins and stop sending challenges.
+
+Add alarm arm/disarm dialog in web app.
+
+Fix web app display for 360x640.
 
 Debug: if xmpp_proxy is active while mqtt is also working, duplicate configurations arreive at the web app and double the items and houses are displayed.
 
