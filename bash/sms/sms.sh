@@ -9,17 +9,18 @@
 #   send: send an sms, 
 #         e.g. {"cmd":"send", "params":{ "modem": 2, "to":"123456789", "text": "testing δοκιμή"} } Note: The modem id number is not included in quotes.
 #         e.g.2 {"cmd":"send", "params":{ "to":"123456789", "text": "testing δοκιμή"} } If no modem is specified the preferred modem will be used
-#         Note: sms messages will be sent with delivery-report=yes. This is the only way to get a time indication regarding when they were sent. The indication will be the timestamp of the corresponding delivery-report. Also note that more than one delivery reports may arrive for the same transmitted sms. They seem to contail the exactly same information, so consider only the latest one.
-#   list: list existing sms messages. params: lastSms:the last sms known to the client, updates: sms numbers to publish
-#         e.g. {"cmd":"list", "params":{ "lastSms":8, "updates": [6,8]} } Note: The sms id numbers are not included in quotes.
+#         Note: sms messages will be sent with delivery-report=yes. This is the only way to get a time indication regarding when they were sent. The indication will be the timestamp of the corresponding delivery-report. Also note that more than one delivery reports may arrive for the same transmitted sms. They seem to contain the exactly same information, so consider only the latest one.
+#   list: list existing sms messages. params: lastSms:the last sms known to the client, updates: sms updates to publish
+#         e.g. {"cmd":"list", "params":{ "lastSms":"22f5c2c183d0b91aed23379c52de0930", "updates": ["30d37002fd79e7198112c27f3bbe1821","30d37002fd79e7198112c27f3bbe1821"]} } LastSms and updates are the hashes of the corresponding sms's.
 #         Note: It is expected that clients (web app) will ask updates for SMS that have been listed with state "receiving"
 #         or "sending" or "unknown" and their state is expected to change to "received" or "sent"
 #         Note: field "delivery" will have a value only for sms of type "status-report"
 #               field "reference" will have a value (used to associate sms with the same reference value) only for sms of type "status-report" and "submit"
 #               field "timestamp" will have a value only for sms of type "deliver" and "status-report"
 #         Note: "type": "submit" indicates sms sent by the device, "type": "deliver" indicates sms received by the device (field number must be accordingly interpreted as source/destination), "type": "status-report" indicates sms delivery-report
+#         Note: field "state" is not included in the calculation of the hash of an sms, because this field may change (from "receiving" to "received", "sending" to "sent", etc)
 #   delete: deletes the specified sms
-#           e.g. {"cmd": "delete", "params":{ "smsIdList": [8] } } Note: The smsId number is not included in quotes.
+#           e.g. {"cmd": "delete", "params":{ "smsList": ["22f5c2c183d0b91aed23379c52de0930", "30d37002fd79e7198112c27f3bbe1821"] } } The smsList contains the hashes of the sms to be deleted.
 #   allowed_destinations: ask for the allowed sms destinations to be published
 #           e.g.: {"cmd":"allowed_destinations"}
 #           the reply is e.g. {"allowed_destinations":["+306974931327","6974931327","1202"]}
@@ -33,7 +34,6 @@
 
 # set -x
 
-# lastSmsFile=lastSms.txt
 processedSmsFile=processedSms.txt
 
 #read configuration parameters
@@ -78,6 +78,11 @@ function getDelivery {
     echo "$d"
 }
 
+function getHash {
+    local h=$(mmcli -s "$1" | tail -n +2 | grep -v "state:" | md5sum | sed 's/ .*$//g')
+    echo "$h"
+}
+
 function getJson {
     timestamp=$( getTimestamp "$1" )
     number=$( getNumber "$1" )
@@ -86,7 +91,8 @@ function getJson {
     type=$( getType "$1" )
     reference=$( getReference "$1" )
     delivery=$( getDelivery "$1" )
-    j=$(jq -n --arg id "$1" --arg modem $2 --arg timestamp "$timestamp" --arg number "$number" --arg state "$state" --arg text "$text" --arg type "$type" --arg reference "$reference" --arg delivery "$delivery" '{modem: $modem, id:$id, timestamp:$timestamp, number: $number, state: $state, text: $text, type: $type, reference: $reference, delivery: $delivery}')
+    hash=$( getHash "$1" )
+    j=$(jq -n --arg id "$1" --arg modem $2 --arg timestamp "$timestamp" --arg number "$number" --arg state "$state" --arg text "$text" --arg type "$type" --arg reference "$reference" --arg delivery "$delivery" --arg hash "$hash" '{modem: $modem, id:$id, timestamp:$timestamp, number: $number, state: $state, text: $text, type: $type, reference: $reference, delivery: $delivery, hash: $hash}')
     echo "$j"
 }
 
@@ -133,7 +139,7 @@ function send {
             echo "smsParams: $smsParams"
             s=$(mmcli -m $modem --messaging-create-sms="$smsParams" | grep -o "SMS\/[0-9]* " | grep -o "[0-9]*")
             if [ -n "$s" ]; then
-                mmcli -s "$s" --send
+                : #mmcli -s "$s" --send
             else
                 echo "Failed sending sms $s"
             fi
@@ -147,6 +153,7 @@ function send {
 function list {
     echo "list params: $1"
     lastSms=$(echo $1 | jq .lastSms)
+    lastSms="${lastSms:1:-1}"  #get rid fo the quotes
     # Note. this does not work, I don'tknow why: updates=$(echo "${updates}" | jq -r .[] )    
     #Therefore I convert the json text to a bash command executed with eval to create my array
     updates=$(echo $1 | jq .updates | tr -d ' ' | tr -d '\n' | tr '[' '(' | tr ']' ')' | tr ',' ' ' )
@@ -155,10 +162,23 @@ function list {
     eval $updatesEval
     # echo "list params: lastSms=$lastSms, updates=${updates[@]}"
     local json=""
+    local add=false
+    if [ -z "$lastSms" ]; then 
+        add=true
+    fi
     for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9]* " | grep -o "[0-9]*"); do
         for s in $(mmcli -m "$modem" --messaging-list-sms | grep -o "SMS\/[0-9]* " | grep -o "[0-9]*"); do
-            #if the current sms index is larger than lastSms or is among the ones in 'updates'
-            if [[ "$s" -gt "$lastSms" ]] || [[ " ${updates[@]} " =~ " ${s} " ]]; then
+            #if the current sms hash is equal to lastSms or is among the ones in 'updates'
+            local h=$( getHash $s )            
+            if [[ "$h" == "$lastSms" ]]; then
+                add=true
+            fi
+            local addOnce=false
+            if [[ " ${updates[@]} " =~ " ${h} " ]]; then
+                addOnce=true
+            fi
+
+            if [ $add = true ] || [ $addOnce = true ]; then                
                 if [ -z "$json" ]; then
                     json="$( getJson $s $modem )"
                 else    
@@ -176,23 +196,24 @@ function status {
 }
 
 function delete {
-    local smsId=$( echo "$1" | jq .smsIdList )
-    smsIdList=$(echo $1 | jq .smsIdList | tr -d ' ' | tr -d '\n' | tr '[' '(' | tr ']' ')' | tr ',' ' ' )
-    smsIdListEval="declare smsIdList=$smsIdList"
-    # echo "smsIdListEval:$smsIdListEval"
-    eval $smsIdListEval
+    local smsList=$( echo "$1" | jq .smsList )
+    smsList=$(echo $1 | jq .smsList | tr -d ' ' | tr -d '\n' | tr '[' '(' | tr ']' ')' | tr ',' ' ' )
+    smsListEval="declare smsList=$smsList"
+    # echo "smsListEval:$smsListEval"
+    eval $smsListEval
     local json=""
-    for smsId in "${smsIdList[@]}" ; do
-        echo "attempting to find and delete sms: $smsId"
+    for smsHash in "${smsList[@]}" ; do
+        echo "attempting to find and delete sms: $smsHash"
         for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9]* " | grep -o "[0-9]*"); do
             for s in $(mmcli -m "$modem" --messaging-list-sms | grep -o "SMS\/[0-9]* " | grep -o "[0-9]*"); do
-                if [[ "$s" -eq "$smsId" ]]; then
-                    echo "deleting sms $smsId"
-                    mmcli -m "$modem" --messaging-delete-sms="$smsId"
+                h=$( getHash $s )
+                if [[ "$h" == "$smsHash" ]]; then
+                    echo "deleting sms $s"
+                    mmcli -m "$modem" --messaging-delete-sms="$s"
                     if [ -z "$json" ]; then
-                        json="$s"
+                        json='"'"$h"'"'
                     else    
-                        json="${json},$s"
+                        json="${json},"'"'"$h"'"'
                     fi
                     break
                 fi
@@ -200,9 +221,10 @@ function delete {
         done
     done
 
-    message='{"deleted":['"$json"']}'
-    mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m "$message" -q 2
-    echo "$message"
+    # No need to publish. The deletion of the messages will be picked up by the infinite loop that monitors sms messages
+    # message='{"deleted":['"$json"']}'
+    # mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m "$message" -q 2
+    # echo "$message"
     return 0
 }
 
@@ -308,13 +330,8 @@ else
 fi
 
 
-# smsList=( [1]="received" [2]="sent" [64]="receiving" ) #testing
-#ahat. Important note: if the computer is restarted, modems will probably get new id
-#and theis sms too (higher than what they previously had). This means that they may be considered new ones. In order to avoid re-processing old sms after a reboot, no sms will be processed during the first run of the while loop
-firstRun=true
 while true; do
     declare currentSmsList=()
-    # . "./$lastSmsFile"  #read last sent
     existing=""
     deleted=""
     for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9]* " | grep -o "[0-9]*"); do
@@ -322,12 +339,13 @@ while true; do
         for s in $(mmcli -m "$modem" --messaging-list-sms | grep -o "SMS\/[0-9]* " | grep -o "[0-9]*"); do
             # echo "Processing sms $s"
             addUpdate=false
-            currentSmsList+=($s)
+            h=$( getHash "$s" )
+            currentSmsList+=($h)
             state=$( getState "$s" )
             type=$( getType "$s" )
 
-            if [ ${smsList[$s]+_} ] ; then
-                storedState=${smsList[$s]}
+            if [ ${smsList[$h]+_} ] ; then
+                storedState=${smsList[$h]}
                 if [[ $storedState != $state ]]; then
                     echo "state of sms $s changed from $storedState to $state"
                     addUpdate=true
@@ -335,18 +353,13 @@ while true; do
                     # echo "skipping sms $s, state is still $state"
                 fi
             fi
-            if [ ! ${smsList[$s]+_} ] ; then
+            if [ ! ${smsList[$h]+_} ] ; then
                 echo "new sms $s found"
                 addUpdate=true
             fi
             if $addUpdate; then
-                # echo "last_sms: $last_sms, s: $s"
-                # if [ "$last_sms" -lt "$s" ] || ( [ "$last_sms" -eq "$s" ] && [ "$last_state" != "$state" ] ); then
-                #     updateLastSms "$s" "$state"
-                # fi
-                smsList[$s]=$state                
+                smsList[$h]=$state                
 
-                # updateLastSms "$s" "$state"
                 if [ -z "$existing" ]; then
                     existing="$( getJson $s $modem )"
                 else    
@@ -358,32 +371,28 @@ while true; do
                 number=$(getNumber "$s" )
                 if [[ "$type" == "deliver" ]] && [[ "$state" == "received" ]] && [[ " ${admins[@]} " =~ " $number " ]]; then
                     echo "message from admin $number"
-                    if [ "$firstRun" = true ]; then
-                        echo 'Will not process because this the first run after restarting.'
+                    text=$(getText "$s" )
+                    textLow="${text,,}"    #convert to lowercase
+                    # echo "lower text: ${text,,}"
+                    # echo "upper text: ${text^^}"
+                    if [[ " ${textLow[@]} " =~ " status " ]]; then
+                        reportStatus "$number"
+                    elif [[ " ${textLow[@]} " =~ " reboot " ]]; then
+                        reboot
+                    elif [[ " ${textLow[@]} " =~ " shutdown " ]]; then
+                        shutdown
+                    elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "away " ]]; then
+                        armAway
+                    elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "home " ]]; then
+                        armHome
+                    elif [[ " ${textLow[@]} " =~ " arm " ]]; then
+                        arm
+                    elif [[ " ${textLow[@]} " =~ " disarm " ]]; then
+                        disarm
                     else
-                        echo 'Will process because now first run is false'
-                        text=$(getText "$s" )
-                        textLow="${text,,}"    #convert to lowercase
-                        # echo "lower text: ${text,,}"
-                        # echo "upper text: ${text^^}"
-                        if [[ " ${textLow[@]} " =~ " status " ]]; then
-                            reportStatus "$number"
-                        elif [[ " ${textLow[@]} " =~ " reboot " ]]; then
-                            reboot
-                        elif [[ " ${textLow[@]} " =~ " shutdown " ]]; then
-                            shutdown
-                        elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "away " ]]; then
-                            armAway
-                        elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "home " ]]; then
-                            armHome
-                        elif [[ " ${textLow[@]} " =~ " arm " ]]; then
-                            arm
-                        elif [[ " ${textLow[@]} " =~ " disarm " ]]; then
-                            disarm
-                        else
-                            unknownCommand "$modem" "$number" "$text"
-                        fi
+                        unknownCommand "$modem" "$number" "$text"
                     fi
+                    # fi
                 fi
             fi
         done
@@ -395,9 +404,9 @@ while true; do
             echo "removing sms $sms"
             unset smsList[$sms]
             if [ -z "$deleted" ]; then
-                deleted='{ "id": "'"$sms"'" }'
+                deleted='"'"$sms"'"'
             else    
-                deleted="${deleted},"'{ "id": "'"$sms"'" }'
+                deleted="${deleted},"'"'"$sms"'"'
             fi
             echo "Remaining sms: ${!smsList[@]}"  # Print all keys
         fi
@@ -413,7 +422,6 @@ while true; do
         echo "$message"
     fi
 
-    firstRun=false
     # echo "sleeping for 5"
     sleep 5
 done

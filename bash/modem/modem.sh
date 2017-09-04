@@ -84,7 +84,7 @@ fi
 declare -A modemInfo
 
 function modemExists {
-    for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9*] " | grep -o "[0-9]"); do
+    for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9]* " | grep -o "[0-9]*"); do
         if [[ $modem -eq $1 ]]; then
             return 0
         fi
@@ -105,7 +105,7 @@ function getModemInfo {
 }
 
 function modemInfo2Json {
-    local j=$(jq -n --arg id "${modemInfo[id]}" --arg manufacturer "${modemInfo[manufacturer]}" --arg model "${modemInfo[model]}" --arg hardware "${modemInfo[hardware]}" --arg state "${modemInfo[state]}" --arg power "${modemInfo[power]}" --arg mode "${modemInfo[mode]}" --arg imei "${modemInfo[imei]}" --arg operator "${modemInfo[operator]}" '{ id: $id, manufacturer:$manufacturer, model:$model, hardware: $hardware, state: $state, power: $power, mode: $mode, imei: $imei, operator: $operator }')
+    j=$(jq -n --arg id "${modemInfo[id]}" --arg manufacturer "${modemInfo[manufacturer]}" --arg model "${modemInfo[model]}" --arg hardware "${modemInfo[hardware]}" --arg state "${modemInfo[state]}" --arg power "${modemInfo[power]}" --arg mode "${modemInfo[mode]}" --arg imei "${modemInfo[imei]}" --arg operator "${modemInfo[operator]}" '{ id: $id, manufacturer:$manufacturer, model:$model, hardware: $hardware, state: $state, power: $power, mode: $mode, imei: $imei, operator: $operator }')
     echo "$j"
 }
 
@@ -116,14 +116,16 @@ function status {
 }
 
 function list {
+    echo 'In function list'
     local json=""
-    for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9*] " | grep -o "[0-9]"); do
+    for modem in $(mmcli -L | grep "Modem" | grep -o "Modem\/[0-9]* " | grep -o "[0-9]*"); do
         getModemInfo $modem
-        if [ -z "$json" ]; then
+        if [ -z "$json" ]; then        
             json="$( modemInfo2Json )"
         else    
             json="${json},$( modemInfo2Json )"
         fi
+        echo "Now json: $json"
     done
     mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "modem_list": ['"$json"']}' -q 2
 }
@@ -151,7 +153,9 @@ function disable {
         echo "cmd:$cmd, params:$params"
         case "$cmd" in
             list)
+                echo 'Will execute function list'
                 list
+                echo 'Executed function list'
                 ;;
             status)
                 if $(modemExists $params); then

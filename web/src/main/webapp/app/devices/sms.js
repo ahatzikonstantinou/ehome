@@ -184,14 +184,17 @@
                 {
                     for( var i = 0 ; i < data.existing.length ; i++ )
                     {
-                        data.existing[i].new = true;
                         var found = false;
                         for( var m = 0 ; m < this.messages.length ; m++ )
                         {
-                            if( this.messages[m].id == data.existing[i].id )
+                            if( this.messages[m].hash == data.existing[i].hash )
                             {
                                 found = true;
-                                this.messages[m] = data.existing[i];
+                                if( this.messages[m].state != data.existing[i].state )
+                                {
+                                    this.messages[m] = data.existing[i];
+                                    this.messages[m].new = true;
+                                }
                             }
                         }
                         if( !found )
@@ -219,12 +222,14 @@
 
                 if( data.deleted )
                 {
+                    // Note: data.deleted contains only message hashes, no objects
                     for( var i = 0 ; i < data.deleted.length ; i++ )
                     {
-                        var found = false;
+                        // console.log( 'Searching to delete sms ', data.deleted[i] );
                         for( var m = 0 ; m < this.messages.length ; m++ )
                         {
-                            if( this.messages[m].id == data.deleted[i].id )
+                            // console.log( 'comparing m[', this.messages[m].id, '].hash:', this.messages[m].hash, ' with d[', i, ']:', data.deleted[i] );
+                            if( this.messages[m].hash == data.deleted[i] )
                             {
                                 console.log( 'Sms deleting sms: ', this.messages[m] );
                                 this.messages.splice( m, 1 );                                
@@ -268,18 +273,18 @@
         Sms.prototype.refresh = function()
         {
             //send a message to retrieve sms list
-            var message = new Paho.MQTT.Message( this.listCmd.replace( '#lastSms#', this._lastSmsId() ).replace( '[]', '['+ this._getPendingSmsIds() + ']' ) );
+            var message = new Paho.MQTT.Message( this.listCmd.replace( '#lastSms#', this._lastSmsHash() ).replace( '[]', '['+ this._getPendingSmsHashes() + ']' ) );
             message.destinationName = this.mqtt_publish_topic ;
             message.qos = 2;
             console.log( 'Sms sending message: ', message );
             this.publisher.send( message );
         }
 
-        Sms.prototype.updateDelete = function( smsId, add )
+        Sms.prototype.updateDelete = function( smsHash, add )
         {
             for( var i = 0 ; i < this.deleteSmsList.length ; i++ )
             {   
-                if( this.deleteSmsList[i] == smsId )
+                if( this.deleteSmsList[i] == smsHash )
                 {
                     if( add )
                     {
@@ -292,49 +297,49 @@
                     }
                 }
             }
-            this.deleteSmsList.push( smsId );
+            this.deleteSmsList.push( smsHash );
         }
 
-        Sms.prototype.delete = function( deleteSmsList )
+        Sms.prototype.delete = function()
         {
             if( this.deleteSmsList.length == 0 )
             {
                 return;
             }
 
-            var ids = "";
+            var hashes = "";
             for( var i = 0 ; i < this.deleteSmsList.length ; i++ )
             {
-                ids += ( ids.length > 0 ? ',' : '' ) + this.deleteSmsList[i];
+                hashes += ( hashes.length > 0 ? ',"' : '"' ) + this.deleteSmsList[i] + '"';
             }
 
-            var message = new Paho.MQTT.Message( '{ "cmd":"delete", "params":{ "smsIdList":[' + ids + '] } }' );
+            var message = new Paho.MQTT.Message( '{ "cmd":"delete", "params":{ "smsList":[' + hashes + '] } }' );
             message.destinationName = this.mqtt_publish_topic ;
             console.log( 'Sms sending message: ', message );
             this.publisher.send( message );
         }
 
-        Sms.prototype._lastSmsId = function()
+        Sms.prototype._lastSmsHash = function()
         {
-            var lastSms = -1;
+            var lastSmsIndex = -1;
             for( var i = 0 ; i < this.messages.length ; i++ )
             {
-                if( this.messages[i].id > lastSms )
+                if( this.messages[i].id > lastSmsIndex )
                 {
-                    lastSms = this.messages[i].id;
+                    lastSmsIndex = i;
                 }
             }
-            return lastSms;
+            return lastSmsIndex > -1 ? '"' + this.messages[ lastSmsIndex ].hash + '"' : '""';
         }
 
-        Sms.prototype._getPendingSmsIds = function()
+        Sms.prototype._getPendingSmsHashes = function()
         {
             var pending = "";
             for( var i = 0 ; i < this.messages.length ; i++ )
             {
                 if( this.messages[i].state.indexOf( "received" ) == -1 && this.messages[i].state.indexOf( "sent" ) == -1 )
                 {
-                    pending += ( pending.length > 0 ? ", " : "" ) + this.messages[i].id;
+                    pending += ( pending.length > 0 ? ", \"" : "\"" ) + this.messages[i].hash + "\"";
                 }
             }
             return pending;

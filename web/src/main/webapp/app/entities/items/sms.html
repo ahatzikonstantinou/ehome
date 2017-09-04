@@ -41,10 +41,10 @@
 <div class="table-responsive" ng-show="showMessages">
     <table class="table table-striped">
         <tbody>
-            <tr ng-repeat="sms in i.device.messages.slice().reverse() track by sms.id">
+            <tr ng-repeat="sms in i.device.messages.slice().reverse() track by sms.hash">
                 <td>
-                    <input type="checkbox" ng-model="deleteSmsList[sms.id]" ng-change="i.device.updateDelete( sms.id, deleteSmsList[sms.id] )"/>
-                    <!-- <span class="sms-id badge">{{sms.id}}</span> -->
+                    <input type="checkbox" ng-model="deleteSmsList[sms.hash]" ng-change="i.device.updateDelete( sms.hash, deleteSmsList[sms.hash] )"/>
+                     <span class="sms-id badge">{{sms.id}} - {{sms.hash}}</span>
                 </td>
                 <td>
                     <div>
