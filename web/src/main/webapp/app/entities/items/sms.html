@@ -38,13 +38,14 @@
         <!-- </div> -->
     </div>
 </div>
+TODO: Fix table of sms, scrolls out of page when 360x640
 <div class="table-responsive" ng-show="showMessages">
     <table class="table table-striped">
         <tbody>
             <tr ng-repeat="sms in i.device.messages.slice().reverse() track by sms.hash">
                 <td>
                     <input type="checkbox" ng-model="deleteSmsList[sms.hash]" ng-change="i.device.updateDelete( sms.hash, deleteSmsList[sms.hash] )"/>
-                     <span class="sms-id badge">{{sms.id}} - {{sms.hash}}</span>
+                     <!-- <span class="sms-id badge">{{sms.id}} - {{sms.hash}}</span> -->
                 </td>
                 <td>
                     <div>

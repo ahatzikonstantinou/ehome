@@ -64,6 +64,7 @@ class Translation( object ):
         self.item = ''
 
 class translate:
+    ConfigurationFile = 'houses-configuration.json'
     def GET( self, params ):
         params = web.input()
         print( params )
@@ -71,12 +72,13 @@ class translate:
             return badData()
 
         try:
-            with open( configuration.ConfigurationFile ) as json_file:
+            with open( translate.ConfigurationFile ) as json_file:
                 configurationTxt = json.load( json_file )
         except:
+            print( 'There seems to be an error reading the configuration from {}'.format( translate.ConfigurationFile ) )
             return internalerror()
                         
-        translation = self.__findTranslation( params.item, configurationTxt )
+        translation = self.__findTranslation( params.item, configurationTxt['houses'] )
         
         if( translation is None ):
             return notfound()

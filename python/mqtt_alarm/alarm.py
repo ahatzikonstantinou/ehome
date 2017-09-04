@@ -17,7 +17,7 @@ import requests # for translation
 
 sys.path.append( os.path.abspath('../mqtt_notifier' ) )
 from aux import *
-from gsm import SMS
+# from gsm import SMS
 
 from pprint import pprint #for debug printing
 
@@ -55,17 +55,15 @@ class Status( object ):
     Attributes:
         main: the actual status eumeration
         countdown: the countdown value when ARMING  or TRIGGERED
-        challengePin: The disarm message must contain the correct pin answer i.e. (challengePin + disarmPin)%10
     """
-    def __init__( self, main = StatusMain.UNARMED, countdown = 0, challengePin = '' ):
+    def __init__( self, main = StatusMain.UNARMED, countdown = 0 ):
         self.main = main
         self.countdown = countdown
-        self.challengePin = challengePin
 
     def toJson( self ):
         """ Json strings must enclose tokens and string literals in double quotes
         """
-        return json.dumps( { 'main': self.main.name, 'countdown': self.countdown, 'challengePin': self.challengePin } )
+        return json.dumps( { 'main': self.main.name, 'countdown': self.countdown } )
 
     def __eq__( self, other ):
         if isinstance(other, self.__class__):
@@ -82,9 +80,7 @@ class AlarmCommand( Enum ):
     """
     ARM_HOME = 1
     ARM_AWAY = 2
-    DEACTIVATE_REQUEST = 3  #this is the first step when disarming a triggered alarm. The alarm responds with a 10-base moduled pin and then the DISARM command must contain the correct answer
-    DEACTIVATE = 4
-    DISARM = 5
+    DISARM = 3
 
 
 class EmailConfig( object ):
@@ -103,7 +99,8 @@ class Notification( object ):
         translation = None
         message = self.messageTemplate
         try:
-            response = requests.get( self.translationUrl + mqttMessage.topic )
+            print( 'requesting translation with [{}]'.format( self.translationUrl + mqttMessage.topic ) )
+            response = requests.get( self.translationUrl + mqttMessage.topic )            
             translation = response.json()
             # print( 'received translation: ', json.dumps( translation, indent = 2 ).decode('utf-8') )
             device_name = ( translation['house'] + '/' + translation['floor'] + '/' + translation['room'] + '/' + translation['item'] ).encode('utf-8')
@@ -142,8 +139,8 @@ class Trigger( object ):
         When such a message arrives and the corresponding regex matches, the alarm will trigger
     
     Attributes:
-        topics: list of topics to subscibe and listen for incoming messages
-        regex: a regeular expression to be matched against the payload of the received message. If matched the alarm triggers
+        topics: list of topics to subscribe to and listen for incoming messages
+        regex: a regular expression to be matched against the payload of the received message. If matched the alarm triggers
     """
     def __init__( self, topics, regex, notify ):
         self.topics = topics
@@ -170,6 +167,10 @@ class ArmConfig( object ):
 
 class MqttAlarm( object ):
     """ An alarm that publishes its status using mqtt and receives commands the same way
+        Valid mqtt commands (i.e. message payloads):
+            ARM_HOME
+            ARM_AWAY
+            {"c": "DISARM", "pin":"1234"} This command must be a vlid json in order to be able to extract pin.
     """
 
     def __init__( self, armingCountdown, triggeredCountdown, disarmPin, mqttId, mqttParams, armedAway, armedHome, notification, status = Status( StatusMain.UNARMED, 0 ) ):
@@ -180,7 +181,6 @@ class MqttAlarm( object ):
         self.triggeredCountdown = triggeredCountdown
         self.mqttId = mqttId
         self.disarmPin = disarmPin
-        self.sendPin = ''
         self.armedAway = armedAway
         self.armedHome = armedHome
         self.notification = notification
@@ -212,7 +212,7 @@ class MqttAlarm( object ):
         """Executed when a connection with the mqtt broker has been established
         """
         #debug:
-        m = "Connected flags"+str(flags_dict)+"result code " + str(result)+"client1_id  "+str(client)
+        m = "Connected flags"+str(flags_dict)+"result code " + str(result)+"client_id  "+str(client)
         print( m )
 
         #subscribe to start listening for incomming commands
@@ -231,12 +231,8 @@ class MqttAlarm( object ):
                 self.__arm( Status( StatusMain.ARMED_HOME ) )
             elif( text.find( AlarmCommand.ARM_AWAY.name ) > -1 ):
                 self.__arm( Status( StatusMain.ARMED_AWAY ) )
-            elif( text.find( AlarmCommand.DEACTIVATE_REQUEST.name ) > -1 ):
-                self.__deactivateRequest()
-            elif( text.find( AlarmCommand.DEACTIVATE.name ) > -1 ):
-                self.__deactivate( text )
             elif( text.find( AlarmCommand.DISARM.name ) > -1 ):
-                self.__disarm()
+                self.__disarm( text )
             else:
                 print( 'Unknown command: [{0}]'.format( text ) )
         else:
@@ -262,7 +258,7 @@ class MqttAlarm( object ):
     def __activate( self, message, notify ):
         self.__logActivation( message )
         self.__setStatus( Status( StatusMain.ACTIVATED ) )
-        self.client.publish( self.notification.notifierMqttPublish, notify.toMqttCommand( self.notification.generateMessage( message ) ), qos = 2, retain = True )
+        self.client.publish( self.notification.notifierMqttPublish, notify.toMqttCommand( self.notification.generateMessage( message ) ), qos = 2, retain = False )
 
     def __logTrigger( self, message ):
         print( 'Alarm was triggered at [{}] by message <{}> "{}"'.format( datetime.now(), message.topic, message.payload.decode( "utf-8" ) ) )
@@ -271,7 +267,7 @@ class MqttAlarm( object ):
         if( self.status.main not in [ StatusMain.ARMED_AWAY, StatusMain.ARMED_HOME ] ):
             return
         print( 'Triggered!' )
-        self.__setStatus( Status( StatusMain.TRIGGERED, self.triggeredCountdown, self.sendPin ) )
+        self.__setStatus( Status( StatusMain.TRIGGERED, self.triggeredCountdown ) )
         self.__doTrigger( message, notify )
 
     def __doTrigger( self, message, notify ):
@@ -284,7 +280,7 @@ class MqttAlarm( object ):
         if( self.status.countdown > 0 ):
             threading.Timer(1.0, self.__doTrigger, [message, notify] ).start()
             print( '__doTrigger countdown {} to get to TRIGGERED'.format( self.status.countdown ) )
-            self.__setStatus( Status( StatusMain.TRIGGERED, self.status.countdown -1, self.sendPin ) )
+            self.__setStatus( Status( StatusMain.TRIGGERED, self.status.countdown -1 ) )
         else:
             print( '__doTrigger will set alarm to ACTIVATED because countdown has finished' )
             self.__activate( message, notify )
@@ -328,27 +324,20 @@ class MqttAlarm( object ):
                     print( '\tsubscribing to trigger topic: {}', o )
                     self.client.subscribe( o )  #subscribe to trigger topics
             for p in mqttPublish:
+                print( 'publishing arm topic: {}'.format( p.topic ) )
                 self.client.publish( p.topic, p.command, qos = 2, retain = True )
 
             # set and publish new status
             self.armStatus = finalArmStatus.main
             self.__setStatus( finalArmStatus ) 
 
-    def __deactivateRequest( self ):
-        """ Generates a random pin and expects the mod 10 sum (per digit) with the disarmPin. When the answer comes will do the subtraction mod 10 and check against disarmPin
-        """
-        self.sendPin = ''
-        for i in range( 4 ):
-            self.sendPin += str( random.randint( 0, 9 ) )
-        print( 'disarmPin: {}, challengePin:{}'.format( self.disarmPin, self.sendPin ) )
-        self.__setStatus( Status( self.status.main, self.status.countdown, self.sendPin ) )
+    
+    def __disarm( self, text ):
+        print( 'Attempt to disarm with text: "{}"'.format( text ) )
+        if( self.status.main in [ StatusMain.UNARMED, StatusMain.UNAVAILABLE ] ):
+            print( 'Current status {}. Will not disarm.'.format( self.status.main.name ) )
+            self.__doDisarm()
 
-    def __deactivate( self, text ):
-        print( 'Attempt to deactivate with text: "{}"'.format( text ) )
-        if( self.status.main not in [ StatusMain.TRIGGERED, StatusMain.ACTIVATED ] ):
-            print( 'Current status {}. Will not attempt deactivation.'.format( self.status.main.name ) )
-            return
-            
         response = None
         try:
             response = json.loads( text )
@@ -357,25 +346,17 @@ class MqttAlarm( object ):
             return
         
         if( 'pin' not in response ):
-            print( 'pin not found in text {}. Will not deactivate'.format( text ) )
+            print( 'pin not found in text {}. Will not disarm'.format( text ) )
             return
         pin = response['pin']
-        for i in range( 4 ):            
-            if( not pin[i].isdigit() ):
-                print( '{} is not a digit, deactivate exits'.format( text[i] ) )
+        for p in self.disarmPin:
+            if( pin == p ):
+                print( 'pin:{} == disarmPin:{}. Will disarm '.format( text, self.disarmPin ) )
+                self.__doDisarm()
                 return
+        
+        print( '"{}" is not a valid pin. Will NOT disarm.'.format( pin ) )
 
-            if( str( ( int( pin[i] ) - int( self.sendPin[i] ) )%10 ) != self.disarmPin[i] ):
-                print( 'Wrong pin! Will not deactivate' )
-                return
-            
-        print( 'pin:{} == disarmPin:{}. Will deactivate '.format( text, self.disarmPin ) )
-        self.sendPin = ''
-        self.__doDisarm()
-
-    def __disarm( self ):
-        if( StatusMain.ARMED_AWAY == self.status.main or StatusMain.ARMED_HOME == self.status.main or StatusMain.ARMING == self.status.main ):
-            self.__doDisarm()
 
     def __doDisarm( self ):
             print( 'Disarm will unsubscribe from trigger topics' )
@@ -415,7 +396,7 @@ if( __name__ == '__main__' ):
         alarm = MqttAlarm( 
             configuration['armingCountdown'], 
             configuration['triggeredCountdown'], 
-            configuration['disarmPin'], 
+            [ p for p in configuration['disarmPin'] ],
             configuration['mqttId'], 
             MqttParams( configuration['mqttParams']['address'], int( configuration['mqttParams']['port'] ), configuration['mqttParams']['subscribeTopic'], configuration['mqttParams']['publishTopic'] ),
             ArmConfig( 

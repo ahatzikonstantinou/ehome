@@ -35,8 +35,6 @@ class Notifier( object ):
     def __init__( self, mqttId, mqttParams, mailParams, imParams, smsParams ):
         self.mqttParams = mqttParams
         self.mqttId = mqttId
-        # self.gsm = GSM( mailParams, imParams )
-        # self.wi = WiredInternet( mailParams, imParams )
         self.mailParams = mailParams
         self.imParams = imParams
         self.smsParams = smsParams
@@ -67,7 +65,7 @@ class Notifier( object ):
         """Executed when a connection with the mqtt broker has been established
         """
         #debug:
-        m = "Connected flags"+str(flags_dict)+"result code " + str(result)+"client1_id  "+str(client)
+        m = "Connected flags"+str(flags_dict)+"result code " + str(result)+"client_id  "+str(client)
         print( m )
 
         # tell other devices that the notifier is available
@@ -87,44 +85,47 @@ class Notifier( object ):
         """
         text = message.payload.decode( "utf-8" )
         print( 'Received message "{}"'.format( text ).encode( 'utf-8' ) )
-        if( mqtt.topic_matches_sub( self.mqttParams.subscribeTopic, message.topic ) ):            
+        if( mqtt.topic_matches_sub( self.mqttParams.subscribeTopic, message.topic ) ):
             try:
                 cmds = json.loads( text )
             except ValueError, e:
                 print( '"{}" is not a valid json text, exiting.'.format( text ) )
                 return
-            # gsmCmds = []
-            # wiCmds = []
+
+            # try:
+            
             if( 'email' in cmds and cmds[ 'email' ] is not None ):
                 #note: Email.To param must be a list of recipients (even if it contains only one element )
-                # wiCmds[ 'email' ] = EMail( cmds[ 'email' ][ 'From' ], cmds[ 'email' ][ 'To' ], cmds[ 'email' ][ 'subject' ], cmds[ 'email' ][ 'body' ] )
-                self.email( EMail( cmds[ 'email' ][ 'From' ], cmds[ 'email' ][ 'To' ], cmds[ 'email' ][ 'subject' ], cmds[ 'email' ][ 'body' ] ) )
+                # self.email( Email( cmds[ 'email' ][ 'From' ], cmds[ 'email' ][ 'To' ], cmds[ 'email' ][ 'subject' ], cmds[ 'email' ][ 'body' ] ) )
+                pass
             if( 'im' in cmds and cmds[ 'im' ] is not None ):
                 # wiCmds[ 'im' ] = InstantMessage( cmds[ 'im' ][ 'recipients' ], cmds[ 'im' ][ 'message' ] )
                 # wiCmds[ 'im ' ] = jsonpickle.decode( json.dumps( cmds[ 'im' ] ) )
-                self.im( jsonpickle.decode( json.dumps( cmds[ 'im' ] ) ) )
-
-            # #if wi is not available and cannot execute the commands, have gsm execute them
-            # if( not self.wi.execute( wiCmds ) ):
-            #     gsmCmds.update( wiCmds );
+                iMessage = jsonpickle.decode( json.dumps( cmds[ 'im' ] ) )
+                print( 'Will send im to:{}, message:{}'.format( iMessage.recipients, iMessage.message.encode( 'utf-8' )  ) )
+                self.im( iMessage )
 
             # phonecalls are not supported yet, must find the right hardware first
             # if( 'phonecall' in cmds  and cmds[ 'phonecall' ] is not None ):
                 # gsmCmds[ 'phonecall' ] = cmds[ 'phonecall' ]
                 #TODO
 
-            if( 'sms' in cmds and cmds[ 'sms' ] is not None ):
-                # gsmCmds[ 'sms' ] = SMS( cmds[ 'sms' ][ 'text' ], cmds[ 'sms' ][ 'phones' ] )
-                sms = json.dumps( {"cmd":"send", "params":{ "to":"123456789", "text": "testing δοκιμή"} } )
-                self.client.publish( self.smsParams.publishTopic, sms, qos = 2, retain = False )
-            # self.gsm.execute( cmds )
+            # if( 'sms' in cmds and cmds[ 'sms' ] is not None ):
+            #     for p in cmds[ 'sms' ][ 'phones' ]:
+            #         sms = json.dumps( {"cmd":"send", "params": { "to":p, "text": cmds[ 'sms' ][ 'text' ] } } )
+            #         print( 'Publishing sms topic:{} mqtt-message: [{}]'.format( self.smsParams.publishTopic, sms ) )
+            #         self.client.publish( self.smsParams.publishTopic, sms, qos = 2, retain = False )
+
+            # except Exception as e:
+            #     print( 'An error occurred while executing cmds in message "{}"'.format( text ).encode( 'utf-8' ) )
+            #     print( 'Error: {}'.format( e ) )
 
     def email( self, mail ):
         msg = MIMEMultipart()
         msg['Subject'] = mail.subject
         msg['From'] = mail.From
         msg['To'] = Notifier.COMMASPACE.join( mail.To )
-        msg.attach( MIMEText( mail.body, 'plain' ) )
+        msg.attach( MIMEText( mail.body.encode('utf8'), 'plain' ) )
         server = smtplib.SMTP( self.mailParams.server, self.mailParams.port )
         server.ehlo()
         server.starttls()
@@ -139,21 +140,24 @@ class Notifier( object ):
         cl = xmpp.Client( jid.getDomain(), debug=[] )
         con = cl.connect( ( self.imParams.server, self.imParams.port ) )
         if not con:
-            print 'could not connect!'
+            print 'xmpp could not connect!'
             return False
-        print 'connected with', con
+        print 'xmpp connected with', con
         auth = cl.auth( jid.getNode(), self.imParams.password,resource = jid.getResource() )
         if not auth:
-            print 'could not authenticate!'
+            print 'xmpp could not authenticate!'
             return False
-        print 'authenticated using', auth
+        print 'xmpp authenticated using', auth
 
-        #cl.SendInitPresence(requestRoster=0)   # you may need to uncomment this for old server
+        cl.Process( 1 )
+        cl.sendInitPresence( requestRoster = 1 ) #if this line is ommited no messages are received
+        cl.Process( 1 )
         for r in iMessage.recipients:
             id = cl.send(xmpp.protocol.Message( r, iMessage.message ) )
-            print 'sent message with id', id
+            cl.Process( 1 )
+            print( 'xmpp sent message [{}] with id {}'.format( iMessage.message.encode( 'utf-8' ), id ) )
 
-        time.sleep(1)   # some older servers will not send the message if you disconnect immediately after sending
+        time.sleep(5)   # some older servers will not send the message if you disconnect immediately after sending
 
         cl.disconnect()
         return True
@@ -173,8 +177,8 @@ if( __name__ == '__main__' ):
             configuration['mqttId'],
             MqttParams( configuration['mqttParams']['address'], int( configuration['mqttParams']['port'] ), configuration['mqttParams']['subscribeTopic'], configuration['mqttParams']['publishTopic'] ),
             MailParams( configuration['mailParams']['user'], configuration['mailParams']['password'], configuration['mailParams']['server']['url'], configuration['mailParams']['server']['port'] ), 
-            InstantMessageParams( configuration['instantMessageParams']['user'], configuration['instantMessageParams']['password'] ),
-            SmsParams( configuration['smsParams']['smsMqttTopic'])
+            InstantMessageParams( configuration['instantMessageParams']['user'], configuration['instantMessageParams']['password'], configuration['instantMessageParams']['server'], configuration['instantMessageParams']['port'] ),
+            SmsParams( configuration['smsParams']['publishTopic'])
         )
 
         notifier.run()

@@ -10,7 +10,7 @@ class InstantMessageParams( object ):
         self.server = server
         self.port = port
 
-class EMail( object ):
+class Email( object ):
     def __init__( self, From, To, subject, body ):
         self.From = From
         self.To = To
@@ -23,6 +23,11 @@ class MailParams( object ):
         self.password = password
         self.server = server
         self.port = port
+
+class SMS( object ):
+    def __init__( self, phones, text ):
+        self.text = text
+        self.phones = phones
 
 class SmsParams( object ):
     def __init__( self, publishTopic ):
