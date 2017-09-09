@@ -35,13 +35,15 @@ Done. Develop mqtt_smscentre
 
 Done. Store incoming sms messages and mark them as unread.
 
-Finish notifier to use the sms.sh service
+Done. Finish notifier to use the sms.sh service
 
-Fix alarm.py to use multiple pins and stop sending challenges.
+Done. Fix alarm.py to use multiple pins and stop sending challenges.
+
+Add forward of sms's from certain numbers to admin
 
 Add alarm arm/disarm dialog in web app.
 
-Fix web app display for 360x640.
+Done. Fix web app display for 360x640.
 
 Debug: if xmpp_proxy is active while mqtt is also working, duplicate configurations arreive at the web app and double the items and houses are displayed.
 
@@ -56,14 +58,15 @@ Create settings form in the web app, scenes
 
 Done. Change http_configuration to mqtt_configuration and watch (and reload and publish) the configuration.json file whenever it changes (necessary for live refresh and mqtt over xmpp)
 
-Notifier
-    GSM: phonecalls, sms, when WiredInternet not available: email, IM
-    Done. WiredInternet email, IM
+Done. Notifier
+
 Esp8266 OTA
+
 http:
     Done. translator (house/floor/room/item from mqtt topic to name)
     Done. configurator (houses json)
 
+Note:Sms sent from the 3G modem cannot be stored (I get an error when trying to store them regardless of selected storage). When the computer reboots they are lost (perhaps because the modem gets anew id every time). Investigate if this is a problem of the particular 3G modem and if they should be stored in a file and added with the saved sms's when running sms.sh
 
 Note:Motion never sends the on_event_end message when executed as a service. It also kind of freezes. Everything is ok when executed by hand "sudo motion".
      Added the appropriate command in rc.local

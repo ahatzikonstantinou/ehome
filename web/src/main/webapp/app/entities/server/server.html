@@ -1,28 +1,31 @@
 <div ng-init="collapsed=false;" ng-init="showXmppErrorFlag=false;">
-    <span class="mdi mdi-server"/>
-    <label class="server">{{server.name}}</label>
-    <button type="button" class="btn btn-default btn-xs" ng-click="collapsed = !collapsed">
-        <span class="mdi mdi-chevron-down" ng-if="collapsed"></span>
-        <span class="mdi mdi-chevron-up" ng-if="!collapsed"></span>
-    </button>
-    <button ng-show="server.showXmppError" type="button" class="btn btn-default btn-xs" ng-click="showXmppErrorFlag = !showXmppErrorFlag">
-        <span class="glyphicon glyphicon-warning-sign"></span>
-    </button>
-    <span class="summary" ng-if="server.connection.connecting" translate="server.connection.CONNECTING" translate-values="{ protocol: server.connection.connectingProtocol }"/>
-    <span class="summary" ng-if="server.configurationDevice.status == 'UNAVAILABLE' || server.configurationDevice.status == 'ERROR'" data-translate="{{'server.configurationStatus.' + server.configurationDevice.status}}"/>
-    <div class="state-container">
-        <span class="last-update">{{server.lastUpdate ? ( server.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
-        <span class="state connection" ng-click="server.connectionDevice.refresh()" ng-class="{ 
-            'danger': server.connection.type == 'NOT_CONNECTED',
-            'info': server.connection.type != 'NOT_CONNECTED' && server.connection.primary, 
-            'warning': server.connection.type != 'NOT_CONNECTED' && !server.connection.primary }">
-            <span ng-if="server.connection.type == 'NOT_CONNECTED' || server.connection.type == 'CONNECTING'" data-translate="{{'server.connection.' + server.connection.type}}"/>
-            <span ng-if="server.connection.type != 'NOT_CONNECTED' && server.connection.type != 'CONNECTING'">{{server.connection.type}}</span>
-            <span style="float:right; margin-left:8px;" class="glyphicon glyphicon-refresh"/>
-        </span>
-        <span class="state protocol" ng-class="{ 'info': server.connection.protocol != 'UNAVAILABLE', 'unavailable': server.connection.protocol == 'UNAVAILABLE' }">
-            <span ng-if="server.connection.protocol == 'UNAVAILABLE'" data-translate="{{'server.connection.' + server.connection.protocol}}"/>
-            <span ng-if="server.connection.protocol != 'UNAVAILABLE'">{{server.connection.protocol}}</span>        
+    <div class="server-info">
+        <span class="mdi mdi-server"/>
+        <label class="server">{{server.name}}</label>
+        <button type="button" class="btn btn-default btn-xs" ng-click="collapsed = !collapsed">
+            <span class="mdi mdi-chevron-down" ng-if="collapsed"></span>
+            <span class="mdi mdi-chevron-up" ng-if="!collapsed"></span>
+        </button>
+        <button ng-show="server.showXmppError" type="button" class="btn btn-default btn-xs" ng-click="showXmppErrorFlag = !showXmppErrorFlag">
+            <span class="glyphicon glyphicon-warning-sign"></span>
+        </button>
+        <div class="state-container">
+            <span class="state connection" ng-click="server.connectionDevice.refresh()" ng-class="{ 
+                'danger': server.connection.type == 'NOT_CONNECTED',
+                'info': server.connection.type != 'NOT_CONNECTED' && server.connection.primary, 
+                'warning': server.connection.type != 'NOT_CONNECTED' && !server.connection.primary }">
+                <span ng-if="server.connection.type == 'NOT_CONNECTED' || server.connection.type == 'CONNECTING'" data-translate="{{'server.connection.' + server.connection.type}}"/>
+                <span ng-if="server.connection.type != 'NOT_CONNECTED' && server.connection.type != 'CONNECTING'">{{server.connection.type}}</span>
+                <span style="float:right; margin-left:8px;" class="glyphicon glyphicon-refresh"/>
+            </span>
+            <span class="state protocol" ng-class="{ 'info': server.connection.protocol != 'UNAVAILABLE', 'unavailable': server.connection.protocol == 'UNAVAILABLE' }">
+                <span ng-if="server.connection.protocol == 'UNAVAILABLE'" data-translate="{{'server.connection.' + server.connection.protocol}}"/>
+                <span ng-if="server.connection.protocol != 'UNAVAILABLE'">{{server.connection.protocol}}</span>
+            </span>
+            <span class="last-update">{{server.lastUpdate ? ( server.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>        
+        </div>
+        <span class="summary" ng-if="server.connection.connecting" translate="server.connection.CONNECTING" translate-values="{ protocol: server.connection.connectingProtocol }"/>
+        <span class="summary" ng-if="server.configurationDevice.status == 'UNAVAILABLE' || server.configurationDevice.status == 'ERROR'" data-translate="{{'server.configurationStatus.' + server.configurationDevice.status}}"/>
     </div>
     <div ng-if="showXmppErrorFlag" class="alert alert-dismissable alert-danger" role="alert" data-translate="server.xmpp-error" translate-values="{xmppUrl: '{{server.getXmmpHost().replace( 'wss', 'https' )}}'}">
     </div>
@@ -32,8 +35,6 @@
         </div>
     </div>
     <div ng-repeat="h in vm.houses" ng-init="houseIndex = $index; isCollapsed=vm.isCollapsed[$index]">
-        <div>
-            <house house="h" is-collapsed="vm.isCollapsed[houseIndex]" expand-all-children="vm.expandAllChildren( house, expand )"/>
-        </div>
+        <house house="h" is-collapsed="vm.isCollapsed[houseIndex]" expand-all-children="vm.expandAllChildren( house, expand )"/>
     </div>
 </div>

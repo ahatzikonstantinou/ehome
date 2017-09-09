@@ -5,11 +5,14 @@
 </div>
 
 <div style="overflow: auto;">
-    <span class="mdi mdi-lightbulb device-icon"/>{{i.name}}
-    <span class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
+    <div class="device-label">
+        <span class="mdi mdi-lightbulb device-icon"/>
+        <span class="device-name">{{i.name}}</span>
+    </div>    
     <div class="state-container">
         <button type="button" class="btn btn-xs state" ng-class="{ 'btn-warning': i.device.state.main == 'ON', 'btn-info': i.device.state.main == 'OFF', 'unavailable': i.device.state.main == 'UNAVAILABLE', 'switch-on': i.device.state.main == 'ON', 'switch-off': i.device.state.main == 'OFF'  }" ng-click="i.device.state.main == 'ON' ? i.device.switch( 'OFF' ) : i.device.switch( 'ON' )" ng-disabled="i.device.state.main == 'UNAVAILABLE'" data-translate="{{'home.state.' + i.device.state.main}}">
             {{i.device.state.main}}
         </button>
+        <span class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
     </div>
 </div>

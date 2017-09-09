@@ -1,4 +1,4 @@
-<div>
+<div class="house-container">
     <label class="house">{{h.name}}</label>
     <span class="summary" ng-if="h.floors.length == 1">({{h.floors[0].name}})</span>
     <button type="button" class="btn btn-default btn-xs" ng-click="isCollapsed.house = !isCollapsed.house">
@@ -34,17 +34,23 @@
         <button type="button" class="btn btn-xs" ng-class="{ 'btn-default': !isCollapsed.filter.MOTION, 'btn-primary': isCollapsed.filter.MOTION }" ng-click="isCollapsed.filter.MOTION = !isCollapsed.filter.MOTION">
             <span class="mdi mdi-vibrate mdi-camera"/>
         </button>        
-        <button type="button" class="btn btn-xs btn-link" ng-click="isCollapsed.filter.DOOR = isCollapsed.filter.WINDOW = isCollapsed.filter.LIGHT = isCollapsed.filter.CLIMATE = isCollapsed.filter.COVER = isCollapsed.filter.ALARM = isCollapsed.filter.CAMERA = isCollapsed.filter.MOTION = true">
-            <span data-translate="home.filters.all">All</span>
-        </button>        
-        <button type="button" class="btn btn-xs btn-link" ng-click="isCollapsed.filter.DOOR = isCollapsed.filter.WINDOW = isCollapsed.filter.LIGHT = isCollapsed.filter.CLIMATE = isCollapsed.filter.COVER = isCollapsed.filter.ALARM = isCollapsed.filter.CAMERA = isCollapsed.filter.MOTION = false">
-            <span data-translate="home.filters.none">None</span>
-        </button>        
-        <button type="button" class="btn btn-sm" ng-class="{ 'btn-default': !isCollapsed.showMqttTopics, 'btn-primary': isCollapsed.showMqttTopics }" ng-click="isCollapsed.showMqttTopics = !isCollapsed.showMqttTopics">
-            <span class="glyphicon glyphicon-info-sign"/>
-            <!--<span class="glyphicon glyphicon-eye-open"/>-->
-        </button>
+
+        <button style="float:right;" type="button" class="btn btn-sm" ng-class="{ 'btn-default': !isCollapsed.showMqttTopics, 'btn-primary': isCollapsed.showMqttTopics }" ng-click="isCollapsed.showMqttTopics = !isCollapsed.showMqttTopics">
+                <span class="glyphicon glyphicon-info-sign"/>
+                <!--<span class="glyphicon glyphicon-eye-open"/>-->
+            </button>
+    
+        <span style="display: inline-block; margin-top:8px;">
+            <button type="button" class="btn btn-xs btn-link" ng-click="isCollapsed.filter.DOOR = isCollapsed.filter.WINDOW = isCollapsed.filter.LIGHT = isCollapsed.filter.CLIMATE = isCollapsed.filter.COVER = isCollapsed.filter.ALARM = isCollapsed.filter.CAMERA = isCollapsed.filter.MOTION = true">
+                <span data-translate="home.filters.all">All</span>
+            </button>        
+            <button type="button" class="btn btn-xs btn-link" ng-click="isCollapsed.filter.DOOR = isCollapsed.filter.WINDOW = isCollapsed.filter.LIGHT = isCollapsed.filter.CLIMATE = isCollapsed.filter.COVER = isCollapsed.filter.ALARM = isCollapsed.filter.CAMERA = isCollapsed.filter.MOTION = false">
+                <span data-translate="home.filters.none">None</span>
+            </button>
+        </span>
+
     </div>
+
     <div uib-collapse="isCollapsed.house">
         <div ng-repeat="f in h.floors" ng-init="floorIndex=$index; showLabel=(h.floors.length > 1)">
             <floor floor='f' show-label="h.floors.length > 1" is-collapsed-house="isCollapsed.house" is-collapsed="isCollapsed.floor[$index]" filter="isCollapsed.filter" show-mqtt-topics="isCollapsed.showMqttTopics"/>            

@@ -3,33 +3,33 @@
     <span class="text-primary">{{i.device.mqtt_subscribe_topic}} {{i.device.cameraId}} {{i.device.videostream}}</span>
 </div>
 <div style="overflow: auto;" ng-init="showPicture=false; showVideostream=false">
-    <div style="float:left;margin-right:5px;"><span class="mdi mdi-camcorder device-icon"/>{{i.name}}</div>
-    <button style="float:left;" type="button" class="btn btn-md btn-default" ng-click="showPicture=!showPicture; showVideostream && showPicture ? showVideostream = false: null;" ng-disabled="i.device.picture == null">
-        <span class="mdi mdi-camera" ng-if="showPicture"/>
-        <span class="mdi mdi-camera-off" ng-if="!showPicture"/>
-    </button>
-    <button style="float:left;" type="button" class="btn btn-md btn-default" ng-click="showVideostream=!showVideostream; showPicture && showVideostream ? showPicture = false: null;">
-        <span class="mdi mdi-camcorder" ng-if="showVideostream"/>
-        <span class="mdi mdi-camcorder-off" ng-if="!showVideostream"/>
-    </button>
-    <!--<div style="float:left;">
-        <div class="last-update">{{i.device.lastDetection ? ( i.device.lastDetection | date: 'dd/MM/yyyy HH:mm') : ''}}</div>
-        <div class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</div>
-    </div>-->
-    <!--<span style="float:right;" ng-class="{'label-info': i.device.state.main == 'NO_MOTION', 'label-danger': i.device.state.main == 'MOTION_DETECTED' }">{{i.device.state.main}}</span>-->
-    <div style="float:right;">
-            <div>
-                <div style="display:inline-block;" class="last-update">{{i.device.lastDetection ? ( i.device.lastDetection | date: 'dd/MM/yyyy HH:mm') : ''}}</div>
-                <div style="display:inline-block;" class="state" ng-class="{ 'label-info': i.device.detection == 'NO_MOTION', 'label-danger': i.device.detection == 'MOTION_DETECTED' }" data-translate="{{'home.motion.detection.'+ i.device.detection}}"/>
-            </div>
-            <div style="margin-top:2px;">
-                <div style="display:inline-block;" class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</div>
-                <div style="display:inline-block;" class="state" ng-class="{ 'label-success': i.device.state == 'ACTIVE', 'label-info': i.device.state == 'PAUSED', 'label-danger': i.device.state == 'CAMERA_LOST', 'unavailable': i.device.state == 'UNAVAILABLE' }" data-translate="{{'home.motion.state.'+ i.device.state}}"/>
-            </div>
+    <div class="device-label">
+        <span class="mdi mdi-camcorder device-icon"/>
+        <span class="device-name">{{i.name}}</span>
     </div>
-    <button style="float:right;" type="button" class="btn btn-md btn-default" ng-click="i.device.getState()"><span class="glyphicon glyphicon-refresh"/></button>
-    <button ng-if="i.device.state == 'ACTIVE'" style="float:right;" type="button" class="btn btn-md btn-default" ng-click="i.device.pauseDetection()"><span class="glyphicon glyphicon-pause"/></button>
-    <button  ng-if="i.device.state == 'PAUSED'" style="float:right;" type="button" class="btn btn-md btn-default" ng-click="i.device.startDetection()"><span class="glyphicon glyphicon-play"/></button>
+    <div class="state-container">
+        <div class="state-row">
+            <div class="last-update">{{i.device.lastDetection ? ( i.device.lastDetection | date: 'dd/MM/yyyy HH:mm') : ''}}</div>
+            <div class="state" ng-class="{ 'label-info': i.device.detection == 'NO_MOTION', 'label-danger': i.device.detection == 'MOTION_DETECTED' }" data-translate="{{'home.motion.detection.'+ i.device.detection}}"/>
+        </div>
+        <div class="state-row">
+            <div class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</div>
+            <div class="state" ng-class="{ 'label-success': i.device.state == 'ACTIVE', 'label-info': i.device.state == 'PAUSED', 'label-danger': i.device.state == 'CAMERA_LOST', 'unavailable': i.device.state == 'UNAVAILABLE' }" data-translate="{{'home.motion.state.'+ i.device.state}}"/>
+        </div>
+    </div>
+    <div class="device-buttons">
+        <button type="button" class="btn btn-md btn-default" ng-click="showPicture=!showPicture; showVideostream && showPicture ? showVideostream = false: null;" ng-disabled="i.device.picture == null">
+            <span class="mdi mdi-camera" ng-if="showPicture"/>
+            <span class="mdi mdi-camera-off" ng-if="!showPicture"/>
+        </button>
+        <button type="button" class="btn btn-md btn-default" ng-click="showVideostream=!showVideostream; showPicture && showVideostream ? showPicture = false: null;">
+            <span class="mdi mdi-camcorder" ng-if="showVideostream"/>
+            <span class="mdi mdi-camcorder-off" ng-if="!showVideostream"/>
+        </button>
+        <button type="button" class="btn btn-md btn-default" ng-click="i.device.getState()"><span class="glyphicon glyphicon-refresh"/></button>
+        <button ng-if="i.device.state == 'ACTIVE'" type="button" class="btn btn-md btn-default" ng-click="i.device.pauseDetection()"><span class="glyphicon glyphicon-pause"/></button>
+        <button  ng-if="i.device.state == 'PAUSED'" type="button" class="btn btn-md btn-default" ng-click="i.device.startDetection()"><span class="glyphicon glyphicon-play"/></button>
+    </div>
     <div class="state-container">        
         <!--
         ahat Note: using src will cause at first page load error

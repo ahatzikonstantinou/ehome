@@ -3,8 +3,10 @@
     <span class="text-primary">{{i.device.mqtt_subscribe_topic}}</span>
 </div>
 <div style="overflow: auto;">
-    <span class="mdi mdi-thermometer device-icon"/>{{i.name}}
-    <span class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
+    <div class="device-label">
+        <span class="mdi mdi-thermometer device-icon"/>
+        <span class="device-name">{{i.name}}</span>
+    </div>    
     <div class="state-container">
         <span class="state temperature mdi mdi-thermometer-lines" ng-class="{'unavailable': i.device.state.main == 'UNAVAILABLE' }">
             {{i.device.state.main == 'UNAVAILABLE' ? '--' : i.device.state.temperature}}°C
@@ -12,5 +14,6 @@
         <span class="state humidity mdi mdi-water"  ng-class="{'unavailable': i.device.state.main == 'UNAVAILABLE' }">
             {{i.device.state.main == 'UNAVAILABLE' ? '--' : i.device.state.humidity}}%
         </span>
+        <span class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
     </div>
 </div>

@@ -13,6 +13,7 @@ from email.MIMEMultipart import MIMEMultipart
 from email.MIMEText import MIMEText
 
 import xmpp
+import sleekxmpp
 
 from aux import *
 # from gsm import *
@@ -29,6 +30,9 @@ class MqttParams( object ):
 
 class Notifier( object ):
     """ This class handles notifications such as phonecalls, sms, email and IM
+        Important Note: both the xmpp and sleekxmpp versions work. However,
+        messages sent are not visible in android jabber although they arrive
+        without a problem in android hangouts!!!
     """
     COMMASPACE = ', '
 
@@ -135,8 +139,35 @@ class Notifier( object ):
         server.quit()
         return True
 
+    def im2( self, iMessage ):
+        """version using sleekxmpp
+        """
+        self.xmppMessage = iMessage 
+        self.xmppClient = sleekxmpp.ClientXMPP( self.imParams.jid, self.imParams.password )
+        self.xmppClient.add_event_handler('session_start', self.startXmpp )
+        self.xmppClient.register_plugin('xep_0030') # Service Discovery
+        self.xmppClient.register_plugin('xep_0199') # XMPP Ping
+        if self.xmppClient.connect():
+            self.xmppClient.process(block=True)
+            print("sleekxmpp: Done")
+        else:
+            print("sleekxmpp: Unable to connect.")
+    
+    def startXmpp( self, event ):
+        print( 'sleekxmpp: session started' )
+        self.xmppClient.send_presence()
+        print( 'sleekxmpp: presence sent' )
+        self.xmppClient.get_roster()
+        print( 'sleekxmpp: got roster' )
+        for r in self.xmppMessage.recipients:
+            self.xmppClient.send_message( mto = r, mbody = self.xmppMessage.message, mtype='chat' )
+        self.xmppClient.disconnect(wait=True)
+        print( 'sleekxmpp: disconnected' )
+        self.xmppMessage = None
+
     def im( self, iMessage ):
         jid = xmpp.protocol.JID( self.imParams.jid )
+        # cl = xmpp.Client( jid.getDomain(), debug=['always'] )
         cl = xmpp.Client( jid.getDomain(), debug=[] )
         con = cl.connect( ( self.imParams.server, self.imParams.port ) )
         if not con:
@@ -149,15 +180,15 @@ class Notifier( object ):
             return False
         print 'xmpp authenticated using', auth
 
-        cl.Process( 1 )
-        cl.sendInitPresence( requestRoster = 1 ) #if this line is ommited no messages are received
-        cl.Process( 1 )
+        # cl.Process( 1 )
+        cl.sendInitPresence( requestRoster = 0 ) #if this line is ommited no messages are received
+        # cl.Process( 1 )
         for r in iMessage.recipients:
-            id = cl.send(xmpp.protocol.Message( r, iMessage.message ) )
+            id = cl.send(xmpp.protocol.Message( r, iMessage.message, typ = 'chat' ) )
             cl.Process( 1 )
             print( 'xmpp sent message [{}] with id {}'.format( iMessage.message.encode( 'utf-8' ), id ) )
 
-        time.sleep(5)   # some older servers will not send the message if you disconnect immediately after sending
+        time.sleep(2)   # some older servers will not send the message if you disconnect immediately after sending
 
         cl.disconnect()
         return True

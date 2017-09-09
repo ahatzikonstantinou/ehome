@@ -11,6 +11,24 @@
     display: inline-block;
 }
 */
+.sms-row {
+    overflow:auto;
+    border-style:solid;
+    border-color:#ddd;
+    border-width:0px 0px 1px 0px;
+}
+
+.sms-checkbox-cell {
+    float:left;
+    width:20px;
+    vertical-align: top;
+    margin:2px;
+}
+
+.sms-content-cell {
+    overflow:hidden; /*ahat: required to trigger expansion of div to full width according to https://stackoverflow.com/a/1767270/8179862 */
+}
+
 .sms-send.char-count {
     color: #555;
 }
@@ -93,13 +111,21 @@
 }
 
 .modem-info label {
-    width:10%; 
+    width:20%; 
     text-align:right;
 }
 
+.server-info
+{
+    overflow:auto; 
+    margin:4px;
+    border-style: solid;
+    border-width: 0px 0px 1px 0px;
+    border-color: #ddd;
+}
 server .items {
     /* background-color: red; */
-    margin-left: 5px;
+    margin: 0px 4px 0px 5px;
 }
 
 server .items .state {
@@ -142,23 +168,71 @@ a.dropdown-toggle.ng-scope
     color: yellow;
 }
 
-.device-icon
+.device-label
 {
+    /* overflow: auto; */
+    /* float:left; */
+    margin:5px 5px 5px 0px;
+    display: inline-block;
+    /* width: 100%; */
+}
+
+.device-icon
+{    
     /*background-color: cyan;*/
     color: #55a;
     border: solid 1px #55a;
     border-radius: 3px;
     padding: 4px;
     margin-right: 4px;
-    /*vertical-align: bottom;*/
+}
+
+.device-name
+{
+    display: inline-block;
+    /* display: inline; */
+}
+
+/* Smartphones (portrait) ----------- */
+@media only screen 
+and (max-width : 360px) {
+    /* Styles */
+
+    room .device-icon
+    {
+        vertical-align: top;
+    }
+
+    room .device-icon::before
+    {
+        vertical-align: top;
+    }
+
+    room .device-name 
+    {
+        max-width: 115px;
+        /* width: 110px; */
+        /* width: 20px;  */
+        /* height: 1.2em;  */
+        /* overflow: hidden;  */
+        /* text-overflow: ellipsis;  */
+        /* white-space: nowrap; */
+    }
+}
+
+.device-buttons
+{
+    margin: 4px 4px 4px 4px;
+    display: inline-block;
 }
 
 .last-update
 {
-    top: 10px;
     font-family: Courier New, Courier, monospace;
     font-size: 12px;
     color: gray;
+    display: block;
+    text-align: right;
 }
 .last-update:not(:empty):before{
     content: '[';
@@ -167,10 +241,18 @@ a.dropdown-toggle.ng-scope
     content: ']';
 }
 
+.state-row > .last-update
+{
+    display: inline-block;
+    margin-top:5px;
+    /* float: left; */
+    /* vertical-align: text-bottom; */
+}
+
 /*ahat: switch-xx classes are used with buttons e.g. in light devices*/
 .switch-on
 {
-    top:-8px;
+    /* top:-8px; */
     width: 78px;
     position:relative;
     padding-right: 10px;
@@ -178,7 +260,7 @@ a.dropdown-toggle.ng-scope
 
 .switch-off
 {
-    top:-8px;
+    /* top:-8px; */
     width: 78px;
     position:relative;
     padding-left: 10px;
@@ -215,7 +297,7 @@ a.dropdown-toggle.ng-scope
 {
     background-color: grey;
     opacity:.08; 
-    width:200px; /*must be same width as rzslider-container*/
+    width:280px; /*must be same width as rzslider-container*/
     height: 20px;
     position:absolute;
     top: 0px;
@@ -227,8 +309,32 @@ a.dropdown-toggle.ng-scope
 .rzslider-container
 {
     float:left;
-    width:200px;
+    width:280px;
     position: relative; /*required so that rzslider-disable can be located absolute to this*/
+}
+
+/* Smartphones (landscape) ----------- */
+@media only screen 
+and (min-width : 361px) {
+    /* Styles */
+    .rzslider-container
+    {
+        float:left;
+        width:580px;
+        position: relative; /*required so that rzslider-disable can be located absolute to this*/
+        }
+
+    .rzslider-disable
+    {
+        background-color: grey;
+        opacity:.08; 
+        width:580px; /*must be same width as rzslider-container*/
+        height: 20px;
+        position:absolute;
+        top: 0px;
+        left: 0px;
+        z-index:1001; /*to cover the rzslider*/
+        }
 }
 
 .rzslider
@@ -265,11 +371,12 @@ a.dropdown-toggle.ng-scope
 
 .state-container
 {
+    overflow: auto;
     float:right;
-    margin:4px 0px 8px 0px;
     cursor: default;
     max-width:100%;
     max-height:100%;
+    display: block;
 }
 
 /*ahat: this makes the images and video from web cams autoresize to fill all available area*/
@@ -289,12 +396,34 @@ a.dropdown-toggle.ng-scope
 .state
 {
     padding: 3px 5px 3px 5px;
-    margin: 1px 0px 0px 1px;
+    margin: 1px 0px 4px 1px;
     border-radius: 4px;
     color: white;
     max-width:100%;
-    min-width:95px; 
+    min-width: 65px; /*95px;*/
+    text-overflow: ellipsis;
+    display: block;
+    float: right;
+    /* line-height: 1; */
+}
+
+/*ahat: used in e.g. MOTIONCAMERAPANTILT with lastupdate and state in one row*/
+.state-row
+{
+    display: block;
+    overflow: auto;
+}
+
+.state-row > .state
+{
     display: inline-block;
+    margin-bottom: 1px;
+}
+
+/*ahat: used when stacking states e.g. recline on top of main or left for DOOR2R or DOOR1R*/
+.state.top
+{
+    margin-bottom: 2px;
 }
 
 .state.primary
@@ -374,12 +503,15 @@ a.dropdown-toggle.ng-scope
 {
     margin-top: 8px;
     margin-bottom: 4px;
+    border-style: solid;
+    border-width: 0px 0px 1px 0px;
+    border-color: #ddd;
 }
 
 .item > div:nth-of-type(2)
 {
-    padding: 8px 0px 4px 0px;
-    margin-bottom: 5px;
+    padding: 4px 0px 4px 0px;
+    margin-bottom: 5px 0px 5px 0px;
     font-size: 13px;
     vertical-align: top;
     line-height: normal;
@@ -392,12 +524,14 @@ label.house
 {
     font-size: 18px;
 }
-
-house > div
+.house-container {
+    margin: 5px;    
+}
+/* house > div
 {
     margin-left: 5px;
     margin-right: 5px;
-}
+} */
 
 floor > div 
 {
@@ -406,7 +540,10 @@ floor > div
 
 room > div
 {    
-    margin-left: 5px;        
+    margin-left: 5px;
+    border-style: solid;
+    border-width: 0px 0px 1px 0px;
+    border-color: #ddd;
 }
     
 room > div > div

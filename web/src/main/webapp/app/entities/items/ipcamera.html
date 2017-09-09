@@ -3,7 +3,10 @@
     <span class="text-primary">{{i.device.url}}</span>
 </div>
 <div style="overflow: auto;">
-    <span class="mdi mdi-camcorder device-icon"/>{{i.name}}
+    <div class="device-label">
+        <span class="mdi mdi-camcorder device-icon"/>
+        <span class="device-name">{{i.name}}</span>
+    </div>
     <button type="button" class="btn btn-md btn-default"  ng-init="show=false" ng-click="show=!show">
         <span class="glyphicon glyphicon-eye-open" ng-if="show"/>
         <span class="glyphicon glyphicon-eye-close" ng-if="!show"/>

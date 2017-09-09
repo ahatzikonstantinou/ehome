@@ -4,8 +4,10 @@
     <span class="text-danger">{{i.device.mqtt_publish_topic}}</span>
 </div>
 <div style="overflow: auto;">
-    <span class="mdi mdi-security-home device-icon"/>{{i.name}}
-    <span class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
+    <div class="device-label">
+        <span class="mdi mdi-security-home device-icon"/>
+        <span class="device-name">{{i.name}}</span>
+    </div>
     <div class="state-container">
         <span class="state" ng-if="i.device.state.main == 'ARMING' || i.device.state.main == 'TRIGGERED'"
             ng-class="{ 'unarmed': i.device.state.main == 'UNARMED', 'arming': i.device.state.main == 'ARMING' , 'armed-home': i.device.state.main == 'ARMED_HOME' , 'armed-away': i.device.state.main == 'ARMED_AWAY' , 'triggered': i.device.state.main == 'TRIGGERED', 'activated': i.device.state.main == 'ACTIVATED'  }">
@@ -16,5 +18,6 @@
             data-translate="{{'home.alarm.' + i.device.state.main}}">
                 {{i.device.state.main}} 
         </span>
+        <span class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
     </div>
 </div>

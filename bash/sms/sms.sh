@@ -139,7 +139,7 @@ function send {
             echo "smsParams: $smsParams"
             s=$(mmcli -m $modem --messaging-create-sms="$smsParams" | grep -o "SMS\/[0-9]* " | grep -o "[0-9]*")
             if [ -n "$s" ]; then
-                : #mmcli -s "$s" --send
+                mmcli -s "$s" --send
             else
                 echo "Failed sending sms $s"
             fi

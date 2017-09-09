@@ -16,7 +16,8 @@ function MqttDevice( mqtt_subscribe_topic, state, mqtt_publish_topic )
     this.mqtt_subscribe_topic = mqtt_subscribe_topic;
     this.mqtt_publish_topic = typeof mqtt_publish_topic !== 'undefined' ? mqtt_publish_topic : null;
     this.state = state;
-    this.lastUpdate = null; //Date.now();
+    this.lastUpdate = null;
+    // this.lastUpdate = Date.now(); // TODO: debug only
     this.publisher = null;
 }
 
