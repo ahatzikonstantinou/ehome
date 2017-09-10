@@ -54,7 +54,8 @@ function getNumber {
 }
 
 function getText {
-    t=$(mmcli -s "$1" | grep -o "text: '[^']*" | cut -c8-)
+    t=$(mmcli -s "$1" | grep -o "text: '.*" | cut -c8- )
+    t=${t::-1}
     echo "$t"
 }
 
@@ -139,7 +140,7 @@ function send {
             echo "smsParams: $smsParams"
             s=$(mmcli -m $modem --messaging-create-sms="$smsParams" | grep -o "SMS\/[0-9]* " | grep -o "[0-9]*")
             if [ -n "$s" ]; then
-                mmcli -s "$s" --send
+                : #mmcli -s "$s" --send
             else
                 echo "Failed sending sms $s"
             fi
@@ -369,30 +370,45 @@ while true; do
 
                 # echo "s:$s, number: $number, state:$state"
                 number=$(getNumber "$s" )
-                if [[ "$type" == "deliver" ]] && [[ "$state" == "received" ]] && [[ " ${admins[@]} " =~ " $number " ]]; then
-                    echo "message from admin $number"
+                if [[ "$type" == "deliver" ]] && [[ "$state" == "received" ]]; then
                     text=$(getText "$s" )
-                    textLow="${text,,}"    #convert to lowercase
-                    # echo "lower text: ${text,,}"
-                    # echo "upper text: ${text^^}"
-                    if [[ " ${textLow[@]} " =~ " status " ]]; then
-                        reportStatus "$number"
-                    elif [[ " ${textLow[@]} " =~ " reboot " ]]; then
-                        reboot
-                    elif [[ " ${textLow[@]} " =~ " shutdown " ]]; then
-                        shutdown
-                    elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "away " ]]; then
-                        armAway
-                    elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "home " ]]; then
-                        armHome
-                    elif [[ " ${textLow[@]} " =~ " arm " ]]; then
-                        arm
-                    elif [[ " ${textLow[@]} " =~ " disarm " ]]; then
-                        disarm
-                    else
-                        unknownCommand "$modem" "$number" "$text"
+                    if [[ " ${admins[@]} " =~ " $number " ]]; then
+                        echo "message from admin $number"                        
+                        textLow="${text,,}"    #convert to lowercase
+                        # echo "lower text: ${text,,}"
+                        # echo "upper text: ${text^^}"
+                        if [[ " ${textLow[@]} " =~ " status " ]]; then
+                            reportStatus "$number"
+                        elif [[ " ${textLow[@]} " =~ " reboot " ]]; then
+                            reboot
+                        elif [[ " ${textLow[@]} " =~ " shutdown " ]]; then
+                            shutdown
+                        elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "away " ]]; then
+                            armAway
+                        elif [[ " ${textLow[@]} " =~ " arm" ]] && [[ " ${textLow[@]} " =~ "home " ]]; then
+                            armHome
+                        elif [[ " ${textLow[@]} " =~ " arm " ]]; then
+                            arm
+                        elif [[ " ${textLow[@]} " =~ " disarm " ]]; then
+                            disarm
+                        else
+                            unknownCommand "$modem" "$number" "$text"
+                        fi
+                    elif [[ " ${forwards[@]} " =~ " $number " ]]; then
+                        echo "Forwarding sms to $forward_to"
+                        forwardText="Forward from $number: ""$text"
+                        echo "forwardText: $forwardText"
+                        # truncate cancelled. If the user can't connect with the web
+                        # app, he will never know what the full message says
+                        # forwardLen=$(echo $forwardText | wc -m)
+                        # echo "forwardLen: $forwardLen"
+                        # if [[ "$forwardLen" -gt 140 ]]; then
+                        #     forwardText=${forwardText::136}"..."
+                        #     echo "Forwarded text truncated to $forwardText"
+                        # fi
+                        forwardParams='{ "to":"'"$forward_to"'", "text":"'"$forwardText"'"}'
+                        send $forwardParams
                     fi
-                    # fi
                 fi
             fi
         done

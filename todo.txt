@@ -62,6 +62,8 @@ Done. Notifier
 
 Esp8266 OTA
 
+Separate xmpp_proxy thread per user.
+
 http:
     Done. translator (house/floor/room/item from mqtt topic to name)
     Done. configurator (houses json)
