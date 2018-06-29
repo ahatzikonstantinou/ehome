@@ -16,9 +16,6 @@ Done: Web app: add message to xmpp when deactivated, in order for xmpp to stop s
 Done: Xmpp when xmpp-activate message is received (via xmpp failover) all intercepted mqtt messages must be sent via xmpp
 Done: Xmpp when xmpp-deactivate message is received (via xmpp failover) mqtt messages must stop being sent via xmpp
 
-Enhance web app to store last received message (must have timestamp) and when activating failover request only newer messages
-Enhance xmpp (messages must have timestamp) and when xmpp is activated, send only messages from mqttQueue newer than last web app message
-
 Done (with eth and wifi, must also test with ppp). Develop eth0 monitor:
     when internet is not accessible via eth0 
         enable ppp
@@ -39,13 +36,23 @@ Done. Finish notifier to use the sms.sh service
 
 Done. Fix alarm.py to use multiple pins and stop sending challenges.
 
-Add forward of sms's from certain numbers to admin
-
-Add alarm arm/disarm dialog in web app.
+Done. Add forward of sms's from certain numbers to admin
 
 Done. Fix web app display for 360x640.
 
-Debug: if xmpp_proxy is active while mqtt is also working, duplicate configurations arreive at the web app and double the items and houses are displayed.
+Debug: if xmpp_proxy is active while mqtt is also working, duplicate configurations arrive at the web app and double the items and houses are displayed.
+
+Done. Change http_configuration to mqtt_configuration and watch (and reload and publish) the configuration.json file whenever it changes (necessary for live refresh and mqtt over xmpp)
+
+Done. Notifier
+
+Add "Add security exception" message for mqtt same as xmpp.
+
+Add alarm arm/disarm dialog in web app.
+
+Enhance web app to store last received message (must have timestamp) and when activating failover request only newer messages
+
+Enhance xmpp (messages must have timestamp) and when xmpp is activated, send only messages from mqttQueue newer than last web app message
 
 Create a mqtt_server that accepts requests and publishes replies regarding server reboot, shutdown, cpu and memory load, top 5 processes per CPU,top 5 processes per MEM.
 
@@ -56,13 +63,9 @@ Add component to store mqtt message history so that web can retrieve a device's 
 Done. Add xmpp proxy as alternative server (to mqtt) to accomodate communication between the web app and the mqtt broker over IM (xmpp).
 Create settings form in the web app, scenes
 
-Done. Change http_configuration to mqtt_configuration and watch (and reload and publish) the configuration.json file whenever it changes (necessary for live refresh and mqtt over xmpp)
-
-Done. Notifier
-
 Esp8266 OTA
 
-Separate xmpp_proxy thread per user.
+Create separate xmpp_proxy thread per user for multi-user support. Cancel continuously on?
 
 http:
     Done. translator (house/floor/room/item from mqtt topic to name)
