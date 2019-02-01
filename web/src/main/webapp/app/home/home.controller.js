@@ -200,7 +200,7 @@
         var servers = getAllServers();
         vm.servers = servers;
         console.log( 'servers: ', vm.servers );
-        // initServers( servers );
+        // initServers( servers ); //no longer done here. As each individual sever is instantiated, it runs its own init. See server.controller.js
         function initServers( servers )
         {
             for( var i = 0 ; i < servers.length ; i++ )
