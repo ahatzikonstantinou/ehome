@@ -19,6 +19,7 @@ void Calibration::run( uint32_t onMillis, uint32_t offMillis )
   }
 
   Relay::on();
+  onMinAmps = 1000.0; // initialise to a very large value. If initialised to 0 it will stay at 0 because we are keeping the lower value between previous and current measurement.
   start_time = millis();
   while( ( millis()-start_time ) < onMillis )
   {
@@ -28,4 +29,6 @@ void Calibration::run( uint32_t onMillis, uint32_t offMillis )
       onMinAmps = amps;
     }
   }
+
+  Relay::off();
 }

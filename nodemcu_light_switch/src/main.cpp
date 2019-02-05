@@ -17,6 +17,11 @@
 
 #include "MeasureAmps.h"
 
+#include "Calibration.h"
+
+double offMaxAmp = 0.15;
+double onMinAmp = 0.25;
+
 // default values
 const char* ssid = "ST-VIRUS";
 const char* password = "ap2109769675ap";
@@ -110,72 +115,22 @@ void setup()
 
   // mqttSetup();
   // Serial.println( "mqttSetup finished" );
+
+  Serial.println( "Calibrating..." );
+  Calibration c;
+  c.run();
+  Serial.println( "Calibration: offMaxAmps = " + String( c.offMaxAmps ) + ", onMinAmps = " + String( c.onMinAmps ) );
+  offMaxAmp = c.offMaxAmps * OFF_MAX_AMPS_FACTOR;
+  onMinAmp = c.onMinAmps * ON_MIN_AMPS_FACTOR;
+  Serial.println( "Thresholds: offMaxAmp = " + String( offMaxAmp ) + ", onMinAmp = " + String( onMinAmp ) );
 }
-
-// void toggleRelay()
-// {
-//   if( relayState == HIGH )
-//   {
-//     relayState = LOW;
-//   }
-//   else
-//   {
-//     relayState = HIGH;
-//   }
-//   digitalWrite( RELAY_PIN, relayState );
-// }
-
-int mVperAmp = 66; // use 100 for 20A Module and 66 for 30A Module
-
-
-//ahat: getVPP is from http://henrysbench.capnfatz.com/henrys-bench/arduino-current-measurements/acs712-arduino-ac-current-tutorial/
-float getVPP( uint16 samples_millis )
-{
-  double Voltage = 0;
-  double VRMS = 0;
-  double AmpsRMS = 0;
-
-  float result;
-
-  int readValue;             //value read from the sensor
-  int maxValue = 0;          // store max value here
-  int minValue = 1024;          // store min value here
-
-   uint32_t start_time = millis();
-   while( ( millis()-start_time ) < samples_millis ) //sample for ### milliseconds
-   {
-       readValue = analogRead( A0 );
-       // see if you have a new maxValue
-       if (readValue > maxValue)
-       {
-           /*record the maximum sensor value*/
-           maxValue = readValue;
-       }
-       if ( readValue < minValue )
-       {
-           /*record the maximum sensor value*/
-           minValue = readValue;
-       }
-   }
-
-   // Subtract min from max
-   result = ( ( maxValue - minValue) * 3.3 ) / 1024.0;
-
-  Voltage = result;
-  VRMS = ( Voltage / 2.0 ) *0.707;
-  AmpsRMS = ( VRMS * 1000 ) / mVperAmp;
-  // Serial.print( AmpsRMS );
-  // Serial.println( " Amps RMS" );
-
-  return AmpsRMS;
- }
 
 double lastAmps = 0;
 bool firstRun = true;
 uint32_t last_trigger = millis();
 
-double lowMaxAmp = 0.15;
-double highMinAmp = 0.25;
+// double offMaxAmp = 0.15;
+// double onMinAmp = 0.25;
 
 void loop()
 {
@@ -187,11 +142,11 @@ void loop()
     // if( ( relayState == HIGH && lastAmps * 4 < currentAmps ) || //transition from OFF to ON
     //     ( relayState == LOW && lastAmps > currentAmps * 8 )   //transition from ON to OFF
     //   )
-    // if( ( relayState == HIGH && currentAmps > lowMaxAmp) || //transition from OFF to ON
-    //     ( relayState == LOW && currentAmps < highMinAmp )   //transition from ON to OFF
+    // if( ( relayState == HIGH && currentAmps > offMaxAmp) || //transition from OFF to ON
+    //     ( relayState == LOW && currentAmps < onMinAmp )   //transition from ON to OFF
     //   )
-    if( ( Relay::state == HIGH && currentAmps > lowMaxAmp) || //transition from OFF to ON
-        ( Relay::state == LOW && currentAmps < highMinAmp )   //transition from ON to OFF
+    if( ( Relay::state == HIGH && currentAmps > offMaxAmp) || //transition from OFF to ON
+        ( Relay::state == LOW && currentAmps < onMinAmp )   //transition from ON to OFF
       )
     {
 

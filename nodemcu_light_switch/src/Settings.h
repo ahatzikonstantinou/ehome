@@ -14,11 +14,19 @@
 //The default amount of milliseconds to measure when measuring Amps RMS
 #define DEFAULT_AMPRMS_MILLIS 20
 
-#define DEFAULT_CALIBRATE_ONMILLIS 1000   //how many millis to keep the light on while calibrating
-#define DEFAULT_CALIBRATE_OFFMILLIS 1000  //how many millis to keep the light off while calibrating
+// For some unknown reason values higher than 1500 e.g. 2000, 3000 etc cause the nodemcu to crash and restart
+#define DEFAULT_CALIBRATE_ONMILLIS 1500   //how many millis to keep the light on while calibrating
+#define DEFAULT_CALIBRATE_OFFMILLIS 1500  //how many millis to keep the light off while calibrating
 
 // Millivolts per detected Amp for ACS712 arduino module
 // use 66 for 5A Module, 100 for 20A Module and 66 for 30A Module
 #define MV_PER_AMP 66
 
+//After calibration mutliply offMaxAmps by this factor to calculate the threshold under which amps are expected to represent a OFF switch
+// Choose a factor > 1 to cover scenarios where spikes occur above the calibrated max ampls value
+#define OFF_MAX_AMPS_FACTOR 1.5
+
+//After calibration mutliply onMinAmps by this factor to calculate the threshold above which amps are expected to represent a ON switch
+// Choose a factor < 1 to cover scenarios where ON amps dip below the calibrated min amps value
+#define ON_MIN_AMPS_FACTOR 0.7
 #endif
