@@ -9,9 +9,13 @@
 #include <ArduinoJson.h>  //https://github.com/bblanchon/ArduinoJson
 #include <WiFiManager.h>  //https://github.com/tzapu/WiFiManager
 
-#define RELAY_PIN D0
+#include "Settings.h"
+//#define RELAY_PIN D0
 
-int relayState = HIGH;  // When the light is connected on the Normally Open contact of the relay, a LOW will keep the light initially switched off
+#include "Relay.h"
+// int relayState = HIGH;  // When the light is connected on the Normally Open contact of the relay, a LOW will keep the light initially switched off
+
+#include "MeasureAmps.h"
 
 // default values
 const char* ssid = "ST-VIRUS";
@@ -99,26 +103,27 @@ void setup()
   Serial.begin( 115200 );
   wifi_set_sleep_type( NONE_SLEEP_T );
 
-  pinMode( RELAY_PIN, OUTPUT );
-  digitalWrite( RELAY_PIN, relayState );
+  Relay::setup();
+  // pinMode( RELAY_PIN, OUTPUT );
+  // digitalWrite( RELAY_PIN, relayState );
   Serial.println( "relay setup finished" );
 
   // mqttSetup();
   // Serial.println( "mqttSetup finished" );
 }
 
-void toggleRelay()
-{
-  if( relayState == HIGH )
-  {
-    relayState = LOW;
-  }
-  else
-  {
-    relayState = HIGH;
-  }
-  digitalWrite( RELAY_PIN, relayState );
-}
+// void toggleRelay()
+// {
+//   if( relayState == HIGH )
+//   {
+//     relayState = LOW;
+//   }
+//   else
+//   {
+//     relayState = HIGH;
+//   }
+//   digitalWrite( RELAY_PIN, relayState );
+// }
 
 int mVperAmp = 66; // use 100 for 20A Module and 66 for 30A Module
 
@@ -175,15 +180,18 @@ double highMinAmp = 0.25;
 void loop()
 {
   // check Amp and toggle relay accordingly
-  double currentAmps = getVPP( 20 );
+  double currentAmps = getAmpsRMS(); //getVPP( 20 );
   if( !firstRun )
   {
     // if( ( lastAmps * 1.5 ) < currentAmps )
     // if( ( relayState == HIGH && lastAmps * 4 < currentAmps ) || //transition from OFF to ON
     //     ( relayState == LOW && lastAmps > currentAmps * 8 )   //transition from ON to OFF
     //   )
-    if( ( relayState == HIGH && currentAmps > lowMaxAmp) || //transition from OFF to ON
-        ( relayState == LOW && currentAmps < highMinAmp )   //transition from ON to OFF
+    // if( ( relayState == HIGH && currentAmps > lowMaxAmp) || //transition from OFF to ON
+    //     ( relayState == LOW && currentAmps < highMinAmp )   //transition from ON to OFF
+    //   )
+    if( ( Relay::state == HIGH && currentAmps > lowMaxAmp) || //transition from OFF to ON
+        ( Relay::state == LOW && currentAmps < highMinAmp )   //transition from ON to OFF
       )
     {
 
@@ -193,7 +201,7 @@ void loop()
       if( trigger > last_trigger + 500 )
       {
         Serial.print( "   Trigger!" );
-        toggleRelay();
+        Relay::toggle(); //toggleRelay();
         last_trigger = trigger;
       }
       else
