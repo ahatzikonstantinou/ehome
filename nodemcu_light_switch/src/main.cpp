@@ -19,6 +19,7 @@
 
 #include "Calibration.h"
 
+//The following values were good thresholds when using a 60W incadescent light bulb
 double offMaxAmp = 0.15;
 double onMinAmp = 0.25;
 
@@ -109,8 +110,6 @@ void setup()
   wifi_set_sleep_type( NONE_SLEEP_T );
 
   Relay::setup();
-  // pinMode( RELAY_PIN, OUTPUT );
-  // digitalWrite( RELAY_PIN, relayState );
   Serial.println( "relay setup finished" );
 
   // mqttSetup();
@@ -128,9 +127,6 @@ void setup()
 double lastAmps = 0;
 bool firstRun = true;
 uint32_t last_trigger = millis();
-
-// double offMaxAmp = 0.15;
-// double onMinAmp = 0.25;
 
 void loop()
 {
