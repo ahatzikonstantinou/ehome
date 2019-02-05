@@ -1,3 +1,9 @@
+/*
+ * IMPORTANT NOTE
+ * Ahat: The PubSubClient library has a continuous disconnect - reconnect bug. In order to correct this addr
+ * "delay(10);" immediately after "if (connected()) {" in function "boolean PubSubClient::loop()"
+ */
+
 #include <FS.h> //for WiFiManager this needs to be first, or it all crashes and burns...
 
 #include <ESP8266WiFi.h>
@@ -23,32 +29,59 @@
 double offMaxAmp = 0.15;
 double onMinAmp = 0.25;
 
+
+//Static IP address configuration
+IPAddress staticIP(192, 168, 1, 33); //ESP static ip
+IPAddress gateway(192, 168, 1, 1);   //IP Address of your WiFi Router (Gateway)
+IPAddress subnet(255, 255, 255, 0);  //Subnet mask
+IPAddress dns(192, 168, 1, 1);  //DNS
+
+
+const char* deviceName = "wifi-light";
+
 // default values
 const char* ssid = "ST-VIRUS";
 const char* password = "ap2109769675ap";
-char mqtt_server[40];
-char mqtt_port[6];
-char publish_topic[256];
-char subscribe_topic[256];
+// char mqtt_server[40];
+// char mqtt_port[6];
+// char publish_topic[256];
+// char subscribe_topic[256];
+const char* mqtt_server = "192.168.1.31";
+const char* mqtt_port = "1883";
+const char* publish_topic = "L/state";
+const char* subscribe_topic = "L/set";
 
 WiFiClient espClient;
 PubSubClient client( espClient );
 
+uint32_t lastReconnect = 0;
 
 bool mqttReconnect()
 {
-  if( !client.connected() )
+  // int state = client.state();
+  uint32_t start = millis();
+  if( !client.connected() && start - lastReconnect > 5000 )
+  // if( state != 0 && state != -3 )
   {
+    Serial.print( "Client rc=" + String( client.state() ) + ", " );
     Serial.print( "Attempting MQTT connection..." );
+    // Create a random client ID
+    String clientId = String( deviceName ) + "-";
+    // clientId += String(random(0xffff), HEX);
     // Attempt to connect
-    if( client.connect( "ESP8266 Client" ) )
+    if( client.connect( clientId.c_str() ) )
     {
-      Serial.println( "connected" );
+      Serial.println( "connected, rc=" + String( client.state() ) );
       // ... and subscribe to topic
       client.subscribe( subscribe_topic );
     }
     else
     {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // // Wait 5 seconds before retrying
+      // delay(5000);
       return false;
     }
   }
@@ -72,26 +105,30 @@ void mqttPublish( String sensorName, char* message )
     }
 }
 
+uint32_t last_trigger = millis();
+
 void callback( char* topic, byte* payload, unsigned int length)
 {
   Serial.print( "Message arrived [" );
   Serial.print( topic );
-  Serial.print( "] " );
+  Serial.println( "] " );
+
+  // set last_trigger to avoid follow-on triggers as the current may spike again once the relay changes state
+  last_trigger = millis();
+
   for (unsigned int i=0;i<length;i++)
   {
     char receivedChar = (char)payload[i];
     Serial.print(receivedChar);
-    // if (receivedChar == '0')
-    // {
-    //   // ESP8266 outputs are "reversed"
-    //   digitalWrite( PIN_LED, HIGH );
-    // }
-    // if (receivedChar == '1')
-    // {
-    //   digitalWrite( PIN_LED, LOW );
-    // }
+    if (receivedChar == '0')
+    {
+      Relay::off();
+    }
+    if (receivedChar == '1')
+    {
+      Relay::on();
+    }
   }
-  Serial.println();
 }
 
 void mqttSetup()
@@ -104,6 +141,28 @@ void mqttSetup()
   client.setCallback( callback );
 }
 
+void wifiSetup()
+{
+  WiFi.hostname(deviceName);      // DHCP Hostname (useful for finding device for static lease)
+  WiFi.config(staticIP, subnet, gateway, dns);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+
+  Serial.print("Connecting to ");
+  Serial.print(ssid); Serial.println(" ...");
+
+  int i = 0;
+  while (WiFi.status() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
+    delay(1000);
+    Serial.print(++i); Serial.print(' ');
+  }
+
+  Serial.println('\n');
+  Serial.println("Connection established!");
+  Serial.print("IP address:\t");
+  Serial.println(WiFi.localIP());
+}
+
 void setup()
 {
   Serial.begin( 115200 );
@@ -112,21 +171,22 @@ void setup()
   Relay::setup();
   Serial.println( "relay setup finished" );
 
-  // mqttSetup();
-  // Serial.println( "mqttSetup finished" );
+  wifiSetup();
 
-  Serial.println( "Calibrating..." );
-  Calibration c;
-  c.run();
-  Serial.println( "Calibration: offMaxAmps = " + String( c.offMaxAmps ) + ", onMinAmps = " + String( c.onMinAmps ) );
-  offMaxAmp = c.offMaxAmps * OFF_MAX_AMPS_FACTOR;
-  onMinAmp = c.onMinAmps * ON_MIN_AMPS_FACTOR;
-  Serial.println( "Thresholds: offMaxAmp = " + String( offMaxAmp ) + ", onMinAmp = " + String( onMinAmp ) );
+  mqttSetup();
+  Serial.println( "mqttSetup finished" );
+
+  // Serial.println( "Calibrating..." );
+  // Calibration c;
+  // c.run();
+  // Serial.println( "Calibration: offMaxAmps = " + String( c.offMaxAmps ) + ", onMinAmps = " + String( c.onMinAmps ) );
+  // offMaxAmp = c.offMaxAmps * OFF_MAX_AMPS_FACTOR;
+  // onMinAmp = c.onMinAmps * ON_MIN_AMPS_FACTOR;
+  // Serial.println( "Thresholds: offMaxAmp = " + String( offMaxAmp ) + ", onMinAmp = " + String( onMinAmp ) );
 }
 
 double lastAmps = 0;
 bool firstRun = true;
-uint32_t last_trigger = millis();
 
 void loop()
 {
@@ -147,7 +207,7 @@ void loop()
     {
 
       // current will jump high once when pressing the pushbutton and also when switching on the light (/relay)
-      //switch only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
+      // switch only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
       uint32_t trigger = millis();
       if( trigger > last_trigger + 500 )
       {
@@ -170,7 +230,7 @@ void loop()
   }
   lastAmps = currentAmps;
 
-  // mqttReconnect();
+  mqttReconnect();
 
   // delay( 100 );
 }
