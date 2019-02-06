@@ -29,4 +29,11 @@
 //After calibration mutliply onMinAmps by this factor to calculate the threshold above which amps are expected to represent a ON switch
 // Choose a factor < 1 to cover scenarios where ON amps dip below the calibrated min amps value
 #define ON_MIN_AMPS_FACTOR 0.7
+
+//It seems that PubSubClient library has a bug. The "loop" function will not send any PING i.e. keepalive requests
+//if it is executed without any delay between runs e.g. function loop() { ... client.loop(); }
+//However, using the "delay" function is not good practice, therefore a time check is performed in function mqttClientLoop
+//and client.loop() is executed only if at least MIN_MQTT_LOOP_MILLIS milliseconds have passed since the previous time
+//it was executed.
+#define MIN_MQTT_LOOP_MILLIS 10
 #endif

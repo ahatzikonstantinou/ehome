@@ -300,8 +300,8 @@ uint16_t PubSubClient::readPacket(uint8_t* lengthLength) {
 }
 
 boolean PubSubClient::loop() {
+    delay( 10 );
     if (connected()) {
-      delay(10);
         // Serial.print( "in loop and connected. " );
         unsigned long t = millis();
         // Serial.println( " t - lastInActivity = " + String( t - lastInActivity ) + " t - lastOutActivity = " + String( t - lastOutActivity ) + " while MQTT_KEEPALIVE*1000UL = " + String( MQTT_KEEPALIVE*1000UL ) );

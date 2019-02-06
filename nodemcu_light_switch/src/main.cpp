@@ -85,19 +85,23 @@ bool mqttReconnect()
       return false;
     }
   }
-  client.loop();
   return true;
 }
 
-void mqttPublish( String sensorName, char* message )
+void mqttPublish( String message )
 {
     if( client.connected() )
     {
-      String topic = publish_topic + String( "/" ) + sensorName;
-      char _topic[ sizeof( topic ) + 1 ]; topic.toCharArray( _topic, sizeof( _topic ) + 1 ) ;
-      Serial.printf( "Publishing: [%s] ", _topic );
+      Serial.print( "Publishing: " ); //+ String( publish_topic ) );
       Serial.println( message );
-      client.publish( _topic, message );
+      Serial.println( "sizeof message: " + String( sizeof( message ) ) );
+
+      char _msg[ message.length() + 1 ];  // note: sizeof( message ) will give the wrong size, use message.length() instead
+      memset(&_msg[0], 0, sizeof(_msg));
+      message.toCharArray( _msg, sizeof( _msg ) ) ;
+      Serial.println( _msg );
+
+      client.publish( publish_topic, _msg );
     }
     else
     {
@@ -111,7 +115,7 @@ void callback( char* topic, byte* payload, unsigned int length)
 {
   Serial.print( "Message arrived [" );
   Serial.print( topic );
-  Serial.println( "] " );
+  Serial.print( "] " );
 
   // set last_trigger to avoid follow-on triggers as the current may spike again once the relay changes state
   last_trigger = millis();
@@ -119,14 +123,34 @@ void callback( char* topic, byte* payload, unsigned int length)
   for (unsigned int i=0;i<length;i++)
   {
     char receivedChar = (char)payload[i];
-    Serial.print(receivedChar);
-    if (receivedChar == '0')
+    Serial.println(receivedChar);
+    if( receivedChar == '0' )
     {
       Relay::off();
+      String msg("{ \"state\": \"OFF\", \"trigger\": \"wifi\" }" );
+      mqttPublish( msg );
     }
-    if (receivedChar == '1')
+    else if( receivedChar == '1' )
     {
       Relay::on();
+      String msg("{ \"state\": \"ON\", \"trigger\": \"wifi\" }" );
+      mqttPublish( msg );
+    }
+    else if( receivedChar == 'l' )
+    {
+      //calibrate
+    }
+    else if( receivedChar == 'r' )
+    {
+      //report
+    }
+    else if( receivedChar == 'c' )
+    {
+      //check
+    }
+    else if( receivedChar == 'a' )
+    {
+      //access point
     }
   }
 }
@@ -211,9 +235,12 @@ void loop()
       uint32_t trigger = millis();
       if( trigger > last_trigger + 500 )
       {
-        Serial.print( "   Trigger!" );
         Relay::toggle(); //toggleRelay();
         last_trigger = trigger;
+
+        String msg("{ \"state\": \"" + String( Relay::state == HIGH ? "OFF" : "ON" ) + "\", \"trigger\": \"manual\" }" );
+        mqttPublish( msg );
+        Serial.print( "   Trigger!" );
       }
       else
       {
@@ -232,5 +259,5 @@ void loop()
 
   mqttReconnect();
 
-  // delay( 100 );
+  client.loop();
 }
