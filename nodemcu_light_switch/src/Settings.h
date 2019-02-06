@@ -12,7 +12,7 @@
 #define INIT_RELAY_STATE HIGH
 
 // The default amount of milliseconds to measure when measuring Amps RMS
-#define DEFAULT_AMPRMS_MILLIS 20
+#define DEFAULT_AMPRMS_MILLIS 50
 
 // For some unknown reason values higher than 1500 e.g. 2000, 3000 etc cause the nodemcu to crash and restart
 #define DEFAULT_CALIBRATE_ONMILLIS 1000   //how many millis to keep the light on while calibrating
@@ -41,5 +41,11 @@
 
 // The min time in milliseconds between mqtt reconnect attempts
 #define MIN_MQTT_RECONNECT_MILLIS 5000
+
+// The min time in milliseconds that a difference in current measurments may be considered as a trigger.
+// Current will spike once when pressing the pushbutton and also when the relay contacts touch switching on the light
+// Trigger only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
+#define MIN_TRIGGER_MILLIS 500
+
 
 #endif

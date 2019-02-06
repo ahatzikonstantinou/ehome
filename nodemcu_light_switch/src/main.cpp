@@ -146,7 +146,7 @@ void mqttPublish( String message )
       char _msg[ message.length() + 1 ];  // note: sizeof( message ) will give the wrong size, use message.length() instead
       memset(&_msg[0], 0, sizeof(_msg));
       message.toCharArray( _msg, sizeof( _msg ) ) ;
-      Serial.println( _msg );
+      // Serial.println( _msg );
 
       client.publish( publish_topic, _msg );
     }
@@ -293,7 +293,7 @@ bool firstRun = true;
 void loop()
 {
   // check Amp and toggle relay accordingly
-  double currentAmps = getAmpsRMS(); //getVPP( 20 );
+  double currentAmps = getAmpsRMS();
   if( !firstRun )
   {
     // if( ( lastAmps * 1.5 ) < currentAmps )
@@ -311,19 +311,20 @@ void loop()
       // current will jump high once when pressing the pushbutton and also when switching on the light (/relay)
       // switch only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
       uint32_t trigger_t = millis();
-      if( trigger_t > last_trigger + 500 )
+      if( trigger_t > last_trigger + MIN_TRIGGER_MILLIS )
       {
         CheckAmps c = setRelay( Relay::state == HIGH ? true : false );// Relay::toggle(); //toggleRelay();
         trigger = TRIGGER_MANUAL;
         last_trigger = trigger_t;
 
         mqttPublishReport( c );
-        Serial.print( "   Trigger!" );
+        Serial.print( "   Trigger: " );
       }
       else
       {
-        Serial.print( "   ignored trigger." );
+        Serial.print( "   Ignored trigger: " );
       }
+
       Serial.print( ", lastAmps = " + String( lastAmps ) );
       Serial.println( ", currentAmps = " + String( currentAmps ) );
     }
@@ -338,4 +339,6 @@ void loop()
   mqttReconnect();
 
   client.loop();
+
+  // delay( 300 );
 }
