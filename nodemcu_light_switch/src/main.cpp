@@ -76,6 +76,8 @@ const char* mqtt_server = "192.168.1.31";
 const char* mqtt_port = "1883";
 const char* publish_topic = "L/state";
 const char* subscribe_topic = "L/set";
+const char* configurator_publish_topic = "Configurator/set";
+const char* configurator_subscribe_topic = "Configurator/report";
 
 WiFiClient espClient;
 PubSubClient client( espClient );
@@ -123,6 +125,7 @@ bool mqttReconnect()
       Serial.println( "connected, rc=" + String( client.state() ) );
       // ... and subscribe to topic
       client.subscribe( subscribe_topic );
+      client.subscribe( configurator_subscribe_topic );
     }
     else
     {
@@ -135,11 +138,11 @@ bool mqttReconnect()
   return true;
 }
 
-void mqttPublish( String message )
+void mqttPublish( const char* topic, String message )
 {
     if( client.connected() )
     {
-      Serial.print( "Publishing: " + String( publish_topic ) );
+      Serial.print( "Publishing: " + String( topic ) );
       Serial.println( message );
       // Serial.println( "sizeof message: " + String( sizeof( message ) ) );
 
@@ -148,12 +151,26 @@ void mqttPublish( String message )
       message.toCharArray( _msg, sizeof( _msg ) ) ;
       // Serial.println( _msg );
 
-      client.publish( publish_topic, _msg );
+      client.publish( topic, _msg );
     }
     else
     {
       Serial.println( "Cannot publish because client is not connected." );
     }
+}
+
+void mqttPublishConfiguration()
+{
+  String msg(
+    String( "{ " ) +
+    "\"device_type\": \"" + DEVICE_TYPE + "\"" +
+    ", \"device_domain\": \"" + DEVICE_DOMAIN + "\"" +
+    ", \"firmware\": \"" + FIRMWARE + "\"" +
+    ", \"version\": \"" + VERSION + "\"" +
+    ", \"publish_topic\": \"" + publish_topic + "\"" +
+    ", \"subscribe_topic\": \"" + subscribe_topic + "\"" +
+  " }" );
+  mqttPublish( configurator_publish_topic, msg );
 }
 
 void mqttPublishReport( CheckAmps c )
@@ -168,13 +185,13 @@ void mqttPublishReport( CheckAmps c )
     ", \"onAmps\": " + String( c.onAmps ) +
     ", \"onError\": " + ( c.onError ? "true" : "false" ) +
   " }" );
-  mqttPublish( msg );
+  mqttPublish( publish_topic, msg );
 }
 
 void mqttPublishReport()
 {
   String msg( String( "{ \"state\": \"" ) + ( Relay::state == HIGH ? "OFF" : "ON" ) + "\", \"trigger\": \"" + triggerToStr() + "\", \"offMaxAmpsThreshold\": " + String( offMaxAmpsThreshold ) + ", \"onMinAmpsThreshold\": " + String( onMinAmpsThreshold ) + " }" );
-  mqttPublish( msg );
+  mqttPublish( publish_topic, msg );
 }
 
 uint32_t last_trigger = millis();
@@ -185,59 +202,71 @@ void callback( char* topic, byte* payload, unsigned int length)
   Serial.print( topic );
   Serial.print( "] " );
 
-  // set last_trigger to avoid follow-on triggers as the current may spike again once the relay changes state
-  last_trigger = millis();
+  String _topic( topic );
+  String _subscribe_topic( subscribe_topic );
+  String _configurator_subscribe_topic( configurator_subscribe_topic );
 
-  for (unsigned int i=0;i<length;i++)
+  if( _topic == _subscribe_topic )
   {
-    char receivedChar = (char)payload[i];
-    Serial.println(receivedChar);
-    if( receivedChar == '0' )
+    for (unsigned int i=0;i<length;i++)
     {
-      CheckAmps c = setRelay( false );
-      trigger = TRIGGER_WIFI;
-      mqttPublishReport( c );
-    }
-    else if( receivedChar == '1' )
-    {
-      CheckAmps c = setRelay( true );
-      trigger = TRIGGER_WIFI;
-      mqttPublishReport( c );
-    }
-    else if( receivedChar == 'l' )
-    {
-      //calibrate
-      trigger = TRIGGER_CALIBRATION;
-      Serial.println( "Before calibration: offMaxAmpsThreshold = " + String( offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( onMinAmpsThreshold ) );
-      Serial.println( "Calibrating..." );
-      Calibration c;
-      c.run( offMaxAmpsThreshold, onMinAmpsThreshold );
-      // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
-      last_trigger = millis();
+      char receivedChar = (char)payload[i];
+      Serial.println(receivedChar);
+      if( receivedChar == '0' )
+      {
+        // set last_trigger to avoid follow-on triggers as the current may spike again once the relay changes state
+        last_trigger = millis();
+        CheckAmps c = setRelay( false );
+        trigger = TRIGGER_WIFI;
+        mqttPublishReport( c );
+      }
+      else if( receivedChar == '1' )
+      {
+        // set last_trigger to avoid follow-on triggers as the current may spike again once the relay changes state
+        last_trigger = millis();
+        CheckAmps c = setRelay( true );
+        trigger = TRIGGER_WIFI;
+        mqttPublishReport( c );
+      }
+      else if( receivedChar == 'l' )
+      {
+        //calibrate
+        trigger = TRIGGER_CALIBRATION;
+        Serial.println( "Before calibration: offMaxAmpsThreshold = " + String( offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( onMinAmpsThreshold ) );
+        Serial.println( "Calibrating..." );
+        Calibration c;
+        c.run( offMaxAmpsThreshold, onMinAmpsThreshold );
+        // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
+        last_trigger = millis();
 
-      Serial.println( "After calibration: offMaxAmpsThreshold = " + String( offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( onMinAmpsThreshold ) );
-      mqttPublishReport();
+        Serial.println( "After calibration: offMaxAmpsThreshold = " + String( offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( onMinAmpsThreshold ) );
+        mqttPublishReport();
+      }
+      else if( receivedChar == 'r' )
+      {
+        //report
+        mqttPublishReport();
+      }
+      else if( receivedChar == 'c' )
+      {
+        //check
+        trigger = TRIGGER_CHECK;
+        Serial.println( "Checking..." );
+        CheckAmps c;
+        c.run( offMaxAmpsThreshold, onMinAmpsThreshold );
+        // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
+        last_trigger = millis();
+        mqttPublishReport( c );
+      }
+      else if( receivedChar == 'a' )
+      {
+        //access point
+      }
     }
-    else if( receivedChar == 'r' )
-    {
-      //report
-      mqttPublishReport();
-    }
-    else if( receivedChar == 'c' )
-    {
-      //check
-      trigger = TRIGGER_CHECK;
-      Serial.println( "Checking..." );
-      CheckAmps c;
-      c.run( offMaxAmpsThreshold, onMinAmpsThreshold );
-      // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
-      last_trigger = millis();
-      mqttPublishReport( c );
-    }
-    else if( receivedChar == 'a' )
-    {
-      //access point
-    }
+  }
+  else if( _topic == _configurator_subscribe_topic )
+  {
+    mqttPublishConfiguration();
   }
 }
 

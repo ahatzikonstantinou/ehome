@@ -3,6 +3,11 @@
 
 #include <ESP8266WiFi.h>
 
+#define FIRMWARE "EHome"
+#define VERSION "0.1"
+#define DEVICE_TYPE "LIGHT1"
+#define DEVICE_DOMAIN "LIGHT"
+
 // The pin were the relay control input is connected
 #define RELAY_PIN D0
 
