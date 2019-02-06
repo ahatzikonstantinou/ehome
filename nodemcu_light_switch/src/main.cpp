@@ -1,7 +1,10 @@
 /*
- * IMPORTANT NOTE
- * Ahat: The PubSubClient library has a continuous disconnect - reconnect bug. In order to correct this addr
+ * Ahat:
+ * IMPORTANT NOTES
+ * The PubSubClient library has a continuous disconnect - reconnect bug. In order to correct this addr
  * "delay(10);" immediately after "if (connected()) {" in function "boolean PubSubClient::loop()"
+ * In order to accommodate larger mqtt messages such as the ones including check errors, increase
+ * MQTT_MAX_PACKET_SIZE to 1024 in PubSubClient.h
  */
 
 #include <FS.h> //for WiFiManager this needs to be first, or it all crashes and burns...
@@ -16,18 +19,15 @@
 #include <WiFiManager.h>  //https://github.com/tzapu/WiFiManager
 
 #include "Settings.h"
-//#define RELAY_PIN D0
-
 #include "Relay.h"
-// int relayState = HIGH;  // When the light is connected on the Normally Open contact of the relay, a LOW will keep the light initially switched off
-
 #include "MeasureAmps.h"
-
 #include "Calibration.h"
+#include "CheckAmps.h"
 
 #define TRIGGER_MANUAL 0
 #define TRIGGER_WIFI 1
 #define TRIGGER_CALIBRATION 2
+#define TRIGGER_CHECK 3
 
 char trigger; // holds a value indicating whether the last trigger was manual or wifi
 
@@ -82,6 +82,29 @@ PubSubClient client( espClient );
 
 uint32_t lastReconnect = 0;
 
+CheckAmps setRelay( bool on )
+{
+  if( on )
+  {
+    Relay::on();
+  }
+  else
+  {
+    Relay::off();
+  }
+  CheckAmps c;
+  c.check( offMaxAmpsThreshold, onMinAmpsThreshold );
+
+  //If the light bulb is burnt or missing switch the Relay back to off, because any
+  //consecutive low current amp measurement will be considered a trigger if the Relay::state is LOW
+  if( c.onError )
+  {
+    Serial.println( "There was an error switching the Relay on!" );
+    Relay::off();
+  }
+  return c;
+}
+
 bool mqttReconnect()
 {
   // int state = client.state();
@@ -118,9 +141,9 @@ void mqttPublish( String message )
 {
     if( client.connected() )
     {
-      Serial.print( "Publishing: " ); //+ String( publish_topic ) );
+      Serial.print( "Publishing: " + String( publish_topic ) );
       Serial.println( message );
-      Serial.println( "sizeof message: " + String( sizeof( message ) ) );
+      // Serial.println( "sizeof message: " + String( sizeof( message ) ) );
 
       char _msg[ message.length() + 1 ];  // note: sizeof( message ) will give the wrong size, use message.length() instead
       memset(&_msg[0], 0, sizeof(_msg));
@@ -133,6 +156,21 @@ void mqttPublish( String message )
     {
       Serial.println( "Cannot publish because client is not connected." );
     }
+}
+
+void mqttPublishReport( CheckAmps c )
+{
+  String msg(
+    String( "{ \"state\": \"" ) + ( Relay::state == HIGH ? "OFF" : "ON" ) +
+    "\", \"trigger\": \"" + triggerToStr() +
+    "\", \"offMaxAmpsThreshold\": " + String( offMaxAmpsThreshold ) +
+    ", \"onMinAmpsThreshold\": " + String( onMinAmpsThreshold ) +
+    ", \"offAmps\": " + String( c.offAmps ) +
+    ", \"offError\": " + ( c.offError ? "true" : "false" ) +
+    ", \"onAmps\": " + String( c.onAmps ) +
+    ", \"onError\": " + ( c.onError ? "true" : "false" ) +
+  " }" );
+  mqttPublish( msg );
 }
 
 void mqttPublishReport()
@@ -158,15 +196,15 @@ void callback( char* topic, byte* payload, unsigned int length)
     Serial.println(receivedChar);
     if( receivedChar == '0' )
     {
-      Relay::off();
+      CheckAmps c = setRelay( false );
       trigger = TRIGGER_WIFI;
-      mqttPublishReport();
+      mqttPublishReport( c );
     }
     else if( receivedChar == '1' )
     {
-      Relay::on();
+      CheckAmps c = setRelay( true );
       trigger = TRIGGER_WIFI;
-      mqttPublishReport();
+      mqttPublishReport( c );
     }
     else if( receivedChar == 'l' )
     {
@@ -190,6 +228,13 @@ void callback( char* topic, byte* payload, unsigned int length)
     else if( receivedChar == 'c' )
     {
       //check
+      trigger = TRIGGER_CHECK;
+      Serial.println( "Checking..." );
+      CheckAmps c;
+      c.run( offMaxAmpsThreshold, onMinAmpsThreshold );
+      // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
+      last_trigger = millis();
+      mqttPublishReport( c );
     }
     else if( receivedChar == 'a' )
     {
@@ -270,11 +315,11 @@ void loop()
       uint32_t trigger_t = millis();
       if( trigger_t > last_trigger + 500 )
       {
-        Relay::toggle(); //toggleRelay();
+        CheckAmps c = setRelay( Relay::state == HIGH ? true : false );// Relay::toggle(); //toggleRelay();
         trigger = TRIGGER_MANUAL;
         last_trigger = trigger_t;
 
-        mqttPublishReport();
+        mqttPublishReport( c );
         Serial.print( "   Trigger!" );
       }
       else
