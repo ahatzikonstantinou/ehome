@@ -27,12 +27,33 @@
 
 #define TRIGGER_MANUAL 0
 #define TRIGGER_WIFI 1
+#define TRIGGER_CALIBRATION 2
 
 char trigger; // holds a value indicating whether the last trigger was manual or wifi
 
+String triggerToStr()
+{
+  String text = "";
+  if( trigger == TRIGGER_MANUAL )
+  {
+    text = "manual";
+  }
+  else if( trigger == TRIGGER_WIFI )
+  {
+    text = "wifi";
+  }
+  else if( trigger == TRIGGER_CALIBRATION )
+  {
+    text = "calibration";
+  }
+
+  return text;
+
+}
+
 //The following values were good thresholds when using a 60W incadescent light bulb
-double offMaxAmp = 0.15;
-double onMinAmp = 0.25;
+double offMaxAmpsThreshold = 0.15;
+double onMinAmpsThreshold = 0.25;
 
 
 //Static IP address configuration
@@ -114,6 +135,12 @@ void mqttPublish( String message )
     }
 }
 
+void mqttPublishReport()
+{
+  String msg( String( "{ \"state\": \"" ) + ( Relay::state == HIGH ? "OFF" : "ON" ) + "\", \"trigger\": \"" + triggerToStr() + "\", \"offMaxAmpsThreshold\": " + String( offMaxAmpsThreshold ) + ", \"onMinAmpsThreshold\": " + String( onMinAmpsThreshold ) + " }" );
+  mqttPublish( msg );
+}
+
 uint32_t last_trigger = millis();
 
 void callback( char* topic, byte* payload, unsigned int length)
@@ -133,24 +160,32 @@ void callback( char* topic, byte* payload, unsigned int length)
     {
       Relay::off();
       trigger = TRIGGER_WIFI;
-      String msg("{ \"state\": \"OFF\", \"trigger\": \"wifi\" }" );
-      mqttPublish( msg );
+      mqttPublishReport();
     }
     else if( receivedChar == '1' )
     {
       Relay::on();
       trigger = TRIGGER_WIFI;
-      String msg("{ \"state\": \"ON\", \"trigger\": \"wifi\" }" );
-      mqttPublish( msg );
+      mqttPublishReport();
     }
     else if( receivedChar == 'l' )
     {
       //calibrate
+      trigger = TRIGGER_CALIBRATION;
+      Serial.println( "Before calibration: offMaxAmpsThreshold = " + String( offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( onMinAmpsThreshold ) );
+      Serial.println( "Calibrating..." );
+      Calibration c;
+      c.run( offMaxAmpsThreshold, onMinAmpsThreshold );
+      // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
+      last_trigger = millis();
+
+      Serial.println( "After calibration: offMaxAmpsThreshold = " + String( offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( onMinAmpsThreshold ) );
+      mqttPublishReport();
     }
     else if( receivedChar == 'r' )
     {
-      String msg( String( "{ \"state\": \"" ) + ( Relay::state == HIGH ? "OFF" : "ON" ) + "\", \"trigger\": \"" + ( trigger == TRIGGER_MANUAL ? "manual" : "wifi" ) + "\" }" );
-      mqttPublish( msg );
+      //report
+      mqttPublishReport();
     }
     else if( receivedChar == 'c' )
     {
@@ -207,14 +242,6 @@ void setup()
 
   mqttSetup();
   Serial.println( "mqttSetup finished" );
-
-  // Serial.println( "Calibrating..." );
-  // Calibration c;
-  // c.run();
-  // Serial.println( "Calibration: offMaxAmps = " + String( c.offMaxAmps ) + ", onMinAmps = " + String( c.onMinAmps ) );
-  // offMaxAmp = c.offMaxAmps * OFF_MAX_AMPS_FACTOR;
-  // onMinAmp = c.onMinAmps * ON_MIN_AMPS_FACTOR;
-  // Serial.println( "Thresholds: offMaxAmp = " + String( offMaxAmp ) + ", onMinAmp = " + String( onMinAmp ) );
 }
 
 double lastAmps = 0;
@@ -230,11 +257,11 @@ void loop()
     // if( ( relayState == HIGH && lastAmps * 4 < currentAmps ) || //transition from OFF to ON
     //     ( relayState == LOW && lastAmps > currentAmps * 8 )   //transition from ON to OFF
     //   )
-    // if( ( relayState == HIGH && currentAmps > offMaxAmp) || //transition from OFF to ON
-    //     ( relayState == LOW && currentAmps < onMinAmp )   //transition from ON to OFF
+    // if( ( relayState == HIGH && currentAmps > offMaxAmpsThreshold) || //transition from OFF to ON
+    //     ( relayState == LOW && currentAmps < onMinAmpsThreshold )   //transition from ON to OFF
     //   )
-    if( ( Relay::state == HIGH && currentAmps > offMaxAmp) || //transition from OFF to ON
-        ( Relay::state == LOW && currentAmps < onMinAmp )   //transition from ON to OFF
+    if( ( Relay::state == HIGH && currentAmps > offMaxAmpsThreshold) || //transition from OFF to ON
+        ( Relay::state == LOW && currentAmps < onMinAmpsThreshold )   //transition from ON to OFF
       )
     {
 
@@ -247,7 +274,7 @@ void loop()
         trigger = TRIGGER_MANUAL;
         last_trigger = trigger_t;
 
-        String msg("{ \"state\": \"" + String( Relay::state == HIGH ? "OFF" : "ON" ) + "\", \"trigger\": \"manual\" }" );
+        String msg("{ \"state\": \"" + String( Relay::state == HIGH ? "OFF" : "ON" ) + "\", \"trigger\": \"" + triggerToStr() + "\" }" );
         mqttPublish( msg );
         Serial.print( "   Trigger!" );
       }

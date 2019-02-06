@@ -24,7 +24,7 @@
 
 //After calibration mutliply offMaxAmps by this factor to calculate the threshold under which amps are expected to represent a OFF switch
 // Choose a factor > 1 to cover scenarios where spikes occur above the calibrated max ampls value
-#define OFF_MAX_AMPS_FACTOR 1.5
+#define OFF_MAX_AMPS_FACTOR 2
 
 //After calibration mutliply onMinAmps by this factor to calculate the threshold above which amps are expected to represent a ON switch
 // Choose a factor < 1 to cover scenarios where ON amps dip below the calibrated min amps value

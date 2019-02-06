@@ -14,7 +14,7 @@ public:
   double offMaxAmps = 0.0;  //max AmpsRMS when light is switced off
   double onMinAmps = 0.0;   //min AmpsRMS when light is switced on
 
-  void run( uint32_t onMillis = DEFAULT_CALIBRATE_ONMILLIS, uint32_t offMillis = DEFAULT_CALIBRATE_OFFMILLIS );
+  void run( double &offMaxAmpsThreshold, double &onMinAmpsThreshold, uint32_t onMillis = DEFAULT_CALIBRATE_ONMILLIS, uint32_t offMillis = DEFAULT_CALIBRATE_OFFMILLIS );
 };
 
 #endif

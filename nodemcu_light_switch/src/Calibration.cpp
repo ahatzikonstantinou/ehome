@@ -3,7 +3,7 @@
 #include "Relay.h"
 #include "MeasureAmps.h"
 
-void Calibration::run( uint32_t onMillis, uint32_t offMillis )
+void Calibration::run( double &offMaxAmpsThreshold, double &onMinAmpsThreshold, uint32_t onMillis, uint32_t offMillis )
 {
   Relay::off();
   float amps = 0.0;
@@ -17,6 +17,7 @@ void Calibration::run( uint32_t onMillis, uint32_t offMillis )
       offMaxAmps = amps;
     }
   }
+  offMaxAmpsThreshold = offMaxAmps * OFF_MAX_AMPS_FACTOR;
 
   Relay::on();
   onMinAmps = 1000.0; // initialise to a very large value. If initialised to 0 it will stay at 0 because we are keeping the lower value between previous and current measurement.
@@ -29,6 +30,7 @@ void Calibration::run( uint32_t onMillis, uint32_t offMillis )
       onMinAmps = amps;
     }
   }
+  onMinAmpsThreshold = onMinAmps * ON_MIN_AMPS_FACTOR;
 
   Relay::off();
 }
