@@ -80,7 +80,6 @@ const char* subscribe_topic = "L/set";
 WiFiClient espClient;
 PubSubClient client( espClient );
 
-uint32_t lastReconnect = 0;
 
 CheckAmps setRelay( bool on )
 {
@@ -107,9 +106,10 @@ CheckAmps setRelay( bool on )
 
 bool mqttReconnect()
 {
+  static uint32_t lastReconnect = 0;
   // int state = client.state();
   uint32_t start = millis();
-  if( !client.connected() && start - lastReconnect > 5000 )
+  if( !client.connected() && start - lastReconnect > MIN_MQTT_RECONNECT_MILLIS )
   // if( state != 0 && state != -3 )
   {
     Serial.print( "Client rc=" + String( client.state() ) + ", " );
@@ -129,8 +129,6 @@ bool mqttReconnect()
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
-      // // Wait 5 seconds before retrying
-      // delay(5000);
       return false;
     }
   }
