@@ -274,8 +274,7 @@ void loop()
         trigger = TRIGGER_MANUAL;
         last_trigger = trigger_t;
 
-        String msg("{ \"state\": \"" + String( Relay::state == HIGH ? "OFF" : "ON" ) + "\", \"trigger\": \"" + triggerToStr() + "\" }" );
-        mqttPublish( msg );
+        mqttPublishReport();
         Serial.print( "   Trigger!" );
       }
       else
