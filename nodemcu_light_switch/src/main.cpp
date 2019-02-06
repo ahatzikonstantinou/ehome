@@ -25,6 +25,11 @@
 
 #include "Calibration.h"
 
+#define TRIGGER_MANUAL 0
+#define TRIGGER_WIFI 1
+
+char trigger; // holds a value indicating whether the last trigger was manual or wifi
+
 //The following values were good thresholds when using a 60W incadescent light bulb
 double offMaxAmp = 0.15;
 double onMinAmp = 0.25;
@@ -127,12 +132,14 @@ void callback( char* topic, byte* payload, unsigned int length)
     if( receivedChar == '0' )
     {
       Relay::off();
+      trigger = TRIGGER_WIFI;
       String msg("{ \"state\": \"OFF\", \"trigger\": \"wifi\" }" );
       mqttPublish( msg );
     }
     else if( receivedChar == '1' )
     {
       Relay::on();
+      trigger = TRIGGER_WIFI;
       String msg("{ \"state\": \"ON\", \"trigger\": \"wifi\" }" );
       mqttPublish( msg );
     }
@@ -142,7 +149,8 @@ void callback( char* topic, byte* payload, unsigned int length)
     }
     else if( receivedChar == 'r' )
     {
-      //report
+      String msg( String( "{ \"state\": \"" ) + ( Relay::state == HIGH ? "OFF" : "ON" ) + "\", \"trigger\": \"" + ( trigger == TRIGGER_MANUAL ? "manual" : "wifi" ) + "\" }" );
+      mqttPublish( msg );
     }
     else if( receivedChar == 'c' )
     {
@@ -232,11 +240,12 @@ void loop()
 
       // current will jump high once when pressing the pushbutton and also when switching on the light (/relay)
       // switch only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
-      uint32_t trigger = millis();
-      if( trigger > last_trigger + 500 )
+      uint32_t trigger_t = millis();
+      if( trigger_t > last_trigger + 500 )
       {
         Relay::toggle(); //toggleRelay();
-        last_trigger = trigger;
+        trigger = TRIGGER_MANUAL;
+        last_trigger = trigger_t;
 
         String msg("{ \"state\": \"" + String( Relay::state == HIGH ? "OFF" : "ON" ) + "\", \"trigger\": \"manual\" }" );
         mqttPublish( msg );
