@@ -47,10 +47,13 @@
 // The min time in milliseconds between mqtt reconnect attempts
 #define MIN_MQTT_RECONNECT_MILLIS 5000
 
+// The maximum number of mqtt reconnect attempts. If this number is exceeded nodemcu will call WiFiManageWrapper to become an AP
+// and get new values
+#define MAX_MQTT_RECONNECT_ATTEMPTS 5
+
 // The min time in milliseconds that a difference in current measurments may be considered as a trigger.
 // Current will spike once when pressing the pushbutton and also when the relay contacts touch switching on the light
 // Trigger only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
 #define MIN_TRIGGER_MILLIS 500
-
 
 #endif

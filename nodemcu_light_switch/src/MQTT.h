@@ -8,6 +8,7 @@ class MQTT
 {
 private:
   PubSubClient client;
+  unsigned int reconnectAttempts;
 
 public:
   String device_name;// = "";
@@ -23,10 +24,11 @@ public:
   MQTT( WiFiClient& espClient ):
     client( espClient )
   {
-
+    reconnectAttempts = 0;
   }
 
   bool reconnect();
+  bool reconnectsExceeded();
   void publish( String topic, String message );
   void publishConfiguration();
   void publishReport( const int relayState, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold, const CheckAmps c );

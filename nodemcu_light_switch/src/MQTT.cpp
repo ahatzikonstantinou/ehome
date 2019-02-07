@@ -6,12 +6,14 @@ bool MQTT::reconnect()
   uint32_t start = millis();
   if( !client.connected() && ( start - lastReconnect > MIN_MQTT_RECONNECT_MILLIS ) )
   {
+    reconnectAttempts++;
     Serial.print( "Client rc=" + String( client.state() ) + ", " );
     Serial.print( "Attempting MQTT connection..." );
     // Attempt to connect
     if( client.connect( client_id.c_str() ) )
     {
       Serial.println( "connected, rc=" + String( client.state() ) );
+      reconnectAttempts = 0;
       // ... and subscribe to topic
       client.subscribe( subscribe_topic.c_str() );
       client.subscribe( configurator_subscribe_topic.c_str() );
@@ -25,6 +27,11 @@ bool MQTT::reconnect()
     }
   }
   return true;
+}
+
+bool MQTT::reconnectsExceeded()
+{
+  return reconnectAttempts > MAX_MQTT_RECONNECT_ATTEMPTS;
 }
 
 void MQTT::publish( String topic, String message )

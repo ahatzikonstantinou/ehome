@@ -7,7 +7,6 @@
  * MQTT_MAX_PACKET_SIZE to 1024 in PubSubClient.h
  */
 
-#include <FS.h> //for WiFiManager this needs to be first, or it all crashes and burns...
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
@@ -15,8 +14,6 @@
 //needed for library
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
-#include <ArduinoJson.h>  //https://github.com/bblanchon/ArduinoJson
-#include <WiFiManager.h>  //https://github.com/tzapu/WiFiManager
 
 #include "Settings.h"
 #include "Relay.h"
@@ -24,6 +21,12 @@
 #include "Calibration.h"
 #include "CheckAmps.h"
 #include "MQTT.h"
+#include "WifiManagerWrapper.h"
+#include <FS.h>
+
+#define PIN_FLASH 0
+int previousFlashState = 1; //ahat: this is important. 0: PRESSED, 1: RELEASED. previousFlashState must start with 1
+                            //or else as soon as the first input is read it will look like FLASH was pressed
 
 #define TRIGGER_MANUAL 0
 #define TRIGGER_WIFI 1
@@ -83,6 +86,44 @@ const char* location = "A/4/L";
 
 WiFiClient espClient;
 MQTT mqtt( espClient );
+WifiManagerWrapper wifiManagerWrapper( mqtt );
+
+void flashSetup()
+{
+  pinMode( PIN_FLASH, INPUT_PULLUP );
+  //ahat: this is important. 0: PRESSED, 1: RELEASED. previousFlashState must start with 1
+  //or else as soon as the first input is read it will look like FLASH was pressed
+  previousFlashState = 1; // Starting with Flash RELEASED
+  Serial.print( "Starting with previousFlashState:" );
+  Serial.println( previousFlashState );
+}
+
+// use the flash button on the nodemcu module to reset parameters and start wifi manager in AP mode
+// so that the user may enter new parameter values
+void loopReadFlash()
+{
+  int inputState = digitalRead( PIN_FLASH );
+  if( inputState != previousFlashState )
+  {
+    // Serial.printf( "In loopReadFlash: previousFlashState = %d, inputState = %d\n", previousFlashState, inputState );
+    Serial.print("Flash is " );
+    if( inputState )
+    {
+      Serial.println( "RELEASED" );
+
+      // We want wifimanager to collect fresh parameters.
+      wifiManagerWrapper.startAPWithoutConnecting();
+
+      //if you get here you have connected to the WiFi
+      Serial.println("connected...yeey :)");
+    }
+    else
+    {
+      Serial.println( "PRESSED" );
+    }
+    previousFlashState = inputState;
+  }
+}
 
 CheckAmps setRelay( bool on )
 {
@@ -174,6 +215,9 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
       else if( receivedChar == 'a' )
       {
         //access point
+        Serial.println( "Changing to WIFI AP Setup mode" );
+        // We want wifimanager to collect fresh parameters.
+        wifiManagerWrapper.startAPWithoutConnecting();
       }
     }
   }
@@ -183,27 +227,27 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
   }
 }
 
-void wifiSetup()
-{
-  WiFi.hostname(deviceName);      // DHCP Hostname (useful for finding device for static lease)
-  WiFi.config(staticIP, subnet, gateway, dns);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-
-  Serial.print("Connecting to ");
-  Serial.print(ssid); Serial.println(" ...");
-
-  int i = 0;
-  while (WiFi.status() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
-    delay(1000);
-    Serial.print(++i); Serial.print(' ');
-  }
-
-  Serial.println('\n');
-  Serial.println("Connection established!");
-  Serial.print("IP address:\t");
-  Serial.println(WiFi.localIP());
-}
+// void wifiSetup()
+// {
+//   WiFi.hostname(deviceName);      // DHCP Hostname (useful for finding device for static lease)
+//   WiFi.config(staticIP, subnet, gateway, dns);
+//   WiFi.mode(WIFI_STA);
+//   WiFi.begin(ssid, password);
+//
+//   Serial.print("Connecting to ");
+//   Serial.print(ssid); Serial.println(" ...");
+//
+//   int i = 0;
+//   while (WiFi.status() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
+//     delay(1000);
+//     Serial.print(++i); Serial.print(' ');
+//   }
+//
+//   Serial.println('\n');
+//   Serial.println("Connection established!");
+//   Serial.print("IP address:\t");
+//   Serial.println(WiFi.localIP());
+// }
 
 void setup()
 {
@@ -213,8 +257,10 @@ void setup()
   Relay::setup();
   Serial.println( "relay setup finished" );
 
-  wifiSetup();
+  flashSetup();
+  Serial.println( "flashSetup finished" );
 
+  // Setup some initial values to mqtt params before wifimanager attempts to read from storage or get from AP
   // IMPORTANT NOTE: access of member variables is allowed only inside function blocks!
   // The following lines will produce "error: 'mqtt' does not name a type" if placed outside function setup()
   mqtt.device_name = "Light";
@@ -226,6 +272,9 @@ void setup()
   mqtt.subscribe_topic = subscribe_topic;
   mqtt.configurator_publish_topic = configurator_publish_topic;
   mqtt.configurator_subscribe_topic = configurator_subscribe_topic;
+
+  wifiManagerWrapper.setup( true ); //wifiSetup();
+
   mqtt.setup( mqtt_callback ); //mqttSetup();
   Serial.println( "mqttSetup finished" );
 }
@@ -272,7 +321,12 @@ void loop()
 
   mqtt.reconnect();
 
+  if( mqtt.reconnectsExceeded() )
+  {
+    wifiManagerWrapper.setup( false );
+  }
   mqtt.loop();
 
+  loopReadFlash();
   // delay( 300 );
 }
