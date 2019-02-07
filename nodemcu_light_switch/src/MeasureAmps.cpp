@@ -29,6 +29,10 @@ float getAmpsRMS( uint32_t samples_millis )
       /*record the maximum sensor value*/
       minValue = readValue;
     }
+
+    //NOTE: the following line was added according to https://github.com/esp8266/Arduino/issues/1017#issuecomment-352107597
+    //This loop seems to cause nodemcu to crash, unless delay(0) is added
+    delay(0); // delay (0) causes a yeild for ESP8266
   }
 
   // Subtract min from max
