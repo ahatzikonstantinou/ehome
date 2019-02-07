@@ -32,6 +32,8 @@ float getAmpsRMS( uint32_t samples_millis )
 
     //NOTE: the following line was added according to https://github.com/esp8266/Arduino/issues/1017#issuecomment-352107597
     //This loop seems to cause nodemcu to crash, unless delay(0) is added
+    // The crash is because of ESP8266 watchdog (see https://arduino-esp8266.readthedocs.io/en/latest/faq/a02-my-esp-crashes.html)
+    // "if code is locked up staying too long in a loop or processing some task, so vital processes like Wi-Fi communication are not able to run."
     delay(0); // delay (0) causes a yeild for ESP8266
   }
 
