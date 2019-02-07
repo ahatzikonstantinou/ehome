@@ -59,4 +59,5 @@ bool CheckAmps::check( const double offMaxAmpsThreshold, const double onMinAmpsT
     onAmps = amps;
     onError = onAmps < onMinAmpsThreshold;
   }
+  return !offError && !onError;
 }

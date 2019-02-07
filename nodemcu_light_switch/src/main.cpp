@@ -23,6 +23,7 @@
 #include "MeasureAmps.h"
 #include "Calibration.h"
 #include "CheckAmps.h"
+#include "MQTT.h"
 
 #define TRIGGER_MANUAL 0
 #define TRIGGER_WIFI 1
@@ -78,10 +79,10 @@ const char* publish_topic = "L/state";
 const char* subscribe_topic = "L/set";
 const char* configurator_publish_topic = "Configurator/set";
 const char* configurator_subscribe_topic = "Configurator/report";
+const char* location = "A/4/L";
 
 WiFiClient espClient;
-PubSubClient client( espClient );
-
+MQTT mqtt( espClient );
 
 CheckAmps setRelay( bool on )
 {
@@ -106,97 +107,9 @@ CheckAmps setRelay( bool on )
   return c;
 }
 
-bool mqttReconnect()
-{
-  static uint32_t lastReconnect = 0;
-  // int state = client.state();
-  uint32_t start = millis();
-  if( !client.connected() && start - lastReconnect > MIN_MQTT_RECONNECT_MILLIS )
-  // if( state != 0 && state != -3 )
-  {
-    Serial.print( "Client rc=" + String( client.state() ) + ", " );
-    Serial.print( "Attempting MQTT connection..." );
-    // Create a random client ID
-    String clientId = String( deviceName ) + "-";
-    // clientId += String(random(0xffff), HEX);
-    // Attempt to connect
-    if( client.connect( clientId.c_str() ) )
-    {
-      Serial.println( "connected, rc=" + String( client.state() ) );
-      // ... and subscribe to topic
-      client.subscribe( subscribe_topic );
-      client.subscribe( configurator_subscribe_topic );
-    }
-    else
-    {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      return false;
-    }
-  }
-  return true;
-}
-
-void mqttPublish( const char* topic, String message )
-{
-    if( client.connected() )
-    {
-      Serial.print( "Publishing: " + String( topic ) );
-      Serial.println( message );
-      // Serial.println( "sizeof message: " + String( sizeof( message ) ) );
-
-      char _msg[ message.length() + 1 ];  // note: sizeof( message ) will give the wrong size, use message.length() instead
-      memset(&_msg[0], 0, sizeof(_msg));
-      message.toCharArray( _msg, sizeof( _msg ) ) ;
-      // Serial.println( _msg );
-
-      client.publish( topic, _msg );
-    }
-    else
-    {
-      Serial.println( "Cannot publish because client is not connected." );
-    }
-}
-
-void mqttPublishConfiguration()
-{
-  String msg(
-    String( "{ " ) +
-    "\"device_type\": \"" + DEVICE_TYPE + "\"" +
-    ", \"device_domain\": \"" + DEVICE_DOMAIN + "\"" +
-    ", \"firmware\": \"" + FIRMWARE + "\"" +
-    ", \"version\": \"" + VERSION + "\"" +
-    ", \"publish_topic\": \"" + publish_topic + "\"" +
-    ", \"subscribe_topic\": \"" + subscribe_topic + "\"" +
-  " }" );
-  mqttPublish( configurator_publish_topic, msg );
-}
-
-void mqttPublishReport( CheckAmps c )
-{
-  String msg(
-    String( "{ \"state\": \"" ) + ( Relay::state == HIGH ? "OFF" : "ON" ) +
-    "\", \"trigger\": \"" + triggerToStr() +
-    "\", \"offMaxAmpsThreshold\": " + String( offMaxAmpsThreshold ) +
-    ", \"onMinAmpsThreshold\": " + String( onMinAmpsThreshold ) +
-    ", \"offAmps\": " + String( c.offAmps ) +
-    ", \"offError\": " + ( c.offError ? "true" : "false" ) +
-    ", \"onAmps\": " + String( c.onAmps ) +
-    ", \"onError\": " + ( c.onError ? "true" : "false" ) +
-  " }" );
-  mqttPublish( publish_topic, msg );
-}
-
-void mqttPublishReport()
-{
-  String msg( String( "{ \"state\": \"" ) + ( Relay::state == HIGH ? "OFF" : "ON" ) + "\", \"trigger\": \"" + triggerToStr() + "\", \"offMaxAmpsThreshold\": " + String( offMaxAmpsThreshold ) + ", \"onMinAmpsThreshold\": " + String( onMinAmpsThreshold ) + " }" );
-  mqttPublish( publish_topic, msg );
-}
-
 uint32_t last_trigger = millis();
 
-void callback( char* topic, byte* payload, unsigned int length)
+void mqtt_callback( char* topic, byte* payload, unsigned int length)
 {
   Serial.print( "Message arrived [" );
   Serial.print( topic );
@@ -218,7 +131,7 @@ void callback( char* topic, byte* payload, unsigned int length)
         last_trigger = millis();
         CheckAmps c = setRelay( false );
         trigger = TRIGGER_WIFI;
-        mqttPublishReport( c );
+        mqtt.publishReport( Relay::state, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
       }
       else if( receivedChar == '1' )
       {
@@ -226,7 +139,7 @@ void callback( char* topic, byte* payload, unsigned int length)
         last_trigger = millis();
         CheckAmps c = setRelay( true );
         trigger = TRIGGER_WIFI;
-        mqttPublishReport( c );
+        mqtt.publishReport( Relay::state, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
       }
       else if( receivedChar == 'l' )
       {
@@ -240,12 +153,12 @@ void callback( char* topic, byte* payload, unsigned int length)
         last_trigger = millis();
 
         Serial.println( "After calibration: offMaxAmpsThreshold = " + String( offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( onMinAmpsThreshold ) );
-        mqttPublishReport();
+        mqtt.publishReport( Relay::state, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold );
       }
       else if( receivedChar == 'r' )
       {
         //report
-        mqttPublishReport();
+        mqtt.publishReport( Relay::state, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold );
       }
       else if( receivedChar == 'c' )
       {
@@ -256,7 +169,7 @@ void callback( char* topic, byte* payload, unsigned int length)
         c.run( offMaxAmpsThreshold, onMinAmpsThreshold );
         // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
         last_trigger = millis();
-        mqttPublishReport( c );
+        mqtt.publishReport( Relay::state, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
       }
       else if( receivedChar == 'a' )
       {
@@ -266,18 +179,8 @@ void callback( char* topic, byte* payload, unsigned int length)
   }
   else if( _topic == _configurator_subscribe_topic )
   {
-    mqttPublishConfiguration();
+    mqtt.publishConfiguration();
   }
-}
-
-void mqttSetup()
-{
-  // Serial.printf( "Will try to read mqtt_port %s in a String\n", mqtt_port );
-  String port( mqtt_port );
-  // Serial.printf( "Will try to set mqtt server to %s and port to %d\n", mqtt_server, port.toInt() );
-  client.setServer( mqtt_server, port.toInt() );
-  // Serial.printf( "Will try to set mqtt callback\n" );
-  client.setCallback( callback );
 }
 
 void wifiSetup()
@@ -312,7 +215,18 @@ void setup()
 
   wifiSetup();
 
-  mqttSetup();
+  // IMPORTANT NOTE: access of member variables is allowed only inside function blocks!
+  // The following lines will produce "error: 'mqtt' does not name a type" if placed outside function setup()
+  mqtt.device_name = "Light";
+  mqtt.client_id = "light1";
+  mqtt.location = location;
+  mqtt.server = mqtt_server;
+  mqtt.port = mqtt_port;
+  mqtt.publish_topic = publish_topic;
+  mqtt.subscribe_topic = subscribe_topic;
+  mqtt.configurator_publish_topic = configurator_publish_topic;
+  mqtt.configurator_subscribe_topic = configurator_subscribe_topic;
+  mqtt.setup( mqtt_callback ); //mqttSetup();
   Serial.println( "mqttSetup finished" );
 }
 
@@ -325,18 +239,10 @@ void loop()
   double currentAmps = getAmpsRMS();
   if( !firstRun )
   {
-    // if( ( lastAmps * 1.5 ) < currentAmps )
-    // if( ( relayState == HIGH && lastAmps * 4 < currentAmps ) || //transition from OFF to ON
-    //     ( relayState == LOW && lastAmps > currentAmps * 8 )   //transition from ON to OFF
-    //   )
-    // if( ( relayState == HIGH && currentAmps > offMaxAmpsThreshold) || //transition from OFF to ON
-    //     ( relayState == LOW && currentAmps < onMinAmpsThreshold )   //transition from ON to OFF
-    //   )
     if( ( Relay::state == HIGH && currentAmps > offMaxAmpsThreshold) || //transition from OFF to ON
         ( Relay::state == LOW && currentAmps < onMinAmpsThreshold )   //transition from ON to OFF
       )
     {
-
       // current will jump high once when pressing the pushbutton and also when switching on the light (/relay)
       // switch only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
       uint32_t trigger_t = millis();
@@ -345,8 +251,7 @@ void loop()
         CheckAmps c = setRelay( Relay::state == HIGH ? true : false );// Relay::toggle(); //toggleRelay();
         trigger = TRIGGER_MANUAL;
         last_trigger = trigger_t;
-
-        mqttPublishReport( c );
+        mqtt.publishReport( Relay::state, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
         Serial.print( "   Trigger: " );
       }
       else
@@ -365,9 +270,9 @@ void loop()
   }
   lastAmps = currentAmps;
 
-  mqttReconnect();
+  mqtt.reconnect();
 
-  client.loop();
+  mqtt.loop();
 
   // delay( 300 );
 }
