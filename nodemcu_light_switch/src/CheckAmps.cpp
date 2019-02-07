@@ -29,7 +29,7 @@ void CheckAmps::run( const double offMaxAmpsThreshold, const double onMinAmpsThr
   while( ( millis()-start_time ) < onMillis )
   {
     i++;
-    amps = getAmpsRMS();
+    amps += getAmpsRMS();
   }
   onAmps = amps/i;
   onError = onAmps < onMinAmpsThreshold;
