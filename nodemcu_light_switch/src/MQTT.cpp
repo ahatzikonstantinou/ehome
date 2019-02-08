@@ -6,6 +6,7 @@ bool MQTT::reconnect()
   uint32_t start = millis();
   if( !client.connected() && ( start - lastReconnect > MIN_MQTT_RECONNECT_MILLIS ) )
   {
+    lastReconnect = start;
     reconnectAttempts++;
     Serial.print( "Client rc=" + String( client.state() ) + ", " );
     Serial.print( "Attempting MQTT connection..." );
@@ -20,9 +21,9 @@ bool MQTT::reconnect()
     }
     else
     {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
+      Serial.print( "failed, rc=" );
+      Serial.print( client.state() );
+      Serial.println( " try again in " + String( MIN_MQTT_RECONNECT_MILLIS / 1000 ) + "  seconds" );
       return false;
     }
   }
