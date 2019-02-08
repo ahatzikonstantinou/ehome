@@ -3,4 +3,7 @@ if the wdt reset is triggert the board reboots, when it reboots it is checking t
 GPIO15 	GPIO0 	GPIO2 	Mode
 0V 	0V 	3.3V 	Uart Bootloader
 0V 	3.3V 	3.3V 	Boot sketch
-consider setting GPIO15 to 0V, GPIO0 to 3.3V and GPIO2 to 3.3V in order to ensure that after a crash nodemcu will reboot the sketch
+Tried setting GPIO15 to 0V, GPIO0 to 3.3V and GPIO2 to 3.3V in order to ensure that after a crash nodemcu will reboot the sketch but nodemcu does not start or even communicate over usb with the laptop.
+
+
+Over The Air update
