@@ -1,4 +1,5 @@
 #include "MQTT.h"
+#include "Buzzer.h"
 
 bool MQTT::reconnect()
 {
@@ -13,6 +14,7 @@ bool MQTT::reconnect()
     // Attempt to connect
     if( client.connect( client_id.c_str() ) )
     {
+      Buzzer::playMQTTConnected();
       Serial.println( "connected, rc=" + String( client.state() ) );
       reconnectAttempts = 0;
       // ... and subscribe to topic
@@ -21,6 +23,7 @@ bool MQTT::reconnect()
     }
     else
     {
+      Buzzer::playMQTTDisconnected();
       Serial.print( "failed, rc=" );
       Serial.print( client.state() );
       Serial.println( " try again in " + String( MIN_MQTT_RECONNECT_MILLIS / 1000 ) + "  seconds" );

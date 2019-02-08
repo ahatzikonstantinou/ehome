@@ -25,6 +25,7 @@
 #include "MQTT.h"
 #include "WifiManagerWrapper.h"
 #include <FS.h>
+#include "Buzzer.h"
 
 #define PIN_FLASH 0
 int previousFlashState = 1; //ahat: this is important. 0: PRESSED, 1: RELEASED. previousFlashState must start with 1
@@ -253,6 +254,9 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
 
 void setup()
 {
+  Buzzer::setup();
+  Buzzer::playStart();
+
   Serial.begin( 115200 );
   wifi_set_sleep_type( NONE_SLEEP_T );
 
@@ -305,6 +309,9 @@ void setup()
   ArduinoOTA.begin();
 
   Serial.println( "ARduinoOTA setup finished" );
+
+
+  Buzzer::playSetupFinished();
 }
 
 double lastAmps = 0;

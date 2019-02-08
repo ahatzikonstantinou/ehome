@@ -11,6 +11,8 @@
 // The pin were the relay control input is connected
 #define RELAY_PIN D0
 
+#define BUZZER_PIN D1
+
 // The initial state of the relay. The light is connected on the NORMALLY OPEN contact so that
 // when power in the house is initially switched on the light will remain OFF. Same for initial
 // relay state which is HIGH

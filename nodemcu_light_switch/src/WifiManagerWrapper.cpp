@@ -2,6 +2,7 @@
 #include <FS.h> //for WiFiManager this needs to be first, or it all crashes and burns...
 #include <ArduinoJson.h>  //https://github.com/bblanchon/ArduinoJson
 #include <WiFiManager.h>  //https://github.com/tzapu/WiFiManager
+#include "Buzzer.h"
 
 
 //callback notifying us of the need to save config
@@ -129,6 +130,7 @@ void WifiManagerWrapper::setup( bool autoConnect )
   //in seconds
   wifiManager.setTimeout( WIFIMANAGER_PORTAL_TIMEOUT_SECS );
 
+  Buzzer::playWifiPortalStart();
   if( autoConnect )
   {
     //fetches ssid and pass and tries to connect
@@ -139,6 +141,7 @@ void WifiManagerWrapper::setup( bool autoConnect )
     {
       Serial.println( "AutoConnectAP failed to connect and hit timeout" );
       //reset and try again
+      Buzzer::playRestart();
       ESP.restart(); //ESP.reset(); reset() will leave the ESP frozen. restart will leave it frozen only the first time after software upload from usb. A reset with the nodemcu button will fix this.
     }
   }
@@ -151,10 +154,12 @@ void WifiManagerWrapper::setup( bool autoConnect )
     {
       Serial.println( "OnDemandAP failed to connect and hit timeout" );
       //reset and try again
+      Buzzer::playRestart();
       ESP.restart(); //ESP.reset();
     }
   }
 
+  Buzzer::playWifiConnected();
   //if you get here you have connected to the WiFi
   Serial.println("connected...yeey :)");
 
