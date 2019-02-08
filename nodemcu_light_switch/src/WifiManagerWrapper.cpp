@@ -127,7 +127,7 @@ void WifiManagerWrapper::setup( bool autoConnect )
   //sets timeout until configuration portal gets turned off
   //useful to make it all retry or go to sleep
   //in seconds
-  //wifiManager.setTimeout(120);
+  wifiManager.setTimeout( WIFIMANAGER_PORTAL_TIMEOUT_SECS );
 
   if( autoConnect )
   {
@@ -135,13 +135,11 @@ void WifiManagerWrapper::setup( bool autoConnect )
     //if it does not connect it starts an access point with the specified name
     //here  "AutoConnectAP"
     //and goes into a blocking loop awaiting configuration
-    if (!wifiManager.autoConnect("AutoConnectAP"))
+    if( !wifiManager.autoConnect( String( String( "AutoConnectAP-" ) + mqtt->device_name ).c_str() ) )
     {
-      Serial.println("failed to connect and hit timeout");
-      delay(3000);
-      //reset and try again, or maybe put it to deep sleep
-      ESP.reset();
-      delay(5000);
+      Serial.println( "AutoConnectAP failed to connect and hit timeout" );
+      //reset and try again
+      ESP.restart(); //ESP.reset(); reset() will leave the ESP frozen. restart will leave it frozen only the first time after software upload from usb. A reset with the nodemcu button will fix this.
     }
   }
   else
@@ -149,13 +147,11 @@ void WifiManagerWrapper::setup( bool autoConnect )
     WiFi.mode( WIFI_STA );
     WiFi.disconnect();
     delay( 2000 );
-    if (!wifiManager.startConfigPortal( "OnDemandAP" ))
+    if( !wifiManager.startConfigPortal( String( String( "OnDemandAP-" ) + mqtt->device_name ).c_str() ) )
     {
-      Serial.println("failed to connect and hit timeout");
-      delay(3000);
-      //reset and try again, or maybe put it to deep sleep
-      ESP.reset();
-      delay(5000);
+      Serial.println( "OnDemandAP failed to connect and hit timeout" );
+      //reset and try again
+      ESP.restart(); //ESP.reset();
     }
   }
 
