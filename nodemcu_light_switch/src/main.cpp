@@ -312,21 +312,25 @@ void loop()
       Serial.println( ", currentAmps = " + String( currentAmps ) );
     }
   }
-  else
-  {
-    Serial.println( "firstRun = true" );
-    firstRun = false;
-  }
   lastAmps = currentAmps;
 
   mqtt.reconnect();
+  if( firstRun )
+  {
+      mqtt.publishConfiguration();  // tell the world we started
+  }
 
   if( mqtt.reconnectsExceeded() )
   {
-    wifiManagerWrapper.setup( false );
+    wifiManagerWrapper.startAPWithoutConnecting();
   }
   mqtt.loop();
 
   loopReadFlash();
-  // delay( 300 );
+
+  if( firstRun )
+  {
+    Serial.println( "firstRun = true" );
+    firstRun = false;
+  }
 }
