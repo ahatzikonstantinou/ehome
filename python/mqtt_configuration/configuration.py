@@ -25,6 +25,8 @@ class Configuration( object ):
         {"cmd": "SEND" } : for publishing the current configuration
         {"cmd": "SAVE", "data": "new configuration in json format" } : for saving new configuration
         {"cmd": "ITEM_UPDATE", "data": "new item configuration in json format" } : for updating or adding new item
+
+    TODO: add expiration of house configuration items and perhaps also alert when an item has not responded to a few report configuration requests
     """
     ConfigurationFile = 'houses-configuration.json'
     def __init__( self, mqttId, mqttParams ):
