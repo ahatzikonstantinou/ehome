@@ -23,7 +23,9 @@
 #include "Calibration.h"
 #include "CheckAmps.h"
 #include "MQTT.h"
+#if USE_WIFIMANAGER == 1
 #include "WifiManagerWrapper.h"
+#endif
 #include <FS.h>
 #include "Buzzer.h"
 
@@ -81,15 +83,17 @@ const char* password = "ap2109769675ap";
 // char subscribe_topic[256];
 const char* mqtt_server = "192.168.1.31";
 const char* mqtt_port = "1883";
-const char* publish_topic = "L/state";
-const char* subscribe_topic = "L/set";
-const char* configurator_publish_topic = "Configurator/set";
-const char* configurator_subscribe_topic = "Configurator/report";
+const char* publish_topic = "A/4/L/LIGHT/L1/state";
+const char* subscribe_topic = "A/4/L/LIGHT/L1/set";
+const char* configurator_publish_topic = "A///CONFIGURATION/C/cmd";
+const char* configurator_subscribe_topic = "A///CONFIGURATION/C/report";
 const char* location = "A/4/L";
 
 WiFiClient espClient;
 MQTT mqtt( espClient );
+#if USE_WIFIMANAGER == 1
 WifiManagerWrapper wifiManagerWrapper( mqtt );
+#endif
 
 void flashSetup()
 {
@@ -114,11 +118,15 @@ void loopReadFlash()
     {
       Serial.println( "RELEASED" );
 
-      // We want wifimanager to collect fresh parameters.
-      wifiManagerWrapper.startAPWithoutConnecting();
+      #if USE_WIFIMANAGER == 1
+        // We want wifimanager to collect fresh parameters.
+        wifiManagerWrapper.startAPWithoutConnecting();
 
-      //if you get here you have connected to the WiFi
-      Serial.println("connected...yeey :)");
+        //if you get here you have connected to the WiFi
+        Serial.println("connected...yeey :)");
+      #else
+        Serial.println( "The command to switch to WIFI AP Setup mode works only with 'USE_WIFIMANAGER 1'" );
+      #endif
     }
     else
     {
@@ -218,9 +226,13 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
       else if( receivedChar == 'a' )
       {
         //access point
-        Serial.println( "Changing to WIFI AP Setup mode" );
-        // We want wifimanager to collect fresh parameters.
-        wifiManagerWrapper.startAPWithoutConnecting();
+        #if USE_WIFIMANAGER == 1
+          Serial.println( "Changing to WIFI AP Setup mode" );
+          // We want wifimanager to collect fresh parameters.
+          wifiManagerWrapper.startAPWithoutConnecting();
+        #else
+          Serial.println( "The command to switch to WIFI AP Setup mode works only with 'USE_WIFIMANAGER 1'" );
+        #endif
       }
     }
   }
@@ -230,27 +242,29 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
   }
 }
 
-// void wifiSetup()
-// {
-//   WiFi.hostname(deviceName);      // DHCP Hostname (useful for finding device for static lease)
-//   WiFi.config(staticIP, subnet, gateway, dns);
-//   WiFi.mode(WIFI_STA);
-//   WiFi.begin(ssid, password);
-//
-//   Serial.print("Connecting to ");
-//   Serial.print(ssid); Serial.println(" ...");
-//
-//   int i = 0;
-//   while (WiFi.status() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
-//     delay(1000);
-//     Serial.print(++i); Serial.print(' ');
-//   }
-//
-//   Serial.println('\n');
-//   Serial.println("Connection established!");
-//   Serial.print("IP address:\t");
-//   Serial.println(WiFi.localIP());
-// }
+#if USE_WIFIMANAGER == 0
+void wifiSetup()
+{
+  WiFi.hostname(deviceName);      // DHCP Hostname (useful for finding device for static lease)
+  WiFi.config(staticIP, subnet, gateway, dns);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+
+  Serial.print("Connecting to ");
+  Serial.print(ssid); Serial.println(" ...");
+
+  int i = 0;
+  while (WiFi.status() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
+    delay(1000);
+    Serial.print(++i); Serial.print(' ');
+  }
+
+  Serial.println('\n');
+  Serial.println("Connection established!");
+  Serial.print("IP address:\t");
+  Serial.println(WiFi.localIP());
+}
+#endif
 
 void setup()
 {
@@ -269,7 +283,7 @@ void setup()
   // Setup some initial values to mqtt params before wifimanager attempts to read from storage or get from AP
   // IMPORTANT NOTE: access of member variables is allowed only inside function blocks!
   // The following lines will produce "error: 'mqtt' does not name a type" if placed outside function setup()
-  mqtt.device_name = "Light";
+  mqtt.device_name = "Φως επίδειξης";
   mqtt.client_id = "light1";
   mqtt.location = location;
   mqtt.server = mqtt_server;
@@ -279,7 +293,11 @@ void setup()
   mqtt.configurator_publish_topic = configurator_publish_topic;
   mqtt.configurator_subscribe_topic = configurator_subscribe_topic;
 
-  wifiManagerWrapper.setup( true ); //wifiSetup();
+  #if USE_WIFIMANAGER == 1
+    wifiManagerWrapper.setup( true );
+  #else
+    wifiSetup();
+  #endif
 
   mqtt.setup( mqtt_callback ); //mqttSetup();
   Serial.println( "mqttSetup finished" );
@@ -357,7 +375,11 @@ void loop()
 
   if( mqtt.reconnectsExceeded() )
   {
-    wifiManagerWrapper.startAPWithoutConnecting();
+    #if USE_WIFIMANAGER == 1
+      wifiManagerWrapper.startAPWithoutConnecting();
+    #else
+      Serial.println( "The command to switch to WIFI AP Setup mode works only with 'USE_WIFIMANAGER 1'" );
+    #endif
   }
   mqtt.loop();
 

@@ -61,4 +61,7 @@
 // The time after which wifimanager shutsdown the portal and nodemcu will restart
 #define WIFIMANAGER_PORTAL_TIMEOUT_SECS 90
 
+// When debugging its best to directly define wifi and mqtt parameters
+#define USE_WIFIMANAGER 0
+
 #endif

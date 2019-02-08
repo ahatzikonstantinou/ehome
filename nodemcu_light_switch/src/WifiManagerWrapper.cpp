@@ -42,13 +42,16 @@ void WifiManagerWrapper::setup( bool autoConnect )
   //read configuration from FS json
   Serial.println("mounting FS...");
 
-  if (SPIFFS.begin()) {
+  if (SPIFFS.begin())
+  {
     Serial.println("mounted file system");
-    if (SPIFFS.exists( configFileName )) {
+    if (SPIFFS.exists( configFileName ))
+     {
       //file exists, reading and loading
       Serial.println("reading config file");
       File configFile = SPIFFS.open( configFileName , "r");
-      if (configFile) {
+      if (configFile)
+      {
         Serial.println("opened config file");
         size_t size = configFile.size();
         // Allocate a buffer to store contents of the file.

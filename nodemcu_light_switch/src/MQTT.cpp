@@ -64,16 +64,19 @@ void MQTT::publishConfiguration()
 {
   String msg(
     String( "{ " ) +
-    "\"device_type\": \"" + DEVICE_TYPE + "\"" +
-    ", \"device_domain\": \"" + DEVICE_DOMAIN + "\"" +
+    "\"cmd\": \"ITEM_UPDATE\"" +
+    ", \"data\": { " +
+    "\"type\": \"" + DEVICE_TYPE + "\"" +
+    ", \"domain\": \"" + DEVICE_DOMAIN + "\"" +
     ", \"firmware\": \"" + FIRMWARE + "\"" +
     ", \"version\": \"" + VERSION + "\"" +
+    ", \"protocol\": \"mqtt\"" +
     ", \"device_name\": \"" + device_name + "\"" +
-    ", \"client_id\": \"" + client_id + "\"" +
+    ", \"id\": \"" + client_id + "\"" +
     ", \"location\": \"" + location + "\"" +
-    ", \"publish_topic\": \"" + publish_topic + "\"" +
-    ", \"subscribe_topic\": \"" + subscribe_topic + "\"" +
-  " }" );
+    ", \"publish\": \"" + publish_topic + "\"" +
+    ", \"subscribe\": \"" + subscribe_topic + "\"" +
+  " } }" );
   publish( configurator_publish_topic, msg );
 }
 
