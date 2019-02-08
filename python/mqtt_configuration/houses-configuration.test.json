@@ -1,7 +1,5 @@
 {
     "items": [
-        { "name": "SMS", "domain": "SMS", "type": "SMS", "protocol": "mqtt", "subscribe": "sms", "publish": "sms/cmd" },
-        { "name": "Modems", "domain": "MODEM", "type": "MODEM", "protocol": "mqtt", "subscribe": "modem", "publish": "modem/cmd" }
     ],
     "houses":[
         { 
@@ -16,20 +14,25 @@
                             "name": "Χωλ",
                             "mqtt": "H",
                             "items": [
-                                { "name": "Πόρτα εισόδου", "domain": "DOOR", "type": "DOOR1", "protocol": "mqtt", "subscribe": "A/4/H/DOOR/D" },
-                                { "name": "Παράθυρο φωταγωγού", "domain": "WINDOW", "type": "WINDOW1R", "protocol": "mqtt", "subscribe": "A/4/H/WINDOW/W" },
-                                { "name": "Σίτα φωταγωγού", "domain": "COVER", "type": "NET", "protocol": "mqtt", "subscribe": "A/4/H/COVER/W" },
-                                { "name": "Φως ταβάνι", "domain": "LIGHT", "type": "LIGHT1", "protocol": "mqtt", "subscribe": "A/4/H/LIGHT/LC/state", "publish": "A/4/H/LC/set" },
-                                { "name": "Εξωτερικό φως εισόδου", "domain": "LIGHT", "type": "LIGHT1", "protocol": "mqtt", "subscribe": "A/4/H/LIGHT/LO/state", "publish": "A/4/H/LO/set" },                                    
-                                { "name": "Κάμερα", "domain": "CAMERA", "type": "IPCAMERAPANTILT", "protocol": "http", "baseUrl": "http://192.168.1.79/webcam/", "videostream": "videostream.cgi?", "right": "decoder_control.cgi?command=6", "left": "decoder_control.cgi?command=4", "up": "decoder_control.cgi?command=0", "down": "decoder_control.cgi?command=2", "stop": "decoder_control.cgi?command=1" },
-                                { "name": "Κίνηση", "domain": "MOTION", "type": "MOTIONCAMERAPANTILT", "protocol": "mqtt", "subscribe": "A///MOTION/M/status", "publish":"A///MOTION/M/cmd", "cameraId": "tenvis", "videostream": "http://192.168.1.11:9081" },
-                                { "name": "Θερμοκρασία", "domain": "CLIMATE", "type": "TEMPERATURE_HUMIDITY", "protocol": "mqtt", "subscribe": "A/4/H/TH" }
-                            ]
+                                 ]
+                        }, 
+                        { 
+                            "name": "Σαλόνι",
+                            "mqtt": "L",
+                            "items": [
+                                 ]
                         }
                     ] 
                 } 
             ],
-            "items": [ { "name": "Συναγερμός", "domain": "ALARM", "type": "ALARM", "protocol": "mqtt", "subscribe": "A///ALARM/A/status", "publish": "A///ALARM/A/set" } ]
+            "items": [ ]
+        },
+        { 
+            "name": "Διαμέρισμα Ειρήνης", 
+            "floors": [ 
+                
+            ],
+            "items": [ ] 
         }
     ]
 }
