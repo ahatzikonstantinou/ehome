@@ -6,4 +6,6 @@ GPIO15 	GPIO0 	GPIO2 	Mode
 Tried setting GPIO15 to 0V, GPIO0 to 3.3V and GPIO2 to 3.3V in order to ensure that after a crash nodemcu will reboot the sketch but nodemcu does not start or even communicate over usb with the laptop.
 
 
-Over The Air update
+NOTE: Over The Air update will not work after uploading firmware to ESP8266 over UART. In such a case do a manual RESET first by pressing the nodemcu RESET button.
+
+NOTE: When the WiFiManager portal times out, it will restart ESP. However, if firmware was uploaded over UART (usb) software restarting will freeze nodemcu. In such a case do a manual RESET  by pressing the nodemcu RESET button, and following restarts will work without a problem.

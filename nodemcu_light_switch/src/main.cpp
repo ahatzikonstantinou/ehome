@@ -15,6 +15,8 @@
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
 
+#include <ArduinoOTA.h>
+
 #include "Settings.h"
 #include "Relay.h"
 #include "MeasureAmps.h"
@@ -277,6 +279,32 @@ void setup()
 
   mqtt.setup( mqtt_callback ); //mqttSetup();
   Serial.println( "mqttSetup finished" );
+
+  // OTA setup
+  ArduinoOTA.onStart([]() {
+    Serial.println("Start OTA");
+  });
+
+  ArduinoOTA.onEnd([]() {
+    Serial.println("End OTA");
+  });
+
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\n", (progress / (total / 100)));
+  });
+
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+
+  ArduinoOTA.begin();
+
+  Serial.println( "ARduinoOTA setup finished" );
 }
 
 double lastAmps = 0;
@@ -327,6 +355,8 @@ void loop()
   mqtt.loop();
 
   loopReadFlash();
+
+  ArduinoOTA.handle();
 
   if( firstRun )
   {
