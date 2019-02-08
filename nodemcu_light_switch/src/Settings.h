@@ -56,4 +56,7 @@
 // Trigger only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
 #define MIN_TRIGGER_MILLIS 500
 
+// The time after which wifimanager shutsdown the portal and nodemcu will restart
+#define WIFIMANAGER_PORTAL_TIMEOUT_SECS 90
+
 #endif
