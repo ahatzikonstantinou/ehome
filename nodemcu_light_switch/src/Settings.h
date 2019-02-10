@@ -62,7 +62,7 @@
 #define MAX_TWO_TRIGGER_MILLIS 500
 
 // The time after which wifimanager shutsdown the portal and nodemcu will restart
-#define WIFIMANAGER_PORTAL_TIMEOUT_SECS 20
+#define WIFIMANAGER_PORTAL_TIMEOUT_SECS 120
 
 // When debugging its best to directly define wifi and mqtt parameters
 #define USE_WIFIMANAGER 1
