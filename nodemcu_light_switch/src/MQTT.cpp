@@ -80,10 +80,11 @@ void MQTT::publishConfiguration()
   publish( configurator_publish_topic, msg );
 }
 
-void MQTT::publishReport( const int relayState, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold, const CheckAmps c )
+void MQTT::publishReport( const int relayState, const bool relayActive, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold, const CheckAmps c )
 {
   String msg(
     String( "{ \"state\": \"" ) + ( relayState == HIGH ? "OFF" : "ON" ) +
+    "\", \"active\": \"" + ( relayActive ? "true" : "false" ) +
     "\", \"trigger\": \"" + trigger +
     "\", \"offMaxAmpsThreshold\": " + String( offMaxAmpsThreshold ) +
     ", \"onMinAmpsThreshold\": " + String( onMinAmpsThreshold ) +
@@ -95,9 +96,15 @@ void MQTT::publishReport( const int relayState, const String trigger, const doub
   publish( publish_topic, msg );
 }
 
-void MQTT::publishReport( const int relayState, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold )
+void MQTT::publishReport( const int relayState, const bool relayActive, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold )
 {
-  String msg( String( "{ \"state\": \"" ) + ( relayState == HIGH ? "OFF" : "ON" ) + "\", \"trigger\": \"" + trigger + "\", \"offMaxAmpsThreshold\": " + String( offMaxAmpsThreshold ) + ", \"onMinAmpsThreshold\": " + String( onMinAmpsThreshold ) + " }" );
+  String msg(
+    String( "{ \"state\": \"" ) + ( relayState == HIGH ? "OFF" : "ON" ) +
+    "\", \"active\": \"" + ( relayActive ? "true" : "false" ) +
+    "\", \"trigger\": \"" + trigger +
+    "\", \"offMaxAmpsThreshold\": " + String( offMaxAmpsThreshold ) +
+    ", \"onMinAmpsThreshold\": " + String( onMinAmpsThreshold ) +
+  " }" );
   publish( publish_topic, msg );
 }
 

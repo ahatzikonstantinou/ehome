@@ -3,14 +3,14 @@
 #include "Relay.h"
 #include "MeasureAmps.h"
 
-void CheckAmps::run( const double offMaxAmpsThreshold, const double onMinAmpsThreshold, uint32_t onMillis, uint32_t offMillis )
+void CheckAmps::run( Relay &relay,const double offMaxAmpsThreshold, const double onMinAmpsThreshold, const uint32_t onMillis, const uint32_t offMillis )
 {
-  int state = Relay::state;
+  int state = relay.state;
 
   double amps = 0.0;
 
   // check when off
-  Relay::off();
+  relay.off();
   uint32_t start_time = millis();
   unsigned int i = 0;
   while( ( millis()-start_time ) < offMillis )
@@ -22,7 +22,7 @@ void CheckAmps::run( const double offMaxAmpsThreshold, const double onMinAmpsThr
   offError = offAmps > offMaxAmpsThreshold;
 
   // check when on
-  Relay::on();
+  relay.on();
   amps = 0.0;
   i = 0;
   start_time = millis();
@@ -37,19 +37,19 @@ void CheckAmps::run( const double offMaxAmpsThreshold, const double onMinAmpsThr
   // restore initial state
   if( state == HIGH )
   {
-    Relay::off();
+    relay.off();
   }
   else
   {
-    Relay::on();
+    relay.on();
   }
 }
 
-bool CheckAmps::check( const double offMaxAmpsThreshold, const double onMinAmpsThreshold )
+bool CheckAmps::check( Relay &relay, const double offMaxAmpsThreshold, const double onMinAmpsThreshold )
 {
   delay( 40 );
   double amps = getAmpsRMS();
-  if( Relay::state == HIGH ) //off
+  if( relay.state == HIGH ) //off
   {
     offAmps = amps;
     offError = offAmps > offMaxAmpsThreshold;

@@ -2,31 +2,41 @@
 #include "Settings.h"
 #include <ESP8266WiFi.h>
 
-int Relay::state = INIT_RELAY_STATE;
+void Relay::activate()
+{
+    Relay::active = true;
+}
+void Relay::deactivate()
+{
+  Relay::off();
+  Relay::active = false;
+}
 
 void Relay::setup()
 {
-  state = INIT_RELAY_STATE;
-  pinMode( RELAY_PIN, OUTPUT );
-  digitalWrite( RELAY_PIN, state );
+  pinMode( pin, OUTPUT );
+  digitalWrite( pin, state );
 }
 
 int Relay::off()
 {
+  if( !active ) { return state; }
   state = HIGH;  // When the light is connected on the Normally Open contact of the relay, a HIGH will keep the light OFF
-  digitalWrite( RELAY_PIN, state );
+  digitalWrite( pin, state );
   return state;
 }
 
 int Relay::on()
 {
+  if( !active ) { return state; }
   state = LOW;  // When the light is connected on the Normally Open contact of the relay, a LOW will keep the light ON
-  digitalWrite( RELAY_PIN, state );
+  digitalWrite( pin, state );
   return state;
 }
 
 int Relay::toggle()
 {
+  if( !active ) { return state; }
   if( state == HIGH )
   {
     state = LOW;
@@ -35,6 +45,6 @@ int Relay::toggle()
   {
     state = HIGH;
   }
-  digitalWrite( RELAY_PIN, state );
+  digitalWrite( pin, state );
   return state;
 }

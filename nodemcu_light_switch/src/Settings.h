@@ -51,17 +51,27 @@
 
 // The maximum number of mqtt reconnect attempts. If this number is exceeded nodemcu will call WiFiManageWrapper to become an AP
 // and get new values
-#define MAX_MQTT_RECONNECT_ATTEMPTS 5
+#define MAX_MQTT_RECONNECT_ATTEMPTS 3
 
 // The min time in milliseconds that a difference in current measurments may be considered as a trigger.
 // Current will spike once when pressing the pushbutton and also when the relay contacts touch switching on the light
 // Trigger only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
-#define MIN_TRIGGER_MILLIS 500
+#define MIN_TRIGGER_MILLIS 300
+
+// The max time between two triggers in order for these two triggers to be considered a toggle of operation mode
+#define MAX_TWO_TRIGGER_MILLIS 500
 
 // The time after which wifimanager shutsdown the portal and nodemcu will restart
-#define WIFIMANAGER_PORTAL_TIMEOUT_SECS 90
+#define WIFIMANAGER_PORTAL_TIMEOUT_SECS 20
 
 // When debugging its best to directly define wifi and mqtt parameters
-#define USE_WIFIMANAGER 0
+#define USE_WIFIMANAGER 1
 
+// When WiFiManager has exceed the maximum number of autoconnect attempts, a fresh attempt will be made to connect with old credentials
+#define MAX_WIFIMANAFER_RECONNECTS 3
+
+// The switch may work in manual_only or manual_wifi mode. manual_only is for when there is no wifi or mqtt infrastructure
+// but the switch should still work at least manually
+#define OPERATION_MANUAL_ONLY 0
+#define OPERATION_MANUAL_WIFI 1
 #endif

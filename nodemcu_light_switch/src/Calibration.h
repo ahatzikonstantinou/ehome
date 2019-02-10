@@ -3,6 +3,7 @@
 
  #include <stdint.h>
  #include "Settings.h"
+ #include "Relay.h"
 
 // Contains param and methods to measure AmpsRMS when ligth is switched ON and OFF
 // in order to establish threshold values of normal operation. Then, if light i.e. relay is
@@ -14,7 +15,7 @@ public:
   double offMaxAmps = 0.0;  //max AmpsRMS when light is switced off
   double onMinAmps = 0.0;   //min AmpsRMS when light is switced on
 
-  void run( double &offMaxAmpsThreshold, double &onMinAmpsThreshold, uint32_t onMillis = DEFAULT_CALIBRATE_ONMILLIS, uint32_t offMillis = DEFAULT_CALIBRATE_OFFMILLIS );
+  void run( Relay &relay, double &offMaxAmpsThreshold, double &onMinAmpsThreshold, const uint32_t onMillis = DEFAULT_CALIBRATE_ONMILLIS, const uint32_t offMillis = DEFAULT_CALIBRATE_OFFMILLIS );
 };
 
 #endif

@@ -3,13 +3,25 @@
 
 class Relay
 {
-public:
-  static int state;
+private:
+  unsigned int pin;
 
-  static void setup();
-  static int toggle();
-  static int on();
-  static int off();
+public:
+  int state;
+  bool active;
+
+  Relay( unsigned int _pin, int _state )
+  {
+    pin = _pin;
+    state = _state;
+    active = true;
+  }
+  void setup();
+  int toggle();
+  int on();
+  int off();
+  void activate();
+  void deactivate();
 };
 
 #endif

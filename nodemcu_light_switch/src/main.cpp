@@ -60,6 +60,40 @@ String triggerToStr()
 
 }
 
+// unsigned int operation_mode = OPERATION_MANUAL_ONLY;
+unsigned int operation_mode = OPERATION_MANUAL_WIFI;
+
+String operationModeToStr()
+{
+  String text = "";
+  if( operation_mode == OPERATION_MANUAL_ONLY )
+  {
+    text = "MANUAL_ONLY";
+  }
+  else if( operation_mode == OPERATION_MANUAL_WIFI )
+  {
+    text = "MANUAL_WIFI";
+  }
+
+  return text;
+}
+
+unsigned int toggleOperationMode()
+{
+  if( operation_mode == OPERATION_MANUAL_ONLY )
+  {
+    Serial.println( "Toglling operation to MANUAL_WIFI" );
+    operation_mode = OPERATION_MANUAL_WIFI;
+  }
+  else
+  {
+    Serial.println( "Toglling operation to MANUAL_ONLY" );
+    operation_mode = OPERATION_MANUAL_ONLY;
+  }
+  return operation_mode;
+}
+
+
 //The following values were good thresholds when using a 60W incadescent light bulb
 double offMaxAmpsThreshold = 0.15;
 double onMinAmpsThreshold = 0.25;
@@ -95,6 +129,8 @@ MQTT mqtt( espClient );
 WifiManagerWrapper wifiManagerWrapper( mqtt );
 #endif
 
+Relay relay( RELAY_PIN, INIT_RELAY_STATE );
+
 void flashSetup()
 {
   pinMode( PIN_FLASH, INPUT_PULLUP );
@@ -118,15 +154,18 @@ void loopReadFlash()
     {
       Serial.println( "RELEASED" );
 
-      #if USE_WIFIMANAGER == 1
-        // We want wifimanager to collect fresh parameters.
-        wifiManagerWrapper.startAPWithoutConnecting();
+      if( operation_mode == OPERATION_MANUAL_WIFI )
+      {
+        #if USE_WIFIMANAGER == 1
+          // We want wifimanager to collect fresh parameters.
+          wifiManagerWrapper.startAPWithoutConnecting();
 
-        //if you get here you have connected to the WiFi
-        Serial.println("connected...yeey :)");
-      #else
-        Serial.println( "The command to switch to WIFI AP Setup mode works only with 'USE_WIFIMANAGER 1'" );
-      #endif
+          //if you get here you have connected to the WiFi
+          Serial.println("connected...yeey :)");
+        #else
+          Serial.println( "The command to switch to WIFI AP Setup mode works only with 'USE_WIFIMANAGER 1'" );
+        #endif
+      }
     }
     else
     {
@@ -140,21 +179,21 @@ CheckAmps setRelay( bool on )
 {
   if( on )
   {
-    Relay::on();
+    relay.on();
   }
   else
   {
-    Relay::off();
+    relay.off();
   }
   CheckAmps c;
-  c.check( offMaxAmpsThreshold, onMinAmpsThreshold );
+  c.check( relay, offMaxAmpsThreshold, onMinAmpsThreshold );
 
   //If the light bulb is burnt or missing switch the Relay back to off, because any
-  //consecutive low current amp measurement will be considered a trigger if the Relay::state is LOW
+  //consecutive low current amp measurement will be considered a trigger if the relay.state is LOW
   if( c.onError )
   {
     Serial.println( "There was an error switching the Relay on!" );
-    Relay::off();
+    relay.off();
   }
   return c;
 }
@@ -183,7 +222,7 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
         last_trigger = millis();
         CheckAmps c = setRelay( false );
         trigger = TRIGGER_WIFI;
-        mqtt.publishReport( Relay::state, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
+        mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
       }
       else if( receivedChar == '1' )
       {
@@ -191,7 +230,7 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
         last_trigger = millis();
         CheckAmps c = setRelay( true );
         trigger = TRIGGER_WIFI;
-        mqtt.publishReport( Relay::state, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
+        mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
       }
       else if( receivedChar == 'l' )
       {
@@ -200,17 +239,17 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
         Serial.println( "Before calibration: offMaxAmpsThreshold = " + String( offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( onMinAmpsThreshold ) );
         Serial.println( "Calibrating..." );
         Calibration c;
-        c.run( offMaxAmpsThreshold, onMinAmpsThreshold );
+        c.run( relay, offMaxAmpsThreshold, onMinAmpsThreshold );
         // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
         last_trigger = millis();
 
         Serial.println( "After calibration: offMaxAmpsThreshold = " + String( offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( onMinAmpsThreshold ) );
-        mqtt.publishReport( Relay::state, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold );
+        mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold );
       }
       else if( receivedChar == 'r' )
       {
         //report
-        mqtt.publishReport( Relay::state, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold );
+        mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold );
       }
       else if( receivedChar == 'c' )
       {
@@ -218,12 +257,12 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
         trigger = TRIGGER_CHECK;
         Serial.println( "Checking..." );
         CheckAmps c;
-        c.run( offMaxAmpsThreshold, onMinAmpsThreshold );
+        c.run( relay, offMaxAmpsThreshold, onMinAmpsThreshold );
         // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
         last_trigger = millis();
-        mqtt.publishReport( Relay::state, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
+        mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
       }
-      else if( receivedChar == 'a' )
+      else if( receivedChar == 'w' )
       {
         //access point
         #if USE_WIFIMANAGER == 1
@@ -233,6 +272,15 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
         #else
           Serial.println( "The command to switch to WIFI AP Setup mode works only with 'USE_WIFIMANAGER 1'" );
         #endif
+      }
+      else if( receivedChar == 'a' )
+      {
+        relay.activate();
+      }
+      else if( receivedChar == 'd' )
+      {
+        //deactivate
+        relay.deactivate();
       }
     }
   }
@@ -274,7 +322,7 @@ void setup()
   Serial.begin( 115200 );
   wifi_set_sleep_type( NONE_SLEEP_T );
 
-  Relay::setup();
+  relay.setup();
   Serial.println( "relay setup finished" );
 
   flashSetup();
@@ -293,41 +341,56 @@ void setup()
   mqtt.configurator_publish_topic = configurator_publish_topic;
   mqtt.configurator_subscribe_topic = configurator_subscribe_topic;
 
-  #if USE_WIFIMANAGER == 1
-    wifiManagerWrapper.setup( true );
-  #else
-    wifiSetup();
-  #endif
-
   mqtt.setup( mqtt_callback ); //mqttSetup();
   Serial.println( "mqttSetup finished" );
 
-  // OTA setup
-  ArduinoOTA.onStart([]() {
-    Serial.println("Start OTA");
-  });
+  if( operation_mode == OPERATION_MANUAL_WIFI )
+  {
+    #if USE_WIFIMANAGER == 1
+      // wifiManagerWrapper.setup( true );
+      wifiManagerWrapper.initFromJsonConfig();
+      if( !wifiManagerWrapper.reconnectsExceeded() )
+      {
+        Serial.println( "wifiManagerWrapper reconnects NOT exceeded, attempting autoconnectWithOldValues..." );
+        wifiManagerWrapper.autoconnectWithOldValues();
+      }
+      else
+      {
+        Serial.println( "wifiManagerWrapper.reconnectsExceeded, attempting startAPWithoutConnecting..." );
+        wifiManagerWrapper.resetReconnects();
+        wifiManagerWrapper.startAPWithoutConnecting();
+      }
 
-  ArduinoOTA.onEnd([]() {
-    Serial.println("End OTA");
-  });
+    #else
+      wifiSetup();
+    #endif
 
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("Progress: %u%%\n", (progress / (total / 100)));
-  });
+    // OTA setup
+    ArduinoOTA.onStart([]() {
+      Serial.println("Start OTA");
+    });
 
-  ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR) Serial.println("End Failed");
-  });
+    ArduinoOTA.onEnd([]() {
+      Serial.println("End OTA");
+    });
 
-  ArduinoOTA.begin();
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+      Serial.printf("Progress: %u%%\n", (progress / (total / 100)));
+    });
 
-  Serial.println( "ARduinoOTA setup finished" );
+    ArduinoOTA.onError([](ota_error_t error) {
+      Serial.printf("Error[%u]: ", error);
+      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+      else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    });
 
+    ArduinoOTA.begin();
+
+    Serial.println( "ARduinoOTA setup finished" );
+  }
 
   Buzzer::playSetupFinished();
 }
@@ -341,8 +404,8 @@ void loop()
   double currentAmps = getAmpsRMS();
   if( !firstRun )
   {
-    if( ( Relay::state == HIGH && currentAmps > offMaxAmpsThreshold) || //transition from OFF to ON
-        ( Relay::state == LOW && currentAmps < onMinAmpsThreshold )   //transition from ON to OFF
+    if( ( relay.state == HIGH && currentAmps > offMaxAmpsThreshold) || //transition from OFF to ON
+        ( relay.state == LOW && currentAmps < onMinAmpsThreshold )   //transition from ON to OFF
       )
     {
       // current will jump high once when pressing the pushbutton and also when switching on the light (/relay)
@@ -350,10 +413,21 @@ void loop()
       uint32_t trigger_t = millis();
       if( trigger_t > last_trigger + MIN_TRIGGER_MILLIS )
       {
-        CheckAmps c = setRelay( Relay::state == HIGH ? true : false );// Relay::toggle(); //toggleRelay();
-        trigger = TRIGGER_MANUAL;
-        last_trigger = trigger_t;
-        mqtt.publishReport( Relay::state, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
+        if( trigger_t < last_trigger + MAX_TWO_TRIGGER_MILLIS )
+        {
+          toggleOperationMode();
+          Serial.println( "Double valid trigger, switched operation mode to " + operationModeToStr() );
+        }
+        else
+        {
+          CheckAmps c = setRelay( relay.state == HIGH ? true : false );// relay.toggle(); //toggleRelay();
+          trigger = TRIGGER_MANUAL;
+          last_trigger = trigger_t;
+          if( operation_mode == OPERATION_MANUAL_WIFI )
+          {
+            mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
+          }
+        }
         Serial.print( "   Trigger: " );
       }
       else
@@ -367,25 +441,28 @@ void loop()
   }
   lastAmps = currentAmps;
 
-  mqtt.reconnect();
-  if( firstRun )
+  if( operation_mode == OPERATION_MANUAL_WIFI )
   {
-      mqtt.publishConfiguration();  // tell the world we started
-  }
+    mqtt.reconnect();
+    if( firstRun )
+    {
+        mqtt.publishConfiguration();  // tell the world we started
+    }
 
-  if( mqtt.reconnectsExceeded() )
-  {
-    #if USE_WIFIMANAGER == 1
-      wifiManagerWrapper.startAPWithoutConnecting();
-    #else
-      Serial.println( "The command to switch to WIFI AP Setup mode works only with 'USE_WIFIMANAGER 1'" );
-    #endif
+    if( mqtt.reconnectsExceeded() )
+    {
+      #if USE_WIFIMANAGER == 1
+        Serial.println( "MQQT reconnects exceeded, will start AP without connecting to get new credentials from user..." );
+        wifiManagerWrapper.startAPWithoutConnecting();
+      #endif
+    }
+    mqtt.loop();
+
+    ArduinoOTA.handle();
   }
-  mqtt.loop();
 
   loopReadFlash();
 
-  ArduinoOTA.handle();
 
   if( firstRun )
   {

@@ -41,7 +41,7 @@ const char HTTP_END[] PROGMEM             = "</div></body></html>";
 
 class WiFiManagerParameter {
   public:
-    /** 
+    /**
         Create custom parameters that can be added to the WiFiManager setup web page
         @id is used for HTTP queries and must not contain spaces nor other special characters
     */
@@ -75,7 +75,9 @@ class WiFiManager
     ~WiFiManager();
 
     boolean       autoConnect();
-    boolean       autoConnect(char const *apName, char const *apPassword = NULL);
+    // ahat: I need this to be pass the credentials with which to connect
+    boolean       autoConnect(char const *apName, char const *apPassword = NULL, char const *connectSSID = NULL, char const *connectPassword = NULL);
+    // boolean       autoConnect(char const *apName, char const *apPassword = NULL);
 
     //if you want to always start the config portal, without trying to connect first
     boolean       startConfigPortal();
@@ -117,6 +119,11 @@ class WiFiManager
     void          setCustomHeadElement(const char* element);
     //if this is true, remove duplicated Access Points - defaut true
     void          setRemoveDuplicateAPs(boolean removeDuplicates);
+
+    String getSSID() { return _ssid; }
+    String getPassword() { return _pass; }
+    void setSSID( String ssid ) { _ssid = ssid; }
+    void setPassword( String password ) { _pass = password; }
 
   private:
     std::unique_ptr<DNSServer>        dnsServer;

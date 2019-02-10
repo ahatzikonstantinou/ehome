@@ -31,8 +31,8 @@ public:
   bool reconnectsExceeded();
   void publish( String topic, String message );
   void publishConfiguration();
-  void publishReport( const int relayState, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold, const CheckAmps c );
-  void publishReport( const int relayState, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold );
+  void publishReport( const int relayState, const bool relayActive, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold, const CheckAmps c );
+  void publishReport( const int relayState, const bool relayActive, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold );
   void setup( MQTT_CALLBACK_SIGNATURE );
   void loop();
 };

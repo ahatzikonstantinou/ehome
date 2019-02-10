@@ -162,7 +162,10 @@ boolean WiFiManager::autoConnect() {
   return autoConnect(ssid.c_str(), NULL);
 }
 
-boolean WiFiManager::autoConnect(char const *apName, char const *apPassword) {
+// ahat: I need this to be pass the credentials with which to connect
+boolean WiFiManager::autoConnect( char const *apName, char const *apPassword, char const *connectSSID, char const *connectPassword )
+// boolean WiFiManager::autoConnect(char const *apName, char const *apPassword)
+{
   DEBUG_WM(F(""));
   DEBUG_WM(F("AutoConnect"));
 
@@ -173,7 +176,9 @@ boolean WiFiManager::autoConnect(char const *apName, char const *apPassword) {
   // attempt to connect; should it fail, fall back to AP
   WiFi.mode(WIFI_STA);
 
-  if (connectWifi("", "") == WL_CONNECTED)   {
+  // ahat: changed this line to be able to connect with explicitly defined (or saved in eeprom) credentials
+  if (connectWifi( connectSSID == NULL ? "" : connectSSID, connectPassword == NULL ? "" : connectPassword ) == WL_CONNECTED)   {
+  // if (connectWifi("", "") == WL_CONNECTED)   {
     DEBUG_WM(F("IP Address:"));
     DEBUG_WM(WiFi.localIP());
     //connected
@@ -197,14 +202,14 @@ boolean WiFiManager::startConfigPortal() {
 }
 
 boolean  WiFiManager::startConfigPortal(char const *apName, char const *apPassword) {
-  
+
   if(!WiFi.isConnected()){
     WiFi.persistent(false);
     // disconnect sta, start ap
     WiFi.disconnect(); //  this alone is not enough to stop the autoconnecter
     WiFi.mode(WIFI_AP);
     WiFi.persistent(true);
-  } 
+  }
   else {
     //setup AP
     WiFi.mode(WIFI_AP_STA);
