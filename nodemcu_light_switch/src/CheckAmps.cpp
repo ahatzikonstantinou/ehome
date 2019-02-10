@@ -3,7 +3,7 @@
 #include "Relay.h"
 #include "MeasureAmps.h"
 
-void CheckAmps::run( Relay &relay,const double offMaxAmpsThreshold, const double onMinAmpsThreshold, const uint32_t onMillis, const uint32_t offMillis )
+void CheckAmps::run( Relay &relay, const uint32_t onMillis, const uint32_t offMillis )
 {
   int state = relay.state;
 
@@ -19,7 +19,7 @@ void CheckAmps::run( Relay &relay,const double offMaxAmpsThreshold, const double
     amps += getAmpsRMS();
   }
   offAmps = amps/i;
-  offError = offAmps > offMaxAmpsThreshold;
+  offError = offAmps > relay.offMaxAmpsThreshold;
 
   // check when on
   relay.on();
@@ -32,7 +32,7 @@ void CheckAmps::run( Relay &relay,const double offMaxAmpsThreshold, const double
     amps += getAmpsRMS();
   }
   onAmps = amps/i;
-  onError = onAmps < onMinAmpsThreshold;
+  onError = onAmps < relay.onMinAmpsThreshold;
 
   // restore initial state
   if( state == HIGH )
@@ -45,19 +45,19 @@ void CheckAmps::run( Relay &relay,const double offMaxAmpsThreshold, const double
   }
 }
 
-bool CheckAmps::check( Relay &relay, const double offMaxAmpsThreshold, const double onMinAmpsThreshold )
+bool CheckAmps::check( Relay &relay )
 {
   delay( 40 );
   double amps = getAmpsRMS();
   if( relay.state == HIGH ) //off
   {
     offAmps = amps;
-    offError = offAmps > offMaxAmpsThreshold;
+    offError = offAmps > relay.offMaxAmpsThreshold;
   }
   else  //on
   {
     onAmps = amps;
-    onError = onAmps < onMinAmpsThreshold;
+    onError = onAmps < relay.onMinAmpsThreshold;
   }
   return !offError && !onError;
 }

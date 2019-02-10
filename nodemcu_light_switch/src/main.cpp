@@ -28,6 +28,7 @@
 #endif
 #include <FS.h>
 #include "Buzzer.h"
+#include "ManualSwitch.h"
 
 #define PIN_FLASH 0
 int previousFlashState = 1; //ahat: this is important. 0: PRESSED, 1: RELEASED. previousFlashState must start with 1
@@ -94,11 +95,6 @@ unsigned int toggleOperationMode()
 }
 
 
-//The following values were good thresholds when using a 60W incadescent light bulb
-double offMaxAmpsThreshold = 0.15;
-double onMinAmpsThreshold = 0.25;
-
-
 //Static IP address configuration
 IPAddress staticIP(192, 168, 1, 33); //ESP static ip
 IPAddress gateway(192, 168, 1, 1);   //IP Address of your WiFi Router (Gateway)
@@ -129,7 +125,48 @@ MQTT mqtt( espClient );
 WifiManagerWrapper wifiManagerWrapper( mqtt );
 #endif
 
-Relay relay( RELAY_PIN, INIT_RELAY_STATE );
+//Threshold values 0.15, 0.25 were good thresholds when using a 60W incadescent light bulb
+Relay relay( RELAY_PIN, INIT_RELAY_STATE, 0.15, 0.25 );
+
+CheckAmps setRelay( bool on )
+{
+  if( on )
+  {
+    relay.on();
+  }
+  else
+  {
+    relay.off();
+  }
+  CheckAmps c;
+  c.check( relay );
+
+  //If the light bulb is burnt or missing switch the Relay back to off, because any
+  //consecutive low current amp measurement will be considered a trigger if the relay.state is LOW
+  if( c.onError )
+  {
+    Serial.println( "There was an error switching the Relay on!" );
+    relay.off();
+  }
+  return c;
+}
+
+void single_trigger_callback( Relay* relay )
+{
+  CheckAmps c = setRelay( relay->state == HIGH ? true : false );// relay->toggle(); //toggleRelay();
+  trigger = TRIGGER_MANUAL;
+  if( operation_mode == OPERATION_MANUAL_WIFI )
+  {
+    mqtt.publishReport( relay->state, relay->active, triggerToStr(), relay->offMaxAmpsThreshold, relay->onMinAmpsThreshold, c );
+  }
+}
+
+void double_trigger_callback( Relay* relay )
+{
+  toggleOperationMode();
+}
+
+ManualSwitch manualSwitch( relay, mqtt, single_trigger_callback, double_trigger_callback );
 
 void flashSetup()
 {
@@ -175,30 +212,7 @@ void loopReadFlash()
   }
 }
 
-CheckAmps setRelay( bool on )
-{
-  if( on )
-  {
-    relay.on();
-  }
-  else
-  {
-    relay.off();
-  }
-  CheckAmps c;
-  c.check( relay, offMaxAmpsThreshold, onMinAmpsThreshold );
-
-  //If the light bulb is burnt or missing switch the Relay back to off, because any
-  //consecutive low current amp measurement will be considered a trigger if the relay.state is LOW
-  if( c.onError )
-  {
-    Serial.println( "There was an error switching the Relay on!" );
-    relay.off();
-  }
-  return c;
-}
-
-uint32_t last_trigger = millis();
+// uint32_t last_trigger = millis();
 
 void mqtt_callback( char* topic, byte* payload, unsigned int length)
 {
@@ -210,6 +224,8 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
   String _subscribe_topic( subscribe_topic );
   String _configurator_subscribe_topic( configurator_subscribe_topic );
 
+  Serial.println( "_subscribe_topic: [" + _subscribe_topic + "], _configurator_subscribe_topic: [" + _configurator_subscribe_topic + "]" );
+
   if( _topic == _subscribe_topic )
   {
     for (unsigned int i=0;i<length;i++)
@@ -219,37 +235,37 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
       if( receivedChar == '0' )
       {
         // set last_trigger to avoid follow-on triggers as the current may spike again once the relay changes state
-        last_trigger = millis();
+        manualSwitch.last_trigger = millis();
         CheckAmps c = setRelay( false );
         trigger = TRIGGER_WIFI;
-        mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
+        mqtt.publishReport( relay.state, relay.active, triggerToStr(), relay.offMaxAmpsThreshold, relay.onMinAmpsThreshold, c );
       }
       else if( receivedChar == '1' )
       {
         // set last_trigger to avoid follow-on triggers as the current may spike again once the relay changes state
-        last_trigger = millis();
+        manualSwitch.last_trigger = millis();
         CheckAmps c = setRelay( true );
         trigger = TRIGGER_WIFI;
-        mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
+        mqtt.publishReport( relay.state, relay.active, triggerToStr(), relay.offMaxAmpsThreshold, relay.onMinAmpsThreshold, c );
       }
       else if( receivedChar == 'l' )
       {
         //calibrate
         trigger = TRIGGER_CALIBRATION;
-        Serial.println( "Before calibration: offMaxAmpsThreshold = " + String( offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( onMinAmpsThreshold ) );
+        Serial.println( "Before calibration: offMaxAmpsThreshold = " + String( relay.offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( relay.onMinAmpsThreshold ) );
         Serial.println( "Calibrating..." );
         Calibration c;
-        c.run( relay, offMaxAmpsThreshold, onMinAmpsThreshold );
+        c.run( relay );
         // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
-        last_trigger = millis();
+        manualSwitch.last_trigger = millis();
 
-        Serial.println( "After calibration: offMaxAmpsThreshold = " + String( offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( onMinAmpsThreshold ) );
-        mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold );
+        Serial.println( "After calibration: offMaxAmpsThreshold = " + String( relay.offMaxAmpsThreshold ) + ", onMinAmpsThreshold = " + String( relay.onMinAmpsThreshold ) );
+        mqtt.publishReport( relay.state, relay.active, triggerToStr(), relay.offMaxAmpsThreshold, relay.onMinAmpsThreshold );
       }
       else if( receivedChar == 'r' )
       {
         //report
-        mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold );
+        mqtt.publishReport( relay.state, relay.active, triggerToStr(), relay.offMaxAmpsThreshold, relay.onMinAmpsThreshold );
       }
       else if( receivedChar == 'c' )
       {
@@ -257,10 +273,10 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
         trigger = TRIGGER_CHECK;
         Serial.println( "Checking..." );
         CheckAmps c;
-        c.run( relay, offMaxAmpsThreshold, onMinAmpsThreshold );
+        c.run( relay );
         // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
-        last_trigger = millis();
-        mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
+        manualSwitch.last_trigger = millis();
+        mqtt.publishReport( relay.state, relay.active, triggerToStr(), relay.offMaxAmpsThreshold, relay.onMinAmpsThreshold, c );
       }
       else if( receivedChar == 'w' )
       {
@@ -325,26 +341,16 @@ void setup()
   relay.setup();
   Serial.println( "relay setup finished" );
 
+  manualSwitch.setup();
+  Serial.println( "manualSwitch setup finished" );
+
   flashSetup();
   Serial.println( "flashSetup finished" );
 
-  // Setup some initial values to mqtt params before wifimanager attempts to read from storage or get from AP
-  // IMPORTANT NOTE: access of member variables is allowed only inside function blocks!
-  // The following lines will produce "error: 'mqtt' does not name a type" if placed outside function setup()
-  mqtt.device_name = "Φως επίδειξης";
-  mqtt.client_id = "light1";
-  mqtt.location = location;
-  mqtt.server = mqtt_server;
-  mqtt.port = mqtt_port;
-  mqtt.publish_topic = publish_topic;
-  mqtt.subscribe_topic = subscribe_topic;
-  mqtt.configurator_publish_topic = configurator_publish_topic;
-  mqtt.configurator_subscribe_topic = configurator_subscribe_topic;
-
-  mqtt.setup( mqtt_callback ); //mqttSetup();
-  Serial.println( "mqttSetup finished" );
-
-  if( operation_mode == OPERATION_MANUAL_WIFI )
+  // TODO: Not sure that OPERATION_MANUAL_ONLY can be changed once it happens
+  // TODO: split configuration into a separate function because there are several entities such
+  // as mqtt and wifimanagerproxy that need to save their own config
+  // if( operation_mode == OPERATION_MANUAL_WIFI )
   {
     #if USE_WIFIMANAGER == 1
       // wifiManagerWrapper.setup( true );
@@ -390,6 +396,22 @@ void setup()
     ArduinoOTA.begin();
 
     Serial.println( "ARduinoOTA setup finished" );
+
+    // Setup some initial values to mqtt params before wifimanager attempts to read from storage or get from AP
+    // IMPORTANT NOTE: access of member variables is allowed only inside function blocks!
+    // The following lines will produce "error: 'mqtt' does not name a type" if placed outside function setup()
+    mqtt.device_name = "Φως επίδειξης";
+    mqtt.client_id = "light1";
+    mqtt.location = location;
+    mqtt.server = mqtt_server;
+    mqtt.port = mqtt_port;
+    mqtt.publish_topic = publish_topic;
+    mqtt.subscribe_topic = subscribe_topic;
+    mqtt.configurator_publish_topic = configurator_publish_topic;
+    mqtt.configurator_subscribe_topic = configurator_subscribe_topic;
+
+    mqtt.setup( mqtt_callback ); //mqttSetup();
+    Serial.println( "mqttSetup finished" );
   }
 
   Buzzer::playSetupFinished();
@@ -401,45 +423,46 @@ bool firstRun = true;
 void loop()
 {
   // check Amp and toggle relay accordingly
-  double currentAmps = getAmpsRMS();
-  if( !firstRun )
-  {
-    if( ( relay.state == HIGH && currentAmps > offMaxAmpsThreshold) || //transition from OFF to ON
-        ( relay.state == LOW && currentAmps < onMinAmpsThreshold )   //transition from ON to OFF
-      )
-    {
-      // current will jump high once when pressing the pushbutton and also when switching on the light (/relay)
-      // switch only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
-      uint32_t trigger_t = millis();
-      if( trigger_t > last_trigger + MIN_TRIGGER_MILLIS )
-      {
-        if( trigger_t < last_trigger + MAX_TWO_TRIGGER_MILLIS )
-        {
-          toggleOperationMode();
-          Serial.println( "Double valid trigger, switched operation mode to " + operationModeToStr() );
-        }
-        else
-        {
-          CheckAmps c = setRelay( relay.state == HIGH ? true : false );// relay.toggle(); //toggleRelay();
-          trigger = TRIGGER_MANUAL;
-          last_trigger = trigger_t;
-          if( operation_mode == OPERATION_MANUAL_WIFI )
-          {
-            mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
-          }
-        }
-        Serial.print( "   Trigger: " );
-      }
-      else
-      {
-        Serial.print( "   Ignored trigger: " );
-      }
-
-      Serial.print( ", lastAmps = " + String( lastAmps ) );
-      Serial.println( ", currentAmps = " + String( currentAmps ) );
-    }
-  }
-  lastAmps = currentAmps;
+  // double currentAmps = getAmpsRMS();
+  // if( !firstRun )
+  // {
+  //   if( ( relay.state == HIGH && currentAmps > offMaxAmpsThreshold) || //transition from OFF to ON
+  //       ( relay.state == LOW && currentAmps < onMinAmpsThreshold )   //transition from ON to OFF
+  //     )
+  //   {
+  //     // current will jump high once when pressing the pushbutton and also when switching on the light (/relay)
+  //     // switch only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
+  //     uint32_t trigger_t = millis();
+  //     if( trigger_t > last_trigger + MIN_TRIGGER_MILLIS )
+  //     {
+  //       if( trigger_t < last_trigger + MAX_TWO_TRIGGER_MILLIS )
+  //       {
+  //         toggleOperationMode();
+  //         Serial.println( "Double valid trigger, switched operation mode to " + operationModeToStr() );
+  //       }
+  //       else
+  //       {
+  //         CheckAmps c = setRelay( relay.state == HIGH ? true : false );// relay.toggle(); //toggleRelay();
+  //         trigger = TRIGGER_MANUAL;
+  //         last_trigger = trigger_t;
+  //         if( operation_mode == OPERATION_MANUAL_WIFI )
+  //         {
+  //           mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
+  //         }
+  //       }
+  //       Serial.print( "   Trigger: " );
+  //     }
+  //     else
+  //     {
+  //       Serial.print( "   Ignored trigger: " );
+  //     }
+  //
+  //     Serial.print( ", lastAmps = " + String( lastAmps ) );
+  //     Serial.println( ", currentAmps = " + String( currentAmps ) );
+  //   }
+  // }
+  // lastAmps = currentAmps;
+  manualSwitch.loop( firstRun );
 
   if( operation_mode == OPERATION_MANUAL_WIFI )
   {

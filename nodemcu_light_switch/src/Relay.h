@@ -9,13 +9,19 @@ private:
 public:
   int state;
   bool active;
+  double offMaxAmpsThreshold;  //max AmpsRMS when light is switced off
+  double onMinAmpsThreshold;   //min AmpsRMS when light is switced on
 
-  Relay( unsigned int _pin, int _state )
+
+  Relay( unsigned int _pin, int _state, double _offMaxAmpsThreshold, double _onMinAmpsThreshold )
   {
     pin = _pin;
     state = _state;
     active = true;
+    offMaxAmpsThreshold = _offMaxAmpsThreshold;
+    onMinAmpsThreshold = _onMinAmpsThreshold;
   }
+
   void setup();
   int toggle();
   int on();

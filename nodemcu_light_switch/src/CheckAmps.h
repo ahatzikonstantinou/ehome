@@ -18,10 +18,10 @@ public:
   bool onError = false;
 
   // switch relay/ligh on and off to measure amps against thresholds
-  void run( Relay &relay, const double offMaxAmpsThreshold, const double onMinAmpsThreshold, const uint32_t onMillis = DEFAULT_CHECK_ONMILLIS, const uint32_t offMillis = DEFAULT_CHECK_OFFMILLIS );
+  void run( Relay &relay, const uint32_t onMillis = DEFAULT_CHECK_ONMILLIS, const uint32_t offMillis = DEFAULT_CHECK_OFFMILLIS );
 
   // measure amps and compare against threshold for the current relay state
-  bool check( Relay &relay, const double offMaxAmpsThreshold, const double onMinAmpsThreshold );
+  bool check( Relay &relay );
 };
 
 #endif
