@@ -1,6 +1,4 @@
 #include "WifiManagerWrapper.h"
-#include <FS.h> //for WiFiManager this needs to be first, or it all crashes and burns...
-#include <ArduinoJson.h>  //https://github.com/bblanchon/ArduinoJson
 #include <WiFiManager.h>  //https://github.com/tzapu/WiFiManager
 #include "Buzzer.h"
 
@@ -28,75 +26,66 @@ void WifiManagerWrapper::startAPWithoutConnecting()
   setup( false );
 }
 
-void WifiManagerWrapper::deleteConfigFile()
+void WifiManagerWrapper::initFromConfiguration()
 {
-  if( SPIFFS.begin() )
-  {
-    Serial.println("mounted file system");
-    if( SPIFFS.exists( configFileName ) )
-    {
-      SPIFFS.remove( configFileName );
-      Serial.println( "deleted json configuration file." );
-    }
-  }
-}
+  // //read configuration from FS json
+  // Serial.println("mounting FS...");
+  //
+  // if (SPIFFS.begin())
+  // {
+  //   Serial.println("mounted file system");
+  //   if (SPIFFS.exists( configFileName ))
+  //    {
+  //     //file exists, reading and loading
+  //     Serial.println("reading config file");
+  //     File configFile = SPIFFS.open( configFileName , "r");
+  //     if( configFile )
+  //     {
+  //       Serial.println("opened config file");
+  //       size_t size = configFile.size();
+  //       // Allocate a buffer to store contents of the file.
+  //       std::unique_ptr<char[]> buf(new char[size]);
+  //
+  //       configFile.readBytes(buf.get(), size);
+  //       DynamicJsonBuffer jsonBuffer;
+  //       JsonObject& json = jsonBuffer.parseObject(buf.get());
+  //       json.printTo(Serial);
+  //       if( json.success() )
+  //       {
+  //         Serial.println("\nparsed json");
+  //         Serial.println( "SSID: " + json["SSID"].as<String>() + ", password: " + json["password"].as<String>() );
+  //
+  //         SSID = json["SSID"].as<String>();
+  //         password = json["password"].as<String>();
+  //         reconnects = String( json["reconnects"].as<String>() ).toInt();
+  //         mqtt->device_name = json["device_name"].as<String>();
+  //         mqtt->client_id = json["mqtt_client_id"].as<String>();
+  //         mqtt->location = json["mqtt_location"].as<String>();
+  //         mqtt->server = json["mqtt_server"].as<String>();
+  //         mqtt->port = json["mqtt_port"].as<String>();
+  //         mqtt->publish_topic = json["mqtt_publish_topic"].as<String>();
+  //         mqtt->subscribe_topic = json["mqtt_subscribe_topic"].as<String>();
+  //         mqtt->configurator_publish_topic = json["mqtt_configurator_publish_topic"].as<String>();
+  //         mqtt->configurator_subscribe_topic = json["mqtt_configurator_subscribe_topic"].as<String>();
+  //         return true;
+  //       }
+  //       else
+  //       {
+  //         Serial.println("failed to load json config");
+  //       }
+  //     }
+  //   }
+  // }
+  // else
+  // {
+  //   Serial.println("failed to mount FS");
+  // }
+  // //end read
+  // return false;
 
-bool WifiManagerWrapper::initFromJsonConfig()
-{
-  //read configuration from FS json
-  Serial.println("mounting FS...");
-
-  if (SPIFFS.begin())
-  {
-    Serial.println("mounted file system");
-    if (SPIFFS.exists( configFileName ))
-     {
-      //file exists, reading and loading
-      Serial.println("reading config file");
-      File configFile = SPIFFS.open( configFileName , "r");
-      if( configFile )
-      {
-        Serial.println("opened config file");
-        size_t size = configFile.size();
-        // Allocate a buffer to store contents of the file.
-        std::unique_ptr<char[]> buf(new char[size]);
-
-        configFile.readBytes(buf.get(), size);
-        DynamicJsonBuffer jsonBuffer;
-        JsonObject& json = jsonBuffer.parseObject(buf.get());
-        json.printTo(Serial);
-        if( json.success() )
-        {
-          Serial.println("\nparsed json");
-          Serial.println( "SSID: " + json["SSID"].as<String>() + ", password: " + json["password"].as<String>() );
-
-          SSID = json["SSID"].as<String>();
-          password = json["password"].as<String>();
-          reconnects = String( json["reconnects"].as<String>() ).toInt();
-          mqtt->device_name = json["device_name"].as<String>();
-          mqtt->client_id = json["mqtt_client_id"].as<String>();
-          mqtt->location = json["mqtt_location"].as<String>();
-          mqtt->server = json["mqtt_server"].as<String>();
-          mqtt->port = json["mqtt_port"].as<String>();
-          mqtt->publish_topic = json["mqtt_publish_topic"].as<String>();
-          mqtt->subscribe_topic = json["mqtt_subscribe_topic"].as<String>();
-          mqtt->configurator_publish_topic = json["mqtt_configurator_publish_topic"].as<String>();
-          mqtt->configurator_subscribe_topic = json["mqtt_configurator_subscribe_topic"].as<String>();
-          return true;
-        }
-        else
-        {
-          Serial.println("failed to load json config");
-        }
-      }
-    }
-  }
-  else
-  {
-    Serial.println("failed to mount FS");
-  }
-  //end read
-  return false;
+  SSID = configuration->wifi.SSID;
+  password = configuration->wifi.password;
+  reconnects = configuration->wifi.reconnects;
 }
 
 // if autoConnect = true wifimanager will attempt to connect with previous known SSID and password
@@ -155,7 +144,7 @@ void WifiManagerWrapper::setup( bool autoConnect )
   //   Serial.println("failed to mount FS");
   // }
   // //end read
-  initFromJsonConfig();
+  initFromConfiguration();
 
   // The extra parameters to be configured (can be either global or just in the setup)
   // After connecting, parameter.getValue() will get you the configured value
@@ -218,7 +207,8 @@ void WifiManagerWrapper::setup( bool autoConnect )
         Serial.println( "AutoConnectAP with old credentials \"" + SSID + "\", \"" + password + "\" failed to connect and hit timeout" );
 
         reconnects++;
-        saveJsonConfig( SSID, password ); //keep the last saved credentials because the current connection attempt failed
+        // saveJsonConfig( SSID, password ); //keep the last saved credentials because the current connection attempt failed
+        saveConfiguration(); //keep the last saved credentials because the current connection attempt failed
         Serial.println( "Saved " + String( reconnects ) + " reconnects in jsonConfig" );
 
         //reset and try again
@@ -235,7 +225,8 @@ void WifiManagerWrapper::setup( bool autoConnect )
       Serial.println( "AutoConnectAP failed to connect and hit timeout" );
 
       reconnects++;
-      saveJsonConfig( SSID, password ); //keep the last saved credentials because the current connection attempt failed
+      // saveJsonConfig( SSID, password ); //keep the last saved credentials because the current connection attempt failed
+      saveConfiguration(); //keep the last saved credentials because the current connection attempt failed
       Serial.println( "Saved " + String( reconnects ) + " reconnects in jsonConfig" );
 
       //reset and try again
@@ -253,7 +244,8 @@ void WifiManagerWrapper::setup( bool autoConnect )
       Serial.println( "OnDemandAP failed to connect and hit timeout" );
 
       reconnects++;
-      saveJsonConfig( SSID, password ); //keep the last saved credentials because the current connection attempt failed
+      // saveJsonConfig( SSID, password ); //keep the last saved credentials because the current connection attempt failed
+      saveConfiguration(); //saveJsonConfig( SSID, password ); //keep the last saved credentials because the current connection attempt failed
       Serial.println( "Saved " + String( reconnects ) + " reconnects in jsonConfig" );
 
       //reset and try again
@@ -268,60 +260,83 @@ void WifiManagerWrapper::setup( bool autoConnect )
   Serial.println("connected...yeey :)");
 
   //read updated parameters
-  mqtt->device_name = custom_device_name.getValue();
-  mqtt->client_id = custom_mqtt_client_id.getValue();
-  mqtt->location = custom_mqtt_location.getValue();
-  mqtt->server = custom_mqtt_server.getValue();
-  mqtt->port = custom_mqtt_port.getValue();
-  mqtt->publish_topic = custom_mqtt_publish_topic.getValue();
-  mqtt->subscribe_topic = custom_mqtt_subscribe_topic.getValue();
-  mqtt->configurator_publish_topic = custom_mqtt_configurator_publish_topic.getValue();
-  mqtt->configurator_subscribe_topic = custom_mqtt_configurator_subscribe_topic.getValue();
+  configuration->wifi.SSID = wifiManager.getSSID();
+  configuration->wifi.password = wifiManager.getPassword();
+  configuration->wifi.reconnects = reconnects;
+  configuration->mqtt.device_name = custom_device_name.getValue();
+  configuration->mqtt.client_id = custom_mqtt_client_id.getValue();
+  configuration->mqtt.location = custom_mqtt_location.getValue();
+  configuration->mqtt.server = custom_mqtt_server.getValue();
+  configuration->mqtt.port = custom_mqtt_port.getValue();
+  configuration->mqtt.publish_topic = custom_mqtt_publish_topic.getValue();
+  configuration->mqtt.subscribe_topic = custom_mqtt_subscribe_topic.getValue();
+  configuration->mqtt.configurator_publish_topic = custom_mqtt_configurator_publish_topic.getValue();
+  configuration->mqtt.configurator_subscribe_topic = custom_mqtt_configurator_subscribe_topic.getValue();
+
+  // mqtt->device_name = custom_device_name.getValue();
+  // mqtt->client_id = custom_mqtt_client_id.getValue();
+  // mqtt->location = custom_mqtt_location.getValue();
+  // mqtt->server = custom_mqtt_server.getValue();
+  // mqtt->port = custom_mqtt_port.getValue();
+  // mqtt->publish_topic = custom_mqtt_publish_topic.getValue();
+  // mqtt->subscribe_topic = custom_mqtt_subscribe_topic.getValue();
+  // mqtt->configurator_publish_topic = custom_mqtt_configurator_publish_topic.getValue();
+  // mqtt->configurator_subscribe_topic = custom_mqtt_configurator_subscribe_topic.getValue();
+
+  mqtt->setup();  //re-setup mqtt based on the new configuration values
 
   //save the custom parameters to FS
   if( WifiManagerWrapper::shouldSaveConfig )
   {
-    saveJsonConfig( wifiManager.getSSID(), wifiManager.getPassword() );
+    // saveJsonConfig( wifiManager.getSSID(), wifiManager.getPassword() );
+    saveConfiguration();
   }
 
   Serial.println("local ip");
   Serial.println( WiFi.localIP() );
 }
 
-void WifiManagerWrapper::saveJsonConfig( String ssid, String password )
+void WifiManagerWrapper::saveConfiguration()
 {
-  Serial.println("saving config");
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject& json = jsonBuffer.createObject();
-  json["SSID"] = ssid;
-  json["password"] = password;
-  json["reconnects"] = String( reconnects );
-  json["device_name"] = mqtt->device_name;
-  json["mqtt_client_id"] = mqtt->client_id;
-  json["mqtt_location"] = mqtt->location;
-  json["mqtt_server"] = mqtt->server;
-  json["mqtt_port"] = mqtt->port;
-  json["mqtt_publish_topic"] = mqtt->publish_topic;
-  json["mqtt_subscribe_topic"] = mqtt->subscribe_topic;
-  json["mqtt_configurator_publish_topic"] = mqtt->configurator_publish_topic;
-  json["mqtt_configurator_subscribe_topic"] = mqtt->configurator_subscribe_topic;
-
-  File configFile = SPIFFS.open( configFileName , "w");
-  if( !configFile )
-  {
-    Serial.println("failed to open config file for writing");
-  }
-
-  json.printTo(Serial);
-  json.printTo(configFile);
-  configFile.close();
+  configuration->write();
 }
+
+// void WifiManagerWrapper::saveJsonConfig( String ssid, String password )
+// {
+//   Serial.println("saving config");
+//   DynamicJsonBuffer jsonBuffer;
+//   JsonObject& json = jsonBuffer.createObject();
+//   json["SSID"] = ssid;
+//   json["password"] = password;
+//   json["reconnects"] = String( reconnects );
+//   json["device_name"] = mqtt->device_name;
+//   json["mqtt_client_id"] = mqtt->client_id;
+//   json["mqtt_location"] = mqtt->location;
+//   json["mqtt_server"] = mqtt->server;
+//   json["mqtt_port"] = mqtt->port;
+//   json["mqtt_publish_topic"] = mqtt->publish_topic;
+//   json["mqtt_subscribe_topic"] = mqtt->subscribe_topic;
+//   json["mqtt_configurator_publish_topic"] = mqtt->configurator_publish_topic;
+//   json["mqtt_configurator_subscribe_topic"] = mqtt->configurator_subscribe_topic;
+//
+//   File configFile = SPIFFS.open( configFileName , "w");
+//   if( !configFile )
+//   {
+//     Serial.println("failed to open config file for writing");
+//   }
+//
+//   json.printTo(Serial);
+//   json.printTo(configFile);
+//   configFile.close();
+// }
+
 void WifiManagerWrapper::resetReconnects()
 {
-  initFromJsonConfig();
+  initFromConfiguration();
   reconnects = 0;
-  saveJsonConfig( SSID, password );
-  Serial.println( "Saved " + String( reconnects ) + " reconnects in jsonConfig" );
+  configuration->wifi.reconnects = reconnects;
+  saveConfiguration(); //saveJsonConfig( SSID, password );
+  Serial.println( "Saved " + String( reconnects ) + " reconnects in configuration" );
 }
 
 bool WifiManagerWrapper::reconnectsExceeded()

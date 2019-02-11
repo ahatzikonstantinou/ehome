@@ -119,10 +119,11 @@ const char* configurator_publish_topic = "A///CONFIGURATION/C/cmd";
 const char* configurator_subscribe_topic = "A///CONFIGURATION/C/report";
 const char* location = "A/4/L";
 
+Configuration configuration;
 WiFiClient espClient;
-MQTT mqtt( espClient );
+MQTT mqtt( configuration, espClient );
 #if USE_WIFIMANAGER == 1
-WifiManagerWrapper wifiManagerWrapper( mqtt );
+WifiManagerWrapper wifiManagerWrapper( configuration, mqtt );
 #endif
 
 //Threshold values 0.15, 0.25 were good thresholds when using a 60W incadescent light bulb
@@ -221,12 +222,12 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
   Serial.print( "] " );
 
   String _topic( topic );
-  String _subscribe_topic( subscribe_topic );
-  String _configurator_subscribe_topic( configurator_subscribe_topic );
+  // String _subscribe_topic( mqtt.subscribe_topic );
+  // String _configurator_subscribe_topic( configurator_subscribe_topic );
 
-  Serial.println( "_subscribe_topic: [" + _subscribe_topic + "], _configurator_subscribe_topic: [" + _configurator_subscribe_topic + "]" );
+  Serial.println( "subscribe_topic: [" + mqtt.subscribe_topic + "], _configurator_subscribe_topic: [" + mqtt.configurator_subscribe_topic + "]" );
 
-  if( _topic == _subscribe_topic )
+  if( _topic == mqtt.subscribe_topic )
   {
     for (unsigned int i=0;i<length;i++)
     {
@@ -300,9 +301,13 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length)
       }
     }
   }
-  else if( _topic == _configurator_subscribe_topic )
+  else if( _topic == mqtt.configurator_subscribe_topic )
   {
     mqtt.publishConfiguration();
+  }
+  else
+  {
+    Serial.println( " ignoring unknown topic..." );
   }
 }
 
@@ -338,6 +343,8 @@ void setup()
   Serial.begin( 115200 );
   wifi_set_sleep_type( NONE_SLEEP_T );
 
+  configuration.setup();
+
   relay.setup();
   Serial.println( "relay setup finished" );
 
@@ -348,13 +355,29 @@ void setup()
   Serial.println( "flashSetup finished" );
 
   // TODO: Not sure that OPERATION_MANUAL_ONLY can be changed once it happens
-  // TODO: split configuration into a separate function because there are several entities such
-  // as mqtt and wifimanagerproxy that need to save their own config
   // if( operation_mode == OPERATION_MANUAL_WIFI )
   {
+    // Setup some initial values to mqtt params before wifimanager attempts to read from storage or get from AP
+    // IMPORTANT NOTE: access of member variables is allowed only inside function blocks!
+    // The following lines will produce "error: 'mqtt' does not name a type" if placed outside function setup()
+    mqtt.device_name = "Φως επίδειξης";
+    mqtt.client_id = "light1";
+    mqtt.location = location;
+    mqtt.server = mqtt_server;
+    mqtt.port = mqtt_port;
+    mqtt.publish_topic = publish_topic;
+    mqtt.subscribe_topic = subscribe_topic;
+    mqtt.configurator_publish_topic = configurator_publish_topic;
+    mqtt.configurator_subscribe_topic = configurator_subscribe_topic;
+
+    // NOTE: mqtt setup must run before wifiManagerProxy because wifiManagerWrapper may get new values and will then
+    // run mqtt.setup() again with the new values
+    mqtt.setup( mqtt_callback );
+    Serial.println( "mqttSetup finished" );
+
     #if USE_WIFIMANAGER == 1
       // wifiManagerWrapper.setup( true );
-      wifiManagerWrapper.initFromJsonConfig();
+      wifiManagerWrapper.initFromConfiguration();
       if( !wifiManagerWrapper.reconnectsExceeded() )
       {
         Serial.println( "wifiManagerWrapper reconnects NOT exceeded, attempting autoconnectWithOldValues..." );
@@ -396,22 +419,6 @@ void setup()
     ArduinoOTA.begin();
 
     Serial.println( "ARduinoOTA setup finished" );
-
-    // Setup some initial values to mqtt params before wifimanager attempts to read from storage or get from AP
-    // IMPORTANT NOTE: access of member variables is allowed only inside function blocks!
-    // The following lines will produce "error: 'mqtt' does not name a type" if placed outside function setup()
-    mqtt.device_name = "Φως επίδειξης";
-    mqtt.client_id = "light1";
-    mqtt.location = location;
-    mqtt.server = mqtt_server;
-    mqtt.port = mqtt_port;
-    mqtt.publish_topic = publish_topic;
-    mqtt.subscribe_topic = subscribe_topic;
-    mqtt.configurator_publish_topic = configurator_publish_topic;
-    mqtt.configurator_subscribe_topic = configurator_subscribe_topic;
-
-    mqtt.setup( mqtt_callback ); //mqttSetup();
-    Serial.println( "mqttSetup finished" );
   }
 
   Buzzer::playSetupFinished();

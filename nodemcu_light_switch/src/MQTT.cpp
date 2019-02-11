@@ -110,10 +110,42 @@ void MQTT::publishReport( const int relayState, const bool relayActive, const St
 
 void MQTT::setup( MQTT_CALLBACK_SIGNATURE )
 {
-  Serial.println( "Will try to set mqtt server to " + server + " and port to " + port );
-  client.setServer( server.c_str(), port.toInt() );
+  setup();
   // Serial.printf( "Will try to set mqtt callback\n" );
   client.setCallback( callback );
+}
+
+void MQTT::setup()
+{
+  if( client.connected() )
+  {
+      client.disconnect();  // if connected, disconnect in order to cancel old subscriptions and subscribe to new topics
+  }
+
+  device_name = configuration->mqtt.device_name;
+  client_id = configuration->mqtt.client_id;
+  location = configuration->mqtt.location;
+  server = configuration->mqtt.server;
+  port = configuration->mqtt.port;
+  publish_topic = configuration->mqtt.publish_topic;
+  subscribe_topic = configuration->mqtt.subscribe_topic;
+  configurator_publish_topic = configuration->mqtt.configurator_publish_topic;
+  configurator_subscribe_topic = configuration->mqtt.configurator_subscribe_topic;
+
+  Serial.println( String( "MQTT setup: " ) +
+  "\"device_name\": \"" + device_name + "\"" +
+  ", \"id\": \"" + client_id + "\"" +
+  ", \"location\": \"" + location + "\"" +
+  ", \"server\": \"" + server + "\"" +
+  ", \"port\": \"" + port + "\"" +
+  ", \"publish\": \"" + publish_topic + "\"" +
+  ", \"subscribe\": \"" + subscribe_topic + "\"" +
+  ", \"configurator_publish_topic\": \"" + configurator_publish_topic + "\"" +
+  ", \"configurator_subscribe_topic\": \"" + configurator_subscribe_topic + "\""
+);
+
+  Serial.println( "Will try to set mqtt server to " + server + " and port to " + port );
+  client.setServer( server.c_str(), port.toInt() );
 }
 
 void MQTT::loop()

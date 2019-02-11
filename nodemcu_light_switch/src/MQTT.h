@@ -3,12 +3,14 @@
 
 #include <PubSubClient.h>
 #include "CheckAmps.h"
+#include "Configuration.h"
 
 class MQTT
 {
 private:
   PubSubClient client;
   unsigned int reconnectAttempts;
+  Configuration* configuration;
 
 public:
   String device_name;// = "";
@@ -21,9 +23,10 @@ public:
   String configurator_publish_topic = "";
   String configurator_subscribe_topic = "";
 
-  MQTT( WiFiClient& espClient ):
+  MQTT( Configuration &_configuration, WiFiClient& espClient ):
     client( espClient )
   {
+    configuration = &_configuration;
     reconnectAttempts = 0;
   }
 
@@ -34,6 +37,7 @@ public:
   void publishReport( const int relayState, const bool relayActive, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold, const CheckAmps c );
   void publishReport( const int relayState, const bool relayActive, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold );
   void setup( MQTT_CALLBACK_SIGNATURE );
+  void setup();
   void loop();
 };
 
