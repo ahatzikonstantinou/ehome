@@ -67,9 +67,10 @@ const char* WiFiManagerParameter::getCustomHTML() {
 }
 
 
-WiFiManager::WiFiManager() {
+WiFiManager::WiFiManager( PORTAL_IDLE_CALLBACK_SIGNATURE ) {
     _max_params = WIFI_MANAGER_MAX_PARAMS;
     _params = (WiFiManagerParameter**)malloc(_max_params * sizeof(WiFiManagerParameter*));
+    this->portal_idle_callback = portal_idle_callback;
 }
 
 WiFiManager::~WiFiManager()
@@ -238,6 +239,8 @@ boolean  WiFiManager::startConfigPortal(char const *apName, char const *apPasswo
     //HTTP
     server->handleClient();
 
+    //ahat
+    portal_idle_callback();
 
     if (connect) {
       connect = false;

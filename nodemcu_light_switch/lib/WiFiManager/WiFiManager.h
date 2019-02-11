@@ -67,11 +67,20 @@ class WiFiManagerParameter {
     friend class WiFiManager;
 };
 
+//ahat: the portal_idle_callback function will be called while the AP portal is waiting for user input.
+// This way, other code can run too e.g. the loop for the ManualSwitch, or the mqtt client loop.
+#if defined(ESP8266) || defined(ESP32)
+#include <functional>
+#define PORTAL_IDLE_CALLBACK_SIGNATURE std::function<void()> portal_idle_callback
+#else
+#define PORTAL_IDLE_CALLBACK_SIGNATURE void (*portal_idle_callback)()
+#endif
+
 
 class WiFiManager
 {
   public:
-    WiFiManager();
+    WiFiManager( PORTAL_IDLE_CALLBACK_SIGNATURE );
     ~WiFiManager();
 
     boolean       autoConnect();
@@ -126,6 +135,8 @@ class WiFiManager
     void setPassword( String password ) { _pass = password; }
 
   private:
+    PORTAL_IDLE_CALLBACK_SIGNATURE;
+    
     std::unique_ptr<DNSServer>        dnsServer;
     std::unique_ptr<ESP8266WebServer> server;
 

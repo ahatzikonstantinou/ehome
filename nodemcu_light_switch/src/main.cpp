@@ -119,15 +119,32 @@ const char* configurator_publish_topic = "A///CONFIGURATION/C/cmd";
 const char* configurator_subscribe_topic = "A///CONFIGURATION/C/report";
 const char* location = "A/4/L";
 
+void loopReadFlash();
+void flashSetup();
+void double_trigger_callback( Relay* relay );
+void single_trigger_callback( Relay* relay );
+CheckAmps setRelay( bool on );
+void wifi_portal_idle();
+
 Configuration configuration;
 WiFiClient espClient;
 MQTT mqtt( configuration, espClient );
+Relay relay( RELAY_PIN, INIT_RELAY_STATE, 0.15, 0.25 );
+ManualSwitch manualSwitch( relay, mqtt, single_trigger_callback, double_trigger_callback );
 #if USE_WIFIMANAGER == 1
-WifiManagerWrapper wifiManagerWrapper( configuration, mqtt );
+void wifi_portal_idle()
+{
+  // This runs with almost no delay, do not print to Serial or it will "clog" the output terminal
+  // Serial.println( "Doing other staff while wifi portal is idle" );
+  manualSwitch.loop( false );
+  mqtt.loop();
+  ArduinoOTA.handle();
+  loopReadFlash();
+}
+WifiManagerWrapper wifiManagerWrapper( configuration, mqtt, wifi_portal_idle );
 #endif
 
 //Threshold values 0.15, 0.25 were good thresholds when using a 60W incadescent light bulb
-Relay relay( RELAY_PIN, INIT_RELAY_STATE, 0.15, 0.25 );
 
 CheckAmps setRelay( bool on )
 {
@@ -166,8 +183,6 @@ void double_trigger_callback( Relay* relay )
 {
   toggleOperationMode();
 }
-
-ManualSwitch manualSwitch( relay, mqtt, single_trigger_callback, double_trigger_callback );
 
 void flashSetup()
 {
@@ -213,9 +228,7 @@ void loopReadFlash()
   }
 }
 
-// uint32_t last_trigger = millis();
-
-void mqtt_callback( char* topic, byte* payload, unsigned int length)
+void mqtt_callback( char* topic, byte* payload, unsigned int length )
 {
   Serial.print( "Message arrived [" );
   Serial.print( topic );
@@ -424,51 +437,10 @@ void setup()
   Buzzer::playSetupFinished();
 }
 
-double lastAmps = 0;
 bool firstRun = true;
 
 void loop()
 {
-  // check Amp and toggle relay accordingly
-  // double currentAmps = getAmpsRMS();
-  // if( !firstRun )
-  // {
-  //   if( ( relay.state == HIGH && currentAmps > offMaxAmpsThreshold) || //transition from OFF to ON
-  //       ( relay.state == LOW && currentAmps < onMinAmpsThreshold )   //transition from ON to OFF
-  //     )
-  //   {
-  //     // current will jump high once when pressing the pushbutton and also when switching on the light (/relay)
-  //     // switch only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
-  //     uint32_t trigger_t = millis();
-  //     if( trigger_t > last_trigger + MIN_TRIGGER_MILLIS )
-  //     {
-  //       if( trigger_t < last_trigger + MAX_TWO_TRIGGER_MILLIS )
-  //       {
-  //         toggleOperationMode();
-  //         Serial.println( "Double valid trigger, switched operation mode to " + operationModeToStr() );
-  //       }
-  //       else
-  //       {
-  //         CheckAmps c = setRelay( relay.state == HIGH ? true : false );// relay.toggle(); //toggleRelay();
-  //         trigger = TRIGGER_MANUAL;
-  //         last_trigger = trigger_t;
-  //         if( operation_mode == OPERATION_MANUAL_WIFI )
-  //         {
-  //           mqtt.publishReport( relay.state, relay.active, triggerToStr(), offMaxAmpsThreshold, onMinAmpsThreshold, c );
-  //         }
-  //       }
-  //       Serial.print( "   Trigger: " );
-  //     }
-  //     else
-  //     {
-  //       Serial.print( "   Ignored trigger: " );
-  //     }
-  //
-  //     Serial.print( ", lastAmps = " + String( lastAmps ) );
-  //     Serial.println( ", currentAmps = " + String( currentAmps ) );
-  //   }
-  // }
-  // lastAmps = currentAmps;
   manualSwitch.loop( firstRun );
 
   if( operation_mode == OPERATION_MANUAL_WIFI )

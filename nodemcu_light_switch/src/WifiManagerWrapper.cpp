@@ -1,5 +1,4 @@
 #include "WifiManagerWrapper.h"
-#include <WiFiManager.h>  //https://github.com/tzapu/WiFiManager
 #include "Buzzer.h"
 
 
@@ -161,7 +160,7 @@ void WifiManagerWrapper::setup( bool autoConnect )
 
   //WiFiManager
   //Local intialization. Once its business is done, there is no need to keep it around
-  WiFiManager wifiManager;
+  WiFiManager wifiManager( portal_idle_callback );
 
   //set config save notify callback
   wifiManager.setSaveConfigCallback( saveWifiManagerConfigCallback );
