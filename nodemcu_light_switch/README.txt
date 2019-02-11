@@ -18,3 +18,4 @@ If mqtt disconnects and the failed mqtt-reconnection attempts exceed a limit, th
 The manual switch, flashbutton, and OTA will work even while a wifi portal is running.
 A trigger (low->high rms amps) is ignored if it occurs less than MIN_TRIGGER_MILLIS milliseconds after the previous one.
 If a valid trigger occurs less than MAX_TWO_TRIGGER_MILLIS milliseconds after the previous one, it is considered a DOUBLE trigger and the corresponding callback function is executed.
+A DOUBLE trigger will toggle operation mode between MANUAL_WIFI and MANUAL_ONLY. In MANUAL_WIFI the device operates as described above. In MANUAL_ONLY the device starts a wifi portal that will not timeout, awaiting for user input. Meanwhile, the manual switch, OTA and the flash button continue to function.
