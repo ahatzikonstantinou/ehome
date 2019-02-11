@@ -8,6 +8,8 @@
 #define DEVICE_TYPE "LIGHT1"
 #define DEVICE_DOMAIN "LIGHT"
 
+#define PIN_FLASH 0
+
 // The pin were the relay control input is connected
 #define RELAY_PIN D0
 
@@ -70,8 +72,4 @@
 // When WiFiManager has exceed the maximum number of autoconnect attempts, a fresh attempt will be made to connect with old credentials
 #define MAX_WIFIMANAFER_RECONNECTS 3
 
-// The switch may work in manual_only or manual_wifi mode. manual_only is for when there is no wifi or mqtt infrastructure
-// but the switch should still work at least manually
-#define OPERATION_MANUAL_ONLY 0
-#define OPERATION_MANUAL_WIFI 1
 #endif

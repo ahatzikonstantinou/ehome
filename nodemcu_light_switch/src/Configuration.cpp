@@ -1,4 +1,10 @@
 #include "Configuration.h"
+#include "Definitions.h"
+
+Configuration::Configuration()
+{
+  operation_mode = OPERATION_MANUAL_WIFI;
+}
 
 void Configuration::setup()
 {
@@ -33,6 +39,8 @@ bool Configuration::read()
         {
           Serial.println("\nparsed json");
           Serial.println( "SSID: " + json["SSID"].as<String>() + ", password: " + json["password"].as<String>() );
+
+          operation_mode = String( json["operation_mode"].as<String>() ).toInt();
 
           wifi.SSID = json["SSID"].as<String>();
           wifi.password = json["password"].as<String>();
@@ -69,6 +77,7 @@ void Configuration::write()
   Serial.println("saving config");
   DynamicJsonBuffer jsonBuffer;
   JsonObject& json = jsonBuffer.createObject();
+  json["operation_mode"] = String( operation_mode );
   json["SSID"] = wifi.SSID;
   json["password"] = wifi.password;
   json["reconnects"] = String( wifi.reconnects );

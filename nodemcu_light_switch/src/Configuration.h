@@ -33,6 +33,10 @@ public:
   } MQTTConfiguration;
   MQTTConfiguration mqtt;
 
+  unsigned int operation_mode;
+
+  Configuration();
+
   void setup();
   bool read();
   void write();

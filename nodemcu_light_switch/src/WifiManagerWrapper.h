@@ -33,8 +33,8 @@ public:
   }
 
   void initFromConfiguration();
-  void setup( bool autoConnect );
-  void startAPWithoutConnecting();
+  void setup( bool autoConnect, bool timeout = true );
+  void startAPWithoutConnecting( bool timeout = true );
   void autoconnectWithOldValues();  // attempt reconnect SSID and password stored in jsonConfig
   bool reconnectsExceeded();
   void resetReconnects();
