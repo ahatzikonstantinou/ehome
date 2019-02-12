@@ -12,7 +12,14 @@ bool MQTT::reconnect()
     Serial.print( "Client rc=" + String( client.state() ) + ", " );
     Serial.print( "Attempting MQTT connection..." );
     // Attempt to connect
-    if( client.connect( client_id.c_str() ) )
+    bool success = client.connect(
+      client_id.c_str(),  // id
+      configuration->mqtt.publish_topic.c_str(), // last will topic
+      0,  // last will QoS
+      true, // last will retain
+      String( "{ \"id\": " + client_id + "\", \"state\": \"offline\" }" ).c_str()  //last will message
+    );
+    if( success )
     {
       Buzzer::playMQTTConnected();
       Serial.println( "connected, rc=" + String( client.state() ) );
@@ -83,7 +90,8 @@ void MQTT::publishConfiguration()
 void MQTT::publishReport( const int relayState, const bool relayActive, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold, const CheckAmps c )
 {
   String msg(
-    String( "{ \"state\": \"" ) + ( relayState == HIGH ? "OFF" : "ON" ) +
+    String( "{ \"id\": \"" + client_id +
+    "\", \"state\": \"" ) + ( relayState == HIGH ? "OFF" : "ON" ) +
     "\", \"active\": \"" + ( relayActive ? "true" : "false" ) +
     "\", \"trigger\": \"" + trigger +
     "\", \"offMaxAmpsThreshold\": " + String( offMaxAmpsThreshold ) +
@@ -99,7 +107,8 @@ void MQTT::publishReport( const int relayState, const bool relayActive, const St
 void MQTT::publishReport( const int relayState, const bool relayActive, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold )
 {
   String msg(
-    String( "{ \"state\": \"" ) + ( relayState == HIGH ? "OFF" : "ON" ) +
+    String( "{ \"id\": \"" + client_id +
+    "\", \"state\": \"" ) + ( relayState == HIGH ? "OFF" : "ON" ) +
     "\", \"active\": \"" + ( relayActive ? "true" : "false" ) +
     "\", \"trigger\": \"" + trigger +
     "\", \"offMaxAmpsThreshold\": " + String( offMaxAmpsThreshold ) +
