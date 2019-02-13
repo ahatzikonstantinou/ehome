@@ -64,12 +64,24 @@ class Translation( object ):
         self.item = ''
 
 class translate:
-    ConfigurationFile = 'houses-configuration.json'
+    """ Handle translation requests. 
+        If using __findTranslation, the request must be of type http://url:port/translate?item=A/4/L/DOOR
+        The translator expects to parse house/floor/room/domain/name/... a 4+ parts string, with the '/' delimiter 
+        Example "A///MOTION/M/status". This will work only if the parts correspond both to the publish element of an item
+        as well as the mqtt elements of a house,floor, room
+        If using LocationFinder the item param is the concatenated mqtt values of all nodes involved in the node hierarchy
+        to be translated
+    """
+    ConfigurationFile = os.path.dirname(os.path.abspath(__file__)) + '/houses-configuration.json'
     def GET( self, params ):
         params = web.input()
         print( params )
         if( params.item is None ):
             return badData()
+
+        method = 1
+        if( 'method' in params ):
+            method = int( params.method )
 
         try:
             with open( translate.ConfigurationFile ) as json_file:
@@ -78,14 +90,22 @@ class translate:
             print( 'There seems to be an error reading the configuration from {}'.format( translate.ConfigurationFile ) )
             return internalerror()
                         
+        if( method == 0 ):
+            locationFinder = self.LocationFinder()
+            self.__locateConfigurationNode( 'mqtt', ( "/" + params.item.strip() ).split( "/" ), 0, configurationTxt, locationFinder )
+            text = ', '.join( locationFinder.texts ).encode( 'utf-8' ) 
+            print( 'location finder has: "{}"'.format( text ) )
+            return text
+
         translation = self.__findTranslation( params.item, configurationTxt['houses'] )
         
         if( translation is None ):
             return notfound()
 
         # return '{0}({1})'.format( params.callback, json.dumps( translation, indent=2 ) )
-        print( 'will return translation: ', json.dumps( { 'house': translation.house, 'floor': translation.floor, 'room': translation.room, 'domain': translation.domain, 'item': translation.item }, indent=2 ) )
-        return json.dumps( { 'house': translation.house, 'floor': translation.floor, 'room': translation.room, 'domain': translation.domain, 'item': translation.item }, indent=2 )
+        text = json.dumps( { 'house': translation.house, 'floor': translation.floor, 'room': translation.room, 'domain': translation.domain, 'item': translation.item }, indent=2, ensure_ascii=False, encoding='utf8' )
+        print( 'will return translation: {}'.format( text.encode( 'utf-8' ) )  )
+        return text #.encode( 'utf-8' )
 
 
     def __findTranslation( self, translate, configurationTxt ):
@@ -102,7 +122,7 @@ class translate:
                 floor = sections[1]
                 print( 'floor: {}', floor )
                 if( len( floor ) == 0 ):
-                    itemConf = self.__findInConfiguration( translate, 'items', houseConf, 'subscribe' )
+                    itemConf = self.__findInConfiguration( translate, 'items', houseConf, 'publish' )
                     if( itemConf is not None ):
                         translation.item = itemConf[ 'name' ]
                 else:
@@ -112,14 +132,14 @@ class translate:
 
                     room = sections[2]
                     if( len( room ) == 0 ):
-                        itemConf = self.__findInConfiguration( translate, 'items', houseConf, 'subscribe' )
+                        itemConf = self.__findInConfiguration( translate, 'items', houseConf, 'publish' )
                         if( itemConf is not None ):
                             translation.item = itemConf[ 'name' ]
                     else:
                         roomConf = self.__findInConfiguration( room, 'rooms', floorConf, 'mqtt' )
                         if( roomConf is not None ):
                             translation.room = roomConf[ 'name' ]
-                            itemConf = self.__findInConfiguration( translate, 'items', roomConf, 'subscribe' )
+                            itemConf = self.__findInConfiguration( translate, 'items', roomConf, 'publish' )
                             if( itemConf is not None ):
                                 translation.item = itemConf[ 'name' ]
                 
@@ -138,6 +158,67 @@ class translate:
                 return configurationSection[ i ]
         
         return None
+
+    class LocationFinder( object ):
+        def __init__( self ):
+            self.texts = []
+            self.foundLocation = False
+            self.finished = False
+            self.node = None
+        def search( self, locationTag, locations, currenLocationIndex, configurationNode, storeText ):
+            #special case: the first node of the configuration does not have locationTag and an empty location
+            #is considered a match
+            if( currenLocationIndex == 0 and 
+                ( not locations[0].strip() ) and 
+                type( configurationNode ) is dict and 
+                locationTag not in configurationNode 
+            ):
+                self.foundLocation = True
+                self.finished = len( locations ) == 0
+                if( self.finished ):
+                    self.node = configurationNode
+                return
+                
+            self.foundLocation = type( configurationNode ) is dict and \
+                locationTag in configurationNode and \
+                configurationNode[ locationTag ] == locations[ currenLocationIndex ]
+
+            if( self.foundLocation and 'name' in configurationNode and storeText ):
+                self.texts.append( configurationNode['name'] )
+                
+            if( self.foundLocation and ( currenLocationIndex + 1 == len( locations ) ) ):
+                self.finished = True
+                self.node = configurationNode
+
+    def __locateConfigurationNode( self, locationTag, locations, currenLocationIndex, configurationNode, locationFinder ):
+        if( locationFinder.finished ):
+            return True
+        
+        nodeType = type( configurationNode )
+        if( nodeType is dict ):
+            locationFinder.search( locationTag, locations, currenLocationIndex, configurationNode, True )
+            if( locationFinder.finished ):
+                #found node
+                return True
+            elif( locationFinder.foundLocation ):
+                #found location but not final node yet, search the rest of the node's children
+                for key in configurationNode:
+                    if( self.__locateConfigurationNode( locationTag, locations, currenLocationIndex + 1, configurationNode[ key ], locationFinder ) ):
+                        return True
+            #locationFinder did not finish and did not even find the requested location
+            return False
+        elif( nodeType is list ):
+            for i in range( 0, len( configurationNode ) ):
+                locationFinder.search( locationTag, locations, currenLocationIndex, configurationNode[i], False )
+                if( locationFinder.finished ):
+                    #found node
+                    return True
+                elif( locationFinder.foundLocation ):
+                    #found location but not final node yet, search the rest of the node's children
+                    if( self.__locateConfigurationNode( locationTag, locations, currenLocationIndex, configurationNode[i], locationFinder ) ):
+                        return True
+            #None of the list items were a correct location that lead to the target node
+            return False
 
 if __name__ == "__main__":
     app = web.application(urls, globals())

@@ -1,8 +1,37 @@
 {
-    "items": [], 
+    "items": [
+        {
+            "domain": "SMS", 
+            "protocol": "mqtt", 
+            "name": "SMS", 
+            "publish": "sms", 
+            "subscribe": "sms/cmd", 
+            "type": "SMS", 
+            "id": "2"
+        }, 
+        {
+            "domain": "MODEM", 
+            "protocol": "mqtt", 
+            "name": "Modems", 
+            "publish": "modem", 
+            "subscribe": "modem/cmd", 
+            "type": "MODEM", 
+            "id": "3"
+        }
+    ], 
     "houses": [
         {
-            "items": [], 
+            "items": [
+                {
+                    "domain": "ALARM", 
+                    "protocol": "mqtt", 
+                    "name": "Συναγερμός", 
+                    "publish": "A///ALARM/A/status", 
+                    "subscribe": "A///ALARM/A/set", 
+                    "type": "ALARM", 
+                    "id": "101"
+                }
+            ], 
             "mqtt": "A", 
             "floors": [
                 {
@@ -10,27 +39,472 @@
                     "name": "4ος", 
                     "rooms": [
                         {
-                            "items": [], 
+                            "items": [
+                                {
+                                    "domain": "DOOR", 
+                                    "protocol": "mqtt", 
+                                    "name": "Πόρτα εισόδου", 
+                                    "publish": "A/4/H/DOOR/D", 
+                                    "type": "DOOR1", 
+                                    "id": "18"
+                                }, 
+                                {
+                                    "domain": "WINDOW", 
+                                    "protocol": "mqtt", 
+                                    "name": "Παράθυρο φωταγωγού", 
+                                    "publish": "A/4/H/WINDOW/W", 
+                                    "type": "WINDOW1R", 
+                                    "id": "19"
+                                }, 
+                                {
+                                    "domain": "COVER", 
+                                    "protocol": "mqtt", 
+                                    "name": "Σίτα φωταγωγού", 
+                                    "publish": "A/4/H/COVER/W", 
+                                    "type": "NET", 
+                                    "id": "20"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Φως ταβάνι", 
+                                    "publish": "A/4/H/LIGHT/LC/state", 
+                                    "subscribe": "A/4/H/LC/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "21"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Εξωτερικό φως εισόδου", 
+                                    "publish": "A/4/H/LIGHT/LO/state", 
+                                    "subscribe": "A/4/H/LO/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "22"
+                                }, 
+                                {
+                                    "domain": "CAMERA", 
+                                    "right": "decoder_control.cgi?command=6", 
+                                    "protocol": "http", 
+                                    "name": "Κάμερα", 
+                                    "up": "decoder_control.cgi?command=0", 
+                                    "stop": "decoder_control.cgi?command=1", 
+                                    "baseUrl": "http://192.168.1.79/webcam/", 
+                                    "videostream": "videostream.cgi?", 
+                                    "down": "decoder_control.cgi?command=2", 
+                                    "type": "IPCAMERAPANTILT", 
+                                    "id": "23", 
+                                    "left": "decoder_control.cgi?command=4"
+                                }, 
+                                {
+                                    "domain": "MOTION", 
+                                    "protocol": "mqtt", 
+                                    "name": "Κίνηση", 
+                                    "videostream": "http://192.168.1.11:9081", 
+                                    "publish": "A///MOTION/M/status", 
+                                    "subscribe": "A///MOTION/M/cmd", 
+                                    "cameraId": "tenvis", 
+                                    "type": "MOTIONCAMERAPANTILT", 
+                                    "id": "24"
+                                }, 
+                                {
+                                    "domain": "CLIMATE", 
+                                    "protocol": "mqtt", 
+                                    "name": "Θερμοκρασία", 
+                                    "publish": "A/4/H/TH", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "25"
+                                }
+                            ], 
                             "mqtt": "H", 
                             "name": "Χωλ"
                         }, 
                         {
                             "items": [
                                 {
+                                    "domain": "DOOR", 
+                                    "protocol": "mqtt", 
+                                    "name": "Μπαλκονόπορτα", 
+                                    "publish": "A/4/L/DOOR/D", 
+                                    "type": "DOOR2R", 
+                                    "id": "32"
+                                }, 
+                                {
+                                    "domain": "COVER", 
+                                    "protocol": "mqtt", 
+                                    "name": "Σίτα μπαλκονόπορτας", 
+                                    "publish": "A/4/L/COVER/NB", 
+                                    "type": "NET", 
+                                    "id": "33"
+                                }, 
+                                {
+                                    "domain": "COVER", 
+                                    "protocol": "mqtt", 
+                                    "name": "Ρολό μπαλκονόπορτας", 
+                                    "publish": "A/4/L/COVER/RB/state", 
+                                    "subscribe": "A/4/L/COVER/RB/set", 
+                                    "type": "ROLLER1_AUTO", 
+                                    "id": "34"
+                                }, 
+                                {
+                                    "domain": "WINDOW", 
+                                    "protocol": "mqtt", 
+                                    "name": "Παράθυρο", 
+                                    "publish": "A/4/L/WINDOW/W", 
+                                    "type": "WINDOW2R", 
+                                    "id": "35"
+                                }, 
+                                {
+                                    "domain": "COVER", 
+                                    "protocol": "mqtt", 
+                                    "name": "Σίτα παραθύρου", 
+                                    "publish": "A/4/L/COVER/NW", 
+                                    "type": "NET", 
+                                    "id": "36"
+                                }, 
+                                {
+                                    "domain": "COVER", 
+                                    "protocol": "mqtt", 
+                                    "name": "Ρολό παραθύρου", 
+                                    "publish": "A/4/L/COVER/RW", 
+                                    "type": "ROLLER1", 
+                                    "id": "37"
+                                }, 
+                                {
                                     "domain": "LIGHT", 
                                     "protocol": "mqtt", 
+                                    "name": "Γυάλινος Πολυέλεος", 
+                                    "publish": "A/4/L/LIGHT/GCH/state", 
+                                    "subscribe": "A/4/L/LIGHT/GCH/set", 
+                                    "type": "LIGHT2", 
+                                    "id": "38"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Ξύλινος Πολυέλεος", 
+                                    "publish": "A/4/L/LIGHT/GCH/state", 
+                                    "subscribe": "A/4/L/LIGHT/GCH/set", 
+                                    "type": "LIGHT2", 
+                                    "id": "39"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Σποτ μπαλκονόπορτα", 
+                                    "publish": "A/4/L/LIGHT/LD/state", 
+                                    "subscribe": "A/4/L/LIGHT/LD/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "40"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Σποτ παραθύρου", 
+                                    "publish": "A/4/L/LIGHT/LW/state", 
+                                    "subscribe": "A/4/L/LIGHT/LW/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "41"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Εξωτερικό φως μπαλκονόπορτα", 
+                                    "publish": "A/4/L/LIGHT/LOB/state", 
+                                    "subscribe": "A/4/L/LIGHT/LOB/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "42"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Εξωτερικό φως παραθύρου", 
+                                    "publish": "A/4/L/LIGHT/LOW/state", 
+                                    "subscribe": "A/4/L/LIGHT/LOW/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "43"
+                                }, 
+                                {
+                                    "domain": "CAMERA", 
+                                    "protocol": "http", 
+                                    "name": "Κάμερα 1", 
+                                    "url": "http://192.168.1.79/webcam", 
+                                    "type": "IPCAMERA", 
+                                    "id": "44"
+                                }, 
+                                {
+                                    "domain": "CAMERA", 
+                                    "protocol": "mqtt", 
+                                    "name": "Κάμερα 2", 
+                                    "videostream": "http://192.168.1.11:9081", 
+                                    "publish": "A///MOTION/M/status", 
+                                    "subscribe": "A///MOTION/M/cmd", 
+                                    "cameraId": "tenvis", 
+                                    "type": "MOTIONCAMERA", 
+                                    "id": "45"
+                                }, 
+                                {
+                                    "domain": "CLIMATE", 
+                                    "protocol": "mqtt", 
+                                    "name": "Θερμοκρασία", 
+                                    "publish": "A/4/L/TH", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "46"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Φώς επίδειξης", 
                                     "firmware": "EHome", 
-                                    "publish": "A/4/L/LIGHT/L1/state", 
-                                    "device_name": "Φως επίδειξης", 
-                                    "subscribe": "A/4/L/LIGHT/L1/set", 
+                                    "publish": "L/state", 
+                                    "subscribe": "L/set", 
                                     "version": "0.1", 
                                     "location": "A/4/L", 
-                                    "type": "LIGHT2", 
+                                    "type": "LIGHT1", 
                                     "id": "light1"
                                 }
                             ], 
                             "mqtt": "L", 
                             "name": "Σαλόνι"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "domain": "DOOR", 
+                                    "protocol": "mqtt", 
+                                    "name": "Μπαλκονόπορτα", 
+                                    "publish": "A/4/K/DOOR/D", 
+                                    "type": "DOOR1", 
+                                    "id": "53"
+                                }, 
+                                {
+                                    "domain": "WINDOW", 
+                                    "protocol": "mqtt", 
+                                    "name": "Παράθυρο νεροχύτη", 
+                                    "publish": "A/4/K/WINDOW/WS", 
+                                    "type": "WINDOW1R", 
+                                    "id": "54"
+                                }, 
+                                {
+                                    "domain": "COVER", 
+                                    "protocol": "mqtt", 
+                                    "name": "Σίτα παραθύρου νεροχύτη", 
+                                    "publish": "A/4/K/COVER/NWS", 
+                                    "type": "NET", 
+                                    "id": "55"
+                                }, 
+                                {
+                                    "domain": "WINDOW", 
+                                    "protocol": "mqtt", 
+                                    "name": "Παράθυρο φωταγωγού", 
+                                    "publish": "A/4/Κ/WINDOW/WL", 
+                                    "type": "WINDOW1R", 
+                                    "id": "56"
+                                }, 
+                                {
+                                    "domain": "COVER", 
+                                    "protocol": "mqtt", 
+                                    "name": "Σίτα παραθύρου φωταγωγού", 
+                                    "publish": "A/4/K/COVER/NWL", 
+                                    "type": "NET", 
+                                    "id": "57"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Φως μπαλκονιού", 
+                                    "publish": "A/4/K/LIGHT/LB/state", 
+                                    "subscribe": "A/4/K/LIGHT/LB/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "58"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Φως ταβάνι", 
+                                    "publish": "A/4/K/LIGHT/LC/state", 
+                                    "subscribe": "A/4/K/LIGHT/LC/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "59"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Φως φαγητού", 
+                                    "publish": "A/4/K/LIGHT/LD/state", 
+                                    "subscribe": "A/4/K/LIGHT/LD/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "60"
+                                }, 
+                                {
+                                    "domain": "CAMERA", 
+                                    "protocol": "http", 
+                                    "name": "Κάμερα", 
+                                    "url": "http://192.168.1.79/webcam", 
+                                    "type": "IPCAMERA", 
+                                    "id": "61"
+                                }, 
+                                {
+                                    "domain": "CLIMATE", 
+                                    "protocol": "mqtt", 
+                                    "name": "Θερμοκρασία", 
+                                    "publish": "A/4/K/TH", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "62"
+                                }
+                            ], 
+                            "mqtt": "K", 
+                            "name": "Κουζίνα"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "domain": "WINDOW", 
+                                    "protocol": "mqtt", 
+                                    "name": "Παράθυρο", 
+                                    "publish": "A/4/B/WINDOW/W", 
+                                    "type": "WINDOW1R", 
+                                    "id": "69"
+                                }, 
+                                {
+                                    "domain": "COVER", 
+                                    "protocol": "mqtt", 
+                                    "name": "Σίτα παραθύρου", 
+                                    "publish": "A/4/B/COVER/NW", 
+                                    "type": "NET", 
+                                    "id": "70"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Φως", 
+                                    "publish": "A/4/B/LIGHT/L/state", 
+                                    "subscribe": "A/4/B/LIGHT/L/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "71"
+                                }, 
+                                {
+                                    "domain": "CLIMATE", 
+                                    "protocol": "mqtt", 
+                                    "name": "Θερμοκρασία", 
+                                    "publish": "A/4/B/TH", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "72"
+                                }
+                            ], 
+                            "mqtt": "B", 
+                            "name": "Μπάνιο"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Φως", 
+                                    "publish": "A/4/WC/L/state", 
+                                    "subscribe": "A/4/WC/L/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "1552752112"
+                                }
+                            ], 
+                            "mqtt": "WC", 
+                            "name": "WC"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "domain": "DOOR", 
+                                    "protocol": "mqtt", 
+                                    "name": "Μπαλκονόπορτα", 
+                                    "publish": "A/4/BR/DOOR/D", 
+                                    "type": "DOOR2R", 
+                                    "id": "80"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Φως ταβάνι", 
+                                    "publish": "A/4/BR/LIGHT/LC/state", 
+                                    "subscribe": "A/4/BR/LIGHT/LC/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "81"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Φως μπαλκονιού", 
+                                    "publish": "A/4/BR/LIGHT/LB/state", 
+                                    "subscribe": "A/4/BR/LIGHT/LB/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "82"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Σποτ", 
+                                    "publish": "A/4/BR/LIGHT/LS/state", 
+                                    "subscribe": "A/4/BR/LIGHT/LS/set", 
+                                    "type": "LIGHT1", 
+                                    "id": "83"
+                                }, 
+                                {
+                                    "domain": "CAMERA", 
+                                    "protocol": "http", 
+                                    "name": "Κάμερα", 
+                                    "url": "http://192.168.1.79/webcam", 
+                                    "type": "IPCAMERA", 
+                                    "id": "84"
+                                }, 
+                                {
+                                    "domain": "CLIMATE", 
+                                    "protocol": "mqtt", 
+                                    "name": "Θερμοκρασία", 
+                                    "publish": "A/4/BR/TH", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "85"
+                                }
+                            ], 
+                            "mqtt": "BR", 
+                            "name": "Κρεββατοκάμαρα"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "domain": "DOOR", 
+                                    "protocol": "mqtt", 
+                                    "name": "Παράθυρο", 
+                                    "publish": "A/4/O/WINDOW/W", 
+                                    "type": "WINDOW2R", 
+                                    "id": "92"
+                                }, 
+                                {
+                                    "domain": "LIGHT", 
+                                    "protocol": "mqtt", 
+                                    "name": "Φως", 
+                                    "publish": "A/4/O/LIGHT/L/state", 
+                                    "subscribe": "A/4/O/LIGHT/L/set", 
+                                    "type": "LIGHT2", 
+                                    "id": "93"
+                                }, 
+                                {
+                                    "domain": "CAMERA", 
+                                    "protocol": "http", 
+                                    "name": "Κάμερα", 
+                                    "url": "http://192.168.1.79/webcam", 
+                                    "type": "IPCAMERA", 
+                                    "id": "94"
+                                }, 
+                                {
+                                    "domain": "CLIMATE", 
+                                    "protocol": "mqtt", 
+                                    "name": "Θερμοκρασία", 
+                                    "publish": "A/4/BR/TH", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "95"
+                                }
+                            ], 
+                            "mqtt": "O", 
+                            "name": "Γραφείο"
                         }
                     ]
                 }
@@ -38,9 +512,598 @@
             "name": "Διαμέρισμα Αντώνη"
         }, 
         {
-            "items": [], 
-            "floors": [], 
+            "items": [
+                {
+                    "protocol": "mqtt", 
+                    "domain": "ALARM", 
+                    "type": "ALARM", 
+                    "id": "180", 
+                    "name": "Συναγερμός"
+                }
+            ], 
+            "floors": [
+                {
+                    "name": "3ος", 
+                    "rooms": [
+                        {
+                            "items": [
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "DOOR", 
+                                    "type": "DOOR1", 
+                                    "id": "112", 
+                                    "name": "Πόρτα εισόδου"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "113", 
+                                    "name": "Φως ταβάνι"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "114", 
+                                    "name": "Εξωτερικό φως εισόδου"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "CLIMATE", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "115", 
+                                    "name": "Θερμοκρασία"
+                                }
+                            ], 
+                            "name": "Χωλ"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "DOOR", 
+                                    "type": "DOOR2R", 
+                                    "id": "121", 
+                                    "name": "Μπαλκονόπορτα"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "COVER", 
+                                    "type": "NET", 
+                                    "id": "122", 
+                                    "name": "Σίτα μπαλκονόπορτας"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "COVER", 
+                                    "type": "ROLLER1", 
+                                    "id": "123", 
+                                    "name": "Ρολό μπαλκονόπορτας"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "124", 
+                                    "name": "Πολυέλεος 1/2"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "125", 
+                                    "name": "Πολυέλεος 2/2"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "126", 
+                                    "name": "Φως μπαλκονιού"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "CLIMATE", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "127", 
+                                    "name": "Θερμοκρασία"
+                                }
+                            ], 
+                            "name": "Σαλόνι"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "WINDOW", 
+                                    "type": "WINDOW2R", 
+                                    "id": "133", 
+                                    "name": "Παράθυρο"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "COVER", 
+                                    "type": "NET", 
+                                    "id": "134", 
+                                    "name": "Σίτα παραθύρου"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "COVER", 
+                                    "type": "ROLLER1", 
+                                    "id": "135", 
+                                    "name": "Ρολό παραθύρου"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "136", 
+                                    "name": "Πολυέλεος 1/2"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "137", 
+                                    "name": "Πολυέλεος 2/2"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "CLIMATE", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "138", 
+                                    "name": "Θερμοκρασία"
+                                }
+                            ], 
+                            "name": "Τραπεζαρία"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "DOOR", 
+                                    "type": "DOOR2R", 
+                                    "id": "144", 
+                                    "name": "Μπαλκονόπορτα"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "COVER", 
+                                    "type": "NET", 
+                                    "id": "145", 
+                                    "name": "Σίτα μπαλκονόπορτας"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "COVER", 
+                                    "type": "ROLLER1", 
+                                    "id": "146", 
+                                    "name": "Ρολό μπαλκονόπορτας"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "147", 
+                                    "name": "Φως ταβάνι"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "148", 
+                                    "name": "Φως μπαλκονιού"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "CLIMATE", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "149", 
+                                    "name": "Θερμοκρασία"
+                                }
+                            ], 
+                            "name": "Καθιστικό"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "155", 
+                                    "name": "Φως ταβάνι"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "CLIMATE", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "156", 
+                                    "name": "Θερμοκρασία"
+                                }
+                            ], 
+                            "name": "Κουζίνα"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "WINDOW", 
+                                    "type": "WINDOW1R", 
+                                    "id": "162", 
+                                    "name": "Παράθυρο"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "COVER", 
+                                    "type": "NET", 
+                                    "id": "163", 
+                                    "name": "Σίτα παραθύρου"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "164", 
+                                    "name": "Φως ταβάνι"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "CLIMATE", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "165", 
+                                    "name": "Θερμοκρασία"
+                                }
+                            ], 
+                            "name": "Μπάνιο"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "WINDOW", 
+                                    "type": "WINDOW1R", 
+                                    "id": "171", 
+                                    "name": "Παράθυρο"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "COVER", 
+                                    "type": "NET", 
+                                    "id": "172", 
+                                    "name": "Σίτα παραθύρου"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "173", 
+                                    "name": "Φως ταβάνι"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "CLIMATE", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "174", 
+                                    "name": "Θερμοκρασία"
+                                }
+                            ], 
+                            "name": "Κρεββατοκάμαρα"
+                        }
+                    ]
+                }
+            ], 
             "name": "Διαμέρισμα Ειρήνης"
+        }, 
+        {
+            "floors": [
+                {
+                    "name": "Ισόγειο", 
+                    "rooms": [
+                        {
+                            "items": [], 
+                            "name": "Κουζίνα"
+                        }, 
+                        {
+                            "items": [], 
+                            "name": "Σαλόνι"
+                        }, 
+                        {
+                            "items": [], 
+                            "name": "Μπάνιο"
+                        }
+                    ]
+                }, 
+                {
+                    "name": "1ος", 
+                    "rooms": [
+                        {
+                            "items": [], 
+                            "name": "Σαλόνι"
+                        }, 
+                        {
+                            "items": [], 
+                            "name": "Μπάνιο"
+                        }, 
+                        {
+                            "items": [], 
+                            "name": "WC"
+                        }, 
+                        {
+                            "items": [], 
+                            "name": "Κρεββατοκάμαρα"
+                        }, 
+                        {
+                            "items": [], 
+                            "name": "Κρεββατοκάμαρα παιδιών"
+                        }, 
+                        {
+                            "items": [], 
+                            "name": "Κρεββατοκάμαρα Αθηνάς"
+                        }, 
+                        {
+                            "items": [], 
+                            "name": "Κρεββατοκάμαρα δυτική"
+                        }
+                    ]
+                }
+            ], 
+            "name": "Εξοχικό Αλυκή"
+        }, 
+        {
+            "items": [
+                {
+                    "protocol": "mqtt", 
+                    "domain": "ALARM", 
+                    "type": "ALARM", 
+                    "id": "301", 
+                    "name": "Συναγερμός"
+                }
+            ], 
+            "floors": [
+                {
+                    "name": "1ος", 
+                    "rooms": [
+                        {
+                            "items": [
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "DOOR", 
+                                    "type": "DOOR1", 
+                                    "id": "246", 
+                                    "name": "Πόρτα εισόδου"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "247", 
+                                    "name": "Εξωτερικό φως εισόδου"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "248", 
+                                    "name": "Φως ταβάνι"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "249", 
+                                    "name": "Σποτ"
+                                }, 
+                                {
+                                    "protocol": "http", 
+                                    "domain": "CAMERA", 
+                                    "type": "IPCAMERA", 
+                                    "id": "250", 
+                                    "name": "Κάμερα"
+                                }
+                            ], 
+                            "name": "Χωλ"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "DOOR", 
+                                    "type": "DOOR2R", 
+                                    "id": "256", 
+                                    "name": "Μπαλκονόπορτα"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "COVER", 
+                                    "type": "NET", 
+                                    "id": "257", 
+                                    "name": "Σίτα μπαλκονόπορτας"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "COVER", 
+                                    "type": "ROLLER1_AUTO", 
+                                    "id": "258", 
+                                    "name": "Ρολό μπαλκονόπορτας"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "259", 
+                                    "name": "Φως ταβάνι"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "260", 
+                                    "name": "Φως μπαλκονιού"
+                                }, 
+                                {
+                                    "protocol": "http", 
+                                    "domain": "CAMERA", 
+                                    "type": "IPCAMERA", 
+                                    "id": "261", 
+                                    "name": "Κάμερα"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "CLIMATE", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "262", 
+                                    "name": "Θερμοκρασία"
+                                }
+                            ], 
+                            "name": "Σαλόνι"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "DOOR", 
+                                    "type": "DOOR1", 
+                                    "id": "268", 
+                                    "name": "Μπαλκονόπορτα"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "WINDOW", 
+                                    "type": "WINDOW2R", 
+                                    "id": "269", 
+                                    "name": "Παράθυρο διπλό"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "WINDOW", 
+                                    "type": "WINDOW1R", 
+                                    "id": "270", 
+                                    "name": "Παράθυρο μονό"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "271", 
+                                    "name": "Φως ταβάνι"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "272", 
+                                    "name": "Σποτ"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "273", 
+                                    "name": "Φως μπαλκονιού"
+                                }, 
+                                {
+                                    "protocol": "http", 
+                                    "domain": "CAMERA", 
+                                    "type": "IPCAMERA", 
+                                    "id": "274", 
+                                    "name": "Κάμερα"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "CLIMATE", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "275", 
+                                    "name": "Θερμοκρασία"
+                                }
+                            ], 
+                            "name": "Κουζίνα"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "WINDOW", 
+                                    "type": "WINDOW1", 
+                                    "id": "281", 
+                                    "name": "Παράθυρο"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "282", 
+                                    "name": "Φως"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "CLIMATE", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "283", 
+                                    "name": "Θερμοκρασία"
+                                }
+                            ], 
+                            "name": "Μπάνιο"
+                        }, 
+                        {
+                            "items": [
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "DOOR", 
+                                    "type": "DOOR1", 
+                                    "id": "289", 
+                                    "name": "Μπαλκονόπορτα"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "COVER", 
+                                    "type": "NET", 
+                                    "id": "290", 
+                                    "name": "Σίτα μπαλκονόπορτας"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "COVER", 
+                                    "type": "ROLLER1_AUTO", 
+                                    "id": "291", 
+                                    "name": "Ρολό μπαλκονόπορτας"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "292", 
+                                    "name": "Φως ταβάνι"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "LIGHT", 
+                                    "type": "LIGHT", 
+                                    "id": "293", 
+                                    "name": "Φως μπαλκονιού"
+                                }, 
+                                {
+                                    "protocol": "http", 
+                                    "domain": "CAMERA", 
+                                    "type": "IPCAMERA", 
+                                    "id": "294", 
+                                    "name": "Κάμερα"
+                                }, 
+                                {
+                                    "protocol": "mqtt", 
+                                    "domain": "CLIMATE", 
+                                    "type": "TEMPERATURE_HUMIDITY", 
+                                    "id": "295", 
+                                    "name": "Θερμοκρασία"
+                                }
+                            ], 
+                            "name": "Γραφείο"
+                        }
+                    ]
+                }
+            ], 
+            "name": "Εταιρία"
         }
     ]
 }
