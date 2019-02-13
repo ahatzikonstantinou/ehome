@@ -32,13 +32,14 @@ void ManualSwitch::loop( bool firstRun )
       uint32_t trigger_t = millis();
       if( trigger_t > last_trigger + MIN_TRIGGER_MILLIS )
       {
-        if( trigger_t < last_trigger + MAX_TWO_TRIGGER_MILLIS )
-        {
-          double_trigger_callback( relay );
-          // toggleOperationMode();
-          Serial.println( "Double valid trigger" );
-        }
-        else
+        // DOUBLE trigger has a lot of glitches. Comment out for the time being
+        // if( trigger_t < last_trigger + MAX_TWO_TRIGGER_MILLIS )
+        // {
+        //   double_trigger_callback( relay );
+        //   // toggleOperationMode();
+        //   Serial.println( "Double valid trigger" );
+        // }
+        // else
         {
           // relay->toggle();
           single_trigger_callback( relay );

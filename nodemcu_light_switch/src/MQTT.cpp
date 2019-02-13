@@ -17,7 +17,7 @@ bool MQTT::reconnect()
       configuration->mqtt.publish_topic.c_str(), // last will topic
       0,  // last will QoS
       true, // last will retain
-      String( "{ \"id\": " + client_id + "\", \"state\": \"offline\" }" ).c_str()  //last will message
+      String( "{ \"id\": \"" + client_id + "\", \"state\": \"offline\" }" ).c_str()  //last will message
     );
     if( success )
     {
@@ -27,6 +27,10 @@ bool MQTT::reconnect()
       // ... and subscribe to topic
       client.subscribe( subscribe_topic.c_str() );
       client.subscribe( configurator_subscribe_topic.c_str() );
+
+      // and publish an empty retained message to the last will topic to remove any retained messages
+      client.publish( configuration->mqtt.publish_topic.c_str(), "", true );
+      Serial.println( "Published a zero length retained message to " + configuration->mqtt.publish_topic + " to clear any previous last will retained messsages" );
     }
     else
     {
@@ -78,7 +82,7 @@ void MQTT::publishConfiguration()
     ", \"firmware\": \"" + FIRMWARE + "\"" +
     ", \"version\": \"" + VERSION + "\"" +
     ", \"protocol\": \"mqtt\"" +
-    ", \"device_name\": \"" + device_name + "\"" +
+    ", \"name\": \"" + device_name + "\"" +
     ", \"id\": \"" + client_id + "\"" +
     ", \"location\": \"" + location + "\"" +
     ", \"publish\": \"" + publish_topic + "\"" +

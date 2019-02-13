@@ -128,6 +128,7 @@ void setup()
   wifi_set_sleep_type( NONE_SLEEP_T );
 
   configuration.setup();
+  configuration.operation_mode = OPERATION_MANUAL_WIFI; //hardcode this because OPERATION_MANUAL_ONLY does not seem to work properly
 
   relay.setup();
   Serial.println( "relay setup finished" );
@@ -142,18 +143,18 @@ void setup()
   {
     Serial.println( "operation_mode: OPERATION_MANUAL_WIFI" );
 
-    // Setup some initial values to mqtt params before wifimanager attempts to read from storage or get from AP
-    // IMPORTANT NOTE: access of member variables is allowed only inside function blocks!
-    // The following lines will produce "error: 'mqtt' does not name a type" if placed outside function setup()
-    mqtt.device_name = "Φως επίδειξης";
-    mqtt.client_id = "light1";
-    mqtt.location = location;
-    mqtt.server = mqtt_server;
-    mqtt.port = mqtt_port;
-    mqtt.publish_topic = publish_topic;
-    mqtt.subscribe_topic = subscribe_topic;
-    mqtt.configurator_publish_topic = configurator_publish_topic;
-    mqtt.configurator_subscribe_topic = configurator_subscribe_topic;
+    // // Setup some initial values to mqtt params before wifimanager attempts to read from storage or get from AP
+    // // IMPORTANT NOTE: access of member variables is allowed only inside function blocks!
+    // // The following lines will produce "error: 'mqtt' does not name a type" if placed outside function setup()
+    // mqtt.device_name = "Φως επίδειξης";
+    // mqtt.client_id = "light1";
+    // mqtt.location = location;
+    // mqtt.server = mqtt_server;
+    // mqtt.port = mqtt_port;
+    // mqtt.publish_topic = publish_topic;
+    // mqtt.subscribe_topic = subscribe_topic;
+    // mqtt.configurator_publish_topic = configurator_publish_topic;
+    // mqtt.configurator_subscribe_topic = configurator_subscribe_topic;
 
     // NOTE: mqtt setup must run before wifiManagerProxy because wifiManagerWrapper may get new values and will then
     // run mqtt.setup() again with the new values
@@ -367,20 +368,20 @@ String operationModeToStr()
 
 void toggleOperationMode()
 {
-  if( configuration.operation_mode == OPERATION_MANUAL_ONLY )
-  {
-    Serial.println( "Toglling operation to MANUAL_WIFI" );
-    configuration.operation_mode = OPERATION_MANUAL_WIFI;
-  }
-  else
-  {
-    Serial.println( "Toglling operation to MANUAL_ONLY" );
-    configuration.operation_mode = OPERATION_MANUAL_ONLY;
-  }
-  configuration.write();
+  // if( configuration.operation_mode == OPERATION_MANUAL_ONLY )
+  // {
+  //   Serial.println( "Toglling operation to MANUAL_WIFI" );
+  //   configuration.operation_mode = OPERATION_MANUAL_WIFI;
+  // }
+  // else
+  // {
+  //   Serial.println( "Toglling operation to MANUAL_ONLY" );
+  //   configuration.operation_mode = OPERATION_MANUAL_ONLY;
+  // }
+  // configuration.write();
 
-  Buzzer::playRestart();
-  ESP.restart();
+  // Buzzer::playRestart();
+  // ESP.restart();
 }
 
 void mqtt_callback( char* topic, byte* payload, unsigned int length )

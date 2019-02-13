@@ -58,10 +58,10 @@
 // The min time in milliseconds that a difference in current measurments may be considered as a trigger.
 // Current will spike once when pressing the pushbutton and also when the relay contacts touch switching on the light
 // Trigger only if current jumps high ### millisecs AFTER the last jump, in order to ignore spikes due to light switching on
-#define MIN_TRIGGER_MILLIS 300
+#define MIN_TRIGGER_MILLIS 500
 
 // The max time between two triggers in order for these two triggers to be considered a toggle of operation mode
-#define MAX_TWO_TRIGGER_MILLIS 500
+#define MAX_TWO_TRIGGER_MILLIS 700
 
 // The time after which wifimanager shutsdown the portal and nodemcu will restart
 #define WIFIMANAGER_PORTAL_TIMEOUT_SECS 120
