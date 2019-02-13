@@ -86,9 +86,10 @@ class Configuration( object ):
 
                 if( ( now - lastExpirationCheck ).total_seconds() > self.mqttParams.defaultItemExpirationSeconds ):
                     # print( 'Checking items for expiration' )
+                    lastExpirationCheck = now
                     for i in range(0, len( self.expirationItemList ) ):
                         if( 'publish' in self.expirationItemList[i].item ):
-                            msg = '{{"id": "{}", "state": "offline"}}'.format( self.expirationItemList[i].item[ 'id' ] )
+                            msg = '{{"id": "{}", "state": "offline", "sender": "configurator"}}'.format( self.expirationItemList[i].item[ 'id' ] )
                             self.client.publish( self.expirationItemList[i].item[ 'publish' ], msg )
                             print( 'sending expiration message {}, topic: {}'.format( msg, self.expirationItemList[i].item['publish'] ) )
 
