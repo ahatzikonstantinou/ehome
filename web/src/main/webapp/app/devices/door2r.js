@@ -9,10 +9,10 @@
 
     function Door2R() {
         //Constructor
-        function Door2R( mqtt_subscribe_topic, state )
+        function Door2R( mqtt_subscribe_topic, state, scope )
         {
             //public properties
-            MqttDevice.call( this, mqtt_subscribe_topic, state );
+            MqttDevice.call( this, mqtt_subscribe_topic, state, scope );
         }
         
         Door2R.prototype = Object.create( MqttDevice.prototype );

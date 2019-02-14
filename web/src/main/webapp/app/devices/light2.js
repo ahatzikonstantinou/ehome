@@ -9,10 +9,10 @@
 
     function Light2() {
         //Constructor
-        function Light2( mqtt_subscribe_topic, mqtt_publish_topic, state )
+        function Light2( mqtt_subscribe_topic, mqtt_publish_topic, state, scope )
         {
             //public properties
-            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic );
+            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic, scope );
         }
         
         Light2.prototype = Object.create( MqttDevice.prototype );

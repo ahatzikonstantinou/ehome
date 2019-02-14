@@ -84,14 +84,16 @@ class Configuration( object ):
                     lastReport = now
                     self.client.publish( self.mqttParams.reportTopic, "", qos = 0, retain = False )
 
-                if( ( now - lastExpirationCheck ).total_seconds() > self.mqttParams.defaultItemExpirationSeconds ):
-                    # print( 'Checking items for expiration' )
-                    lastExpirationCheck = now
-                    for i in range(0, len( self.expirationItemList ) ):
-                        if( 'publish' in self.expirationItemList[i].item ):
-                            msg = '{{"id": "{}", "state": "offline", "sender": "configurator"}}'.format( self.expirationItemList[i].item[ 'id' ] )
-                            self.client.publish( self.expirationItemList[i].item[ 'publish' ], msg )
-                            print( 'sending expiration message {}, topic: {}'.format( msg, self.expirationItemList[i].item['publish'] ) )
+                #The mqtt devices have a retained last will message with "state": "offline". So the configurator does not need to
+                #publish offline messages on behalf of expired items
+                # if( ( now - lastExpirationCheck ).total_seconds() > self.mqttParams.defaultItemExpirationSeconds ):
+                #     # print( 'Checking items for expiration' )
+                #     lastExpirationCheck = now
+                #     for i in range(0, len( self.expirationItemList ) ):
+                #         if( 'publish' in self.expirationItemList[i].item ):
+                #             msg = '{{"id": "{}", "state": "offline", "sender": "configurator"}}'.format( self.expirationItemList[i].item[ 'id' ] )
+                #             self.client.publish( self.expirationItemList[i].item[ 'publish' ], msg )
+                #             print( 'sending expiration message {}, topic: {}'.format( msg, self.expirationItemList[i].item['publish'] ) )
 
             except Exception, e:
                 print( 'Error in infinite loop. Error: {}'.format( traceback.format_exc() ) )                

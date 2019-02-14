@@ -10,8 +10,8 @@
         <span class="device-name">{{i.name}}</span>
     </div>    
     <div class="state-container">
-        <button type="button" class="btn btn-xs state" ng-class="{ 'btn-warning': i.device.state.main == 'ON', 'btn-info': i.device.state.main == 'OFF', 'unavailable': i.device.state.main == 'UNAVAILABLE', 'switch-on': i.device.state.main == 'ON', 'switch-off': i.device.state.main == 'OFF'  }" ng-click="i.device.state.main == 'ON' ? i.device.switch( 'OFF' ) : i.device.switch( 'ON' )" ng-disabled="i.device.state.main == 'UNAVAILABLE'" data-translate="{{'home.state.' + i.device.state.main}}">
-            {{i.device.state.main}}
+        <button type="button" class="btn btn-xs state" ng-class="{ 'btn-warning': i.device.state.state == 'ON', 'btn-info': i.device.state.state == 'OFF', 'unavailable': i.device.state.state == 'offline', 'switch-on': i.device.state.state == 'ON', 'switch-off': i.device.state.state == 'OFF'  }" ng-click="i.device.state.state == 'ON' ? i.device.switch( 'OFF' ) : i.device.switch( 'ON' )" ng-disabled="i.device.state.state == 'offline'" data-translate="{{'home.state.' + i.device.state.state}}">
+            {{i.device.state.state}}
         </button>
         <span class="last-update">{{i.device.lastUpdate ? ( i.device.lastUpdate | date: 'dd/MM/yyyy HH:mm') : ''}}</span>
     </div>

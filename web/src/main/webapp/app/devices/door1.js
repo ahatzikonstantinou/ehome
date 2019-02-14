@@ -9,9 +9,9 @@
 
     function Door1() {
         //Constructor
-        function Door1( mqtt_subscribe_topic, state )
+        function Door1( mqtt_subscribe_topic, state, scope )
         {
-            MqttDevice.call( this, mqtt_subscribe_topic, state );
+            MqttDevice.call( this, mqtt_subscribe_topic, state, scope );
         }
         
         Door1.prototype = Object.create( MqttDevice.prototype );

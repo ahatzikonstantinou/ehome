@@ -9,9 +9,9 @@
 
     function Modem() {
         //Constructor
-        function Modem( mqtt_subscribe_topic, mqtt_publish_topic, state )
+        function Modem( mqtt_subscribe_topic, mqtt_publish_topic, state, scope )
         {
-            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic );
+            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic, scope );
             this.listCmd = '{"cmd":"list"}';
             this.observers = [];
             this.modems = [];

@@ -9,9 +9,9 @@
 
     function Alarm() {
         //Constructor
-        function Alarm( mqtt_subscribe_topic, mqtt_publish_topic, state )
+        function Alarm( mqtt_subscribe_topic, mqtt_publish_topic, state, scope )
         {
-            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic );
+            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic, scope );
         }
         Alarm.prototype = Object.create( MqttDevice.prototype );
         Alarm.prototype.constructor = Alarm;

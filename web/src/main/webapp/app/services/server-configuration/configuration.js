@@ -10,22 +10,22 @@
     function Configuration( Door1, Window1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, $resource, Modem, Sms )
     {
         return {
-            generateList: function( data )
+            generateList: function( data, $scope )
             {
                 var items = []
                 for( var i = 0 ; i < data.items.length ; i++ )
                 {
-                    items.push( generateItem( data.items[i] ) );
+                    items.push( generateItem( data.items[i], $scope ) );
                 }
 
                 return {
                     items: items,
-                    houses: generateHousesList( data.houses )
+                    houses: generateHousesList( data.houses, $scope )
                 };
             }
         };
 
-        function generateHousesList( data )
+        function generateHousesList( data, $scope )
         {
             var housesList = []
             for( var h = 0 ; h < data.length ; h++ )
@@ -50,7 +50,7 @@
                         }
                         for( var i = 0 ; i < data[h].floors[f].rooms[r].items.length ; i++ )
                         {
-                            room.items.push( generateItem( data[h].floors[f].rooms[r].items[i] ) )
+                            room.items.push( generateItem( data[h].floors[f].rooms[r].items[i], $scope ) )
                         }
                         floor.rooms.push( room );
                     }
@@ -59,7 +59,7 @@
 
                 for( var i = 0 ; data[h].items && i < data[h].items.length ; i++ )
                 {
-                    house.items.push( generateItem( data[h].items[i] ) )
+                    house.items.push( generateItem( data[h].items[i], $scope ) )
                 }
                 
                 // console.log( house );
@@ -68,7 +68,7 @@
             return housesList;
         }
 
-        function generateItem( def )
+        function generateItem( def, $scope )
         {
             var item = {
                 name: def.name,
@@ -80,16 +80,16 @@
             switch( item.type )
             {
                 case 'ALARM':
-                    item.device = new Alarm( def.subscribe, def.publish, { main: 'UNAVAILABLE' } );
+                    item.device = new Alarm( def.subscribe, def.publish, { main: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'NET':
-                    item.device = new Net( def.subscribe, { main: 'UNAVAILABLE' } );
+                    item.device = new Net( def.subscribe, { main: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'DOOR1':
-                    item.device = new Door1( def.subscribe, { main: 'UNAVAILABLE' } );
+                    item.device = new Door1( def.subscribe, { main: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'DOOR2R':                
-                    item.device = new Door2R( def.subscribe, { left: 'UNAVAILABLE', right: 'UNAVAILABLE', recline: 'UNAVAILABLE' } );
+                    item.device = new Door2R( def.subscribe, { left: 'UNAVAILABLE', right: 'UNAVAILABLE', recline: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'IPCAMERA':
                     item.device = new IPCamera( def.url );
@@ -98,40 +98,40 @@
                     item.device = new IPCameraPanTilt( def.baseUrl, def.videostream, def.right, def.left, def.up, def.down, def.stop );
                     break;
                 case 'LIGHT1':
-                    item.device = new Light1( def.subscribe, def.publish, { main: 'UNAVAILABLE' } );
+                    item.device = new Light1( def.subscribe, def.publish, { state: 'offline' }, $scope );
                     break;
                 case 'LIGHT2':
-                    item.device = new Light2( def.subscribe, def.publish, { left: 'UNAVAILABLE', right: 'UNAVAILABLE' } );
+                    item.device = new Light2( def.subscribe, def.publish, { left: 'UNAVAILABLE', right: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'MOTIONCAMERA':
-                    item.device = new MotionCamera( def.subscribe, def.publish, def.cameraId, def.videostream, 'UNAVAILABLE', 'NO_MOTION' );
+                    item.device = new MotionCamera( def.subscribe, def.publish, def.cameraId, def.videostream, 'UNAVAILABLE', 'NO_MOTION', $scope );
                     break;
                 case 'MOTIONCAMERAPANTILT':
-                    item.device = new MotionCameraPanTilt( def.subscribe, def.publish, def.cameraId, def.videostream, 'UNAVAILABLE', 'NO_MOTION' );
+                    item.device = new MotionCameraPanTilt( def.subscribe, def.publish, def.cameraId, def.videostream, 'UNAVAILABLE', 'NO_MOTION', $scope );
                     break;
                 case 'ROLLER1':
-                    item.device = new Roller1( def.subscribe, { main: 'UNAVAILABLE' } );
+                    item.device = new Roller1( def.subscribe, { main: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'ROLLER1_AUTO':
-                    item.device = new Roller1_Auto( def.subscribe, def.publish, { main: 'UNAVAILABLE', percent: -1 } );
+                    item.device = new Roller1_Auto( def.subscribe, def.publish, { main: 'UNAVAILABLE', percent: -1 }, $scope );
                     break;
                 case 'TEMPERATURE_HUMIDITY':
-                    item.device = new TemperatureHumidity( def.subscribe, { main: 'UNAVAILABLE', temperature: 0, humidity: 0 } );
+                    item.device = new TemperatureHumidity( def.subscribe, { main: 'UNAVAILABLE', temperature: 0, humidity: 0 }, $scope );
                     break;
                 case 'WINDOW1':
-                    item.device = new Window1( def.subscribe, { main: 'UNAVAILABLE' } );
+                    item.device = new Window1( def.subscribe, { main: 'UNAVAILABLE' }, $scope);
                     break;
                 case 'WINDOW1R':
-                    item.device = new Window1R( def.subscribe, { main: 'UNAVAILABLE', recline: 'UNAVAILABLE' } );
+                    item.device = new Window1R( def.subscribe, { main: 'UNAVAILABLE', recline: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'WINDOW2R':
-                    item.device = new Window2R( def.subscribe, { left: 'UNAVAILABLE', right: 'UNAVAILABLE', recline: 'UNAVAILABLE' } );
+                    item.device = new Window2R( def.subscribe, { left: 'UNAVAILABLE', right: 'UNAVAILABLE', recline: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'MODEM':
-                    item.device = new Modem( def.subscribe, def.publish, {} );
+                    item.device = new Modem( def.subscribe, def.publish, {}, $scope );
                     break;
                 case 'SMS':
-                    item.device = new Sms( def.subscribe, def.publish, {} );
+                    item.device = new Sms( def.subscribe, def.publish, {}, $scope );
                     break;
             }
 

@@ -45,7 +45,8 @@
             "CLOSED": "Closed",
             "RECLINED": "Reclined",
             "ON": "On",
-            "OFF": "Off"
+            "OFF": "Off",
+            "offline": "Unavailable"
         },
         "filters": {
             "all": "All",

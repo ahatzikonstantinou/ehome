@@ -32,7 +32,7 @@ public:
 
   bool reconnect();
   bool reconnectsExceeded();
-  void publish( String topic, String message );
+  void publish( String topic, String message, bool retain );
   void publishConfiguration();
   void publishReport( const int relayState, const bool relayActive, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold, const CheckAmps c );
   void publishReport( const int relayState, const bool relayActive, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold );

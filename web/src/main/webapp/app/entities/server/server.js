@@ -14,7 +14,8 @@
         };
 
         function init( server, updateConfiguration, removeConf, removeHouses, failover, primaryServer, connectionDevice, configurationDevice )
-        {
+        {            
+            // console.log( 'Server::init with configurationDevice: ', configurationDevice );
             server.showXmppError = false; //used in order to display a message when xmpp cannot connect
             server.showXmppErrorFn = function( show )
             {
@@ -202,12 +203,12 @@
                 // console.log( '\t\titem:', item );
                 if( item.device )
                 {
-                    if( item.device.mqtt_subscribe_topic )
+                    if( item.device.mqtt_publish_topic )
                     {
                         // console.log( 'Subscribing ', item.device );        
-                        this.subscribeDevice( item.device, item.device.mqtt_subscribe_topic );
+                        this.subscribeDevice( item.device, item.device.mqtt_publish_topic );
                     }
-                    if( item.device.mqtt_publish_topic )
+                    if( item.device.mqtt_subscribe_topic )
                     {
                         item.device.setPublisher( this );
                     }
@@ -228,10 +229,10 @@
             {
                 var server = this;
                 // console.log( '\t\titem:', item );
-                if( item.device && item.device.mqtt_subscribe_topic )
+                if( item.device && item.device.mqtt_publish_topic )
                 {
                     // console.log( 'Unsubscribing ', item.device, ' from server: ', server.type );
-                    this.unsubscribeDevice( item.device, item.device.mqtt_subscribe_topic );
+                    this.unsubscribeDevice( item.device, item.device.mqtt_publish_topic );
                 }
             }            
             

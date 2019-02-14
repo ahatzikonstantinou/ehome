@@ -9,9 +9,9 @@
 
     function ServerConfiguration() {
         //Constructor
-        function ServerConfiguration( server, mqtt_subscribe_topic, state, guiUpdateCb )
+        function ServerConfiguration( server, mqtt_subscribe_topic, state, guiUpdateCb, scope )
         {
-            MqttDevice.call( this, mqtt_subscribe_topic, state );
+            MqttDevice.call( this, mqtt_subscribe_topic, state, scope );
             this.server = server;
             this.status = 'NOT_SET'; //'UNAVAILABLE'; //SUCCESS, ERROR
             this.guiUpdateCb = guiUpdateCb;

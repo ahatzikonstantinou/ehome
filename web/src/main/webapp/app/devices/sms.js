@@ -9,9 +9,9 @@
 
     function Sms( $uibModal ) {
         //Constructor
-        function Sms( mqtt_subscribe_topic, mqtt_publish_topic, state, $timeout )
+        function Sms( mqtt_subscribe_topic, mqtt_publish_topic, state, scope )
         {
-            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic );
+            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic, scope );
             this.listCmd = '{"cmd":"list", "params":{ "lastSms":#lastSms#, "updates": []} }';
             this.allowedDestinationsCmd = '{"cmd":"allowed_destinations"}';
             this.modems = [];

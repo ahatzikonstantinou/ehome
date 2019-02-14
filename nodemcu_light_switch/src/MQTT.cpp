@@ -49,7 +49,7 @@ bool MQTT::reconnectsExceeded()
   return reconnectAttempts > MAX_MQTT_RECONNECT_ATTEMPTS;
 }
 
-void MQTT::publish( String topic, String message )
+void MQTT::publish( String topic, String message, bool retain )
 {
     if( client.connected() )
     {
@@ -63,7 +63,7 @@ void MQTT::publish( String topic, String message )
       // // Serial.println( _msg );
       //
       // client.publish( topic, _msg );
-      client.publish( topic.c_str(), message.c_str() );
+      client.publish( topic.c_str(), message.c_str(), retain );
     }
     else
     {
@@ -88,7 +88,7 @@ void MQTT::publishConfiguration()
     ", \"publish\": \"" + publish_topic + "\"" +
     ", \"subscribe\": \"" + subscribe_topic + "\"" +
   " } }" );
-  publish( configurator_publish_topic, msg );
+  publish( configurator_publish_topic, msg, false );
 }
 
 void MQTT::publishReport( const int relayState, const bool relayActive, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold, const CheckAmps c )
@@ -105,7 +105,7 @@ void MQTT::publishReport( const int relayState, const bool relayActive, const St
     ", \"onAmps\": " + String( c.onAmps ) +
     ", \"onError\": " + ( c.onError ? "true" : "false" ) +
   " }" );
-  publish( publish_topic, msg );
+  publish( publish_topic, msg, true );
 }
 
 void MQTT::publishReport( const int relayState, const bool relayActive, const String trigger, const double offMaxAmpsThreshold, const double onMinAmpsThreshold )
@@ -118,7 +118,7 @@ void MQTT::publishReport( const int relayState, const bool relayActive, const St
     "\", \"offMaxAmpsThreshold\": " + String( offMaxAmpsThreshold ) +
     ", \"onMinAmpsThreshold\": " + String( onMinAmpsThreshold ) +
   " }" );
-  publish( publish_topic, msg );
+  publish( publish_topic, msg, true );
 }
 
 void MQTT::setup( MQTT_CALLBACK_SIGNATURE )

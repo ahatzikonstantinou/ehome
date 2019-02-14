@@ -76,7 +76,7 @@
             // messages subscribed by this function should be handled directly in the client.onMessageArrived function
             server.subscribe = function( topic )
             {
-                // console.log( 'my mqtt server subscribe for topic ', topic );
+                console.log( 'my mqtt server subscribe for topic ', topic );
                 if( this.connectionStatus == 'CONNECTED')
                 {
                     this.client.subscribe( topic );
@@ -89,7 +89,7 @@
 
             server.subscribeDevice = function( device, topic )
             {
-                // console.log( 'my mqtt server subscribe for topic ', topic );
+                console.log( 'my mqtt server subscribe for device topic ', topic );
                 if( server.connectionStatus == 'CONNECTED')
                 {
                     this.client.subscribe( topic );

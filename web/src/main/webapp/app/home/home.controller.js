@@ -115,8 +115,8 @@
                         // connect simultaneously to the mqtt broker using this web app
                         mqtt_client_id : uuidv4(), 
                         configuration: {
-                            subscribeTopic: 'A///CONFIGURATION/C/status',
-                            publishTopic: 'A///CONFIGURATION/C/cmd',
+                            subscribeTopic: 'Configurator/status', //'A///CONFIGURATION/C/status',
+                            publishTopic: 'Configurator/set', //'A///CONFIGURATION/C/cmd',
                             publishMessage: '{"cmd": "SEND"}'
                         },
                         connection: {
@@ -131,32 +131,32 @@
                         primary: true,
                         protocol: 'Mqtt' // 'UNAVAILABLE'
                     },
-                    failover: {
-                        active: false,
-                        type: 'xmpp',
-                        settings: {
-                            host: 'wss://192.168.1.79:5281/xmpp-websocket',
-                            user: 'antonis@ahatzikonstantinou.dtdns.net',
-                            password: '312ggp12',
-                            destination: 'alyki@ahatzikonstantinou.dtdns.net',
-                            email: 'ahatziko.alyki@gmail.com',
-                            configuration: {
-                                subscribeTopic: 'A///CONFIGURATION/C/status',
-                                publishTopic: 'A///CONFIGURATION/C/cmd',
-                                publishMessage: '{"cmd": "SEND"}'
-                            },
-                            connection: {
-                                subscribeTopic: 'connection',
-                                publishTopic: 'connection/report'    
-                            }
-                        },
-                        connection: {
-                            type: 'NOT_CONNECTED',
-                            primary: false,
-                            protocol: 'Xmpp'
-                        },    
-                        conf: { items:[], houses:[] }
-                    },
+                    failover: null, //{
+                    //     active: false,
+                    //     type: 'xmpp',
+                    //     settings: {
+                    //         host: 'wss://192.168.1.79:5281/xmpp-websocket',
+                    //         user: 'antonis@ahatzikonstantinou.dtdns.net',
+                    //         password: '312ggp12',
+                    //         destination: 'alyki@ahatzikonstantinou.dtdns.net',
+                    //         email: 'ahatziko.alyki@gmail.com',
+                    //         configuration: {
+                    //             subscribeTopic: 'A///CONFIGURATION/C/status',
+                    //             publishTopic: 'A///CONFIGURATION/C/cmd',
+                    //             publishMessage: '{"cmd": "SEND"}'
+                    //         },
+                    //         connection: {
+                    //             subscribeTopic: 'connection',
+                    //             publishTopic: 'connection/report'    
+                    //         }
+                    //     },
+                    //     connection: {
+                    //         type: 'NOT_CONNECTED',
+                    //         primary: false,
+                    //         protocol: 'Xmpp'
+                    //     },    
+                    //     conf: { items:[], houses:[] }
+                    // },
                     conf: { items:[], houses:[] }
                 },
                 // {
@@ -230,431 +230,436 @@
             console.log( 'xmpp.publish override, topic: ', topic );
         }
 
-        function initXmppServer( server )
-        {
-            if( server.settings.host.startsWith( "https" ) )
-            {
-                server.client = XMPP.createClient({
-                    jid: server.settings.user,
-                    password: server.settings.password,
+        // function initXmppServer( server )
+        // {
+        //     if( server.settings.host.startsWith( "https" ) )
+        //     {
+        //         server.client = XMPP.createClient({
+        //             jid: server.settings.user,
+        //             password: server.settings.password,
 
-                    // If you have a .well-known/host-meta.json file for your
-                    // domain, the connection transport config can be skipped.
+        //             // If you have a .well-known/host-meta.json file for your
+        //             // domain, the connection transport config can be skipped.
 
-                    transport: 'bosh',
-                    boshURL: server.settings.host
-                });                
-            }
-            else if( server.settings.host.startsWith( "ws" ) || server.settings.host.startsWith( "ws" ) )
-            {
-                server.client = XMPP.createClient({
-                    jid: server.settings.user,
-                    password: server.settings.password,
+        //             transport: 'bosh',
+        //             boshURL: server.settings.host
+        //         });                
+        //     }
+        //     else if( server.settings.host.startsWith( "ws" ) || server.settings.host.startsWith( "ws" ) )
+        //     {
+        //         server.client = XMPP.createClient({
+        //             jid: server.settings.user,
+        //             password: server.settings.password,
 
-                    // If you have a .well-known/host-meta.json file for your
-                    // domain, the connection transport config can be skipped.
+        //             // If you have a .well-known/host-meta.json file for your
+        //             // domain, the connection transport config can be skipped.
 
-                    transport: 'websocket',
-                    wsURL: server.settings.host
-                });
-            }
-            console.log( 'connecting to ', server.settings.host, ' as ', server.settings.user );
-            var client = server.client;
-            client.server = server;
-            client.observerDevices = [];
-            client.subscribe = function( topic )
-            {
-                // console.log( 'my xmpp subscribe for topic ', topic );
-                var body = '{ "cmd": "subscribe", "topic": ' + '"' + topic + '" }';
-                client.sendMessage(
-                    {
-                        to: server.settings.destination,
-                        body: body
-                    }
-                );
-                console.log( 'sent message ', body, ' to ', server.settings.destination );
-            }
+        //             transport: 'websocket',
+        //             wsURL: server.settings.host
+        //         });
+        //     }
+        //     console.log( 'connecting to ', server.settings.host, ' as ', server.settings.user );
+        //     var client = server.client;
+        //     client.server = server;
+        //     client.observerDevices = [];
+        //     client.subscribe = function( topic )
+        //     {
+        //         // console.log( 'my xmpp subscribe for topic ', topic );
+        //         var body = '{ "cmd": "subscribe", "topic": ' + '"' + topic + '" }';
+        //         client.sendMessage(
+        //             {
+        //                 to: server.settings.destination,
+        //                 body: body
+        //             }
+        //         );
+        //         console.log( 'sent message ', body, ' to ', server.settings.destination );
+        //     }
 
-            client.unsubscribe = function( topic )
-            {
-                // console.log( 'my xmpp unsubscribe for topic ', topic );
-                var body = '{ "cmd": "unsubscribe", "topic": ' + '"' + topic + '" }';
-                client.sendMessage(
-                    {
-                        to: server.settings.destination,
-                        body: body
-                    }
-                );
-                console.log( 'sent message ', body, ' to ', server.settings.destination );
-            }
+        //     client.unsubscribe = function( topic )
+        //     {
+        //         // console.log( 'my xmpp unsubscribe for topic ', topic );
+        //         var body = '{ "cmd": "unsubscribe", "topic": ' + '"' + topic + '" }';
+        //         client.sendMessage(
+        //             {
+        //                 to: server.settings.destination,
+        //                 body: body
+        //             }
+        //         );
+        //         console.log( 'sent message ', body, ' to ', server.settings.destination );
+        //     }
 
-            client.on('session:started', function () {
-                console.log( 'session:started so i must be connected!' );
-                client.getRoster();
-                client.sendPresence();
+        //     client.on('session:started', function () {
+        //         console.log( 'session:started so i must be connected!' );
+        //         client.getRoster();
+        //         client.sendPresence();
 
-                //subscribe to configuration topic
-                client.sendMessage(
-                    {
-                        to: server.settings.destination,
-                        body: '{ "cmd":"subscribe", "topic": ' + '"' + server.settings.configuration.subscribeTopic + '" }'
-                    }
-                );
-                console.log( 'sent message ', server.settings.configuration.subscribeTopic, ' to ', server.settings.destination );
+        //         //subscribe to configuration topic
+        //         client.sendMessage(
+        //             {
+        //                 to: server.settings.destination,
+        //                 body: '{ "cmd":"subscribe", "topic": ' + '"' + server.settings.configuration.subscribeTopic + '" }'
+        //             }
+        //         );
+        //         console.log( 'sent message ', server.settings.configuration.subscribeTopic, ' to ', server.settings.destination );
 
-                //send cmd to have configuration sent back to us
-                client.sendMessage(
-                    {
-                        to: server.settings.destination,
-                        body: '{ "cmd":"publish", "topic": ' + '"' + server.settings.configuration.publishTopic + '", "message": "' + btoa( server.settings.configuration.publishMessage ) + '" }'
-                    }
-                );
-                console.log( 'sent message ', server.settings.configuration.publishTopic, ' to ', server.settings.destination );
-            });
+        //         //send cmd to have configuration sent back to us
+        //         client.sendMessage(
+        //             {
+        //                 to: server.settings.destination,
+        //                 body: '{ "cmd":"publish", "topic": ' + '"' + server.settings.configuration.publishTopic + '", "message": "' + btoa( server.settings.configuration.publishMessage ) + '" }'
+        //             }
+        //         );
+        //         console.log( 'sent message ', server.settings.configuration.publishTopic, ' to ', server.settings.destination );
+        //     });
 
-            client.on( 'disconnected', function(){
-                console.log( 'disconnected from ', server.settings.host );  
-                client.connect();
-            });
+        //     client.on( 'disconnected', function(){
+        //         console.log( 'disconnected from ', server.settings.host );  
+        //         client.connect();
+        //     });
 
-            // ahat: Note. It seems that whatever arrives as a chat also arrives as a message
-            //       so I cancel the on 'chat' callback
-            // client.on( 'chat', function (msg) {
-            //     // client.sendMessage({
-            //     // to: msg.from,
-            //     // body: 'You sent: ' + msg.body
-            //     // });
-            //     var text = pako.inflate( atob( msg.body ), { to: 'string' } );
-            //     console.log( 'received [chat]  from ', msg.from, ': ', text );
-            //     var message = angular.fromJson( text );
-            //     if( message.topic == this.server.settings.configuration.subscribeTopic )
-            //     {
-            //         updateConfiguration( this.server, message.payload );
-            //         return;
-            //     }
-            // });
+        //     // ahat: Note. It seems that whatever arrives as a chat also arrives as a message
+        //     //       so I cancel the on 'chat' callback
+        //     // client.on( 'chat', function (msg) {
+        //     //     // client.sendMessage({
+        //     //     // to: msg.from,
+        //     //     // body: 'You sent: ' + msg.body
+        //     //     // });
+        //     //     var text = pako.inflate( atob( msg.body ), { to: 'string' } );
+        //     //     console.log( 'received [chat]  from ', msg.from, ': ', text );
+        //     //     var message = angular.fromJson( text );
+        //     //     if( message.topic == this.server.settings.configuration.subscribeTopic )
+        //     //     {
+        //     //         updateConfiguration( this.server, message.payload );
+        //     //         return;
+        //     //     }
+        //     // });
 
-            client.on( 'message', function (msg) {
-                var text = pako.inflate( atob( msg.body ), { to: 'string' } );
-                console.log( 'received [message]  from ', msg.from, ': ', text );
-                var message = angular.fromJson( text );
-                if( message.topic == this.server.settings.configuration.subscribeTopic )
-                {
-                    updateConfiguration( this.server, message.payload );
-                    return;
-                }
+        //     client.on( 'message', function (msg) {
+        //         var text = pako.inflate( atob( msg.body ), { to: 'string' } );
+        //         console.log( 'received [message]  from ', msg.from, ': ', text );
+        //         var message = angular.fromJson( text );
+        //         if( message.topic == this.server.settings.configuration.subscribeTopic )
+        //         {
+        //             updateConfiguration( this.server, message.payload );
+        //             return;
+        //         }
                 
-                // if this is not a new houses-configuration message then it must be a message for the subscribed devices of the current house configuration
-                // console.log( this );
-                $scope.observerDevices = this.observerDevices;
-                for( var i = 0 ; i < this.observerDevices.length ; i++ )
-                {
-                    // console.log( this.observerDevices[i] );                    
-                    $scope.$apply( function() { $scope.observerDevices[i].update( message.topic, message.payload ); } );
-                }
-            });
+        //         // if this is not a new houses-configuration message then it must be a message for the subscribed devices of the current house configuration
+        //         // console.log( this );
+        //         $scope.observerDevices = this.observerDevices;
+        //         for( var i = 0 ; i < this.observerDevices.length ; i++ )
+        //         {
+        //             // console.log( this.observerDevices[i] );                    
+        //             $scope.$apply( function() { $scope.observerDevices[i].update( message.topic, message.payload ); } );
+        //         }
+        //     });
 
-            client.connect();
-        }
+        //     client.connect();
+        // }
 
-        function initMqttServer( server )
-        {
-            server.client = MqttClient;
-            var client = server.client;            
-            client.observerDevices = [];
-            client.init( server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, server.settings.mqtt_client_id );
+        // function initMqttServer( server )
+        // {
+        //     server.client = MqttClient;
+        //     var client = server.client;            
+        //     client.observerDevices = [];
+        //     client.init( server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, server.settings.mqtt_client_id );
             
-            client.connect({
-                onSuccess: successCallback,
-                onFailure: function() { console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); },
-                invocationContext: server
-            });   
+        //     client.connect({
+        //         onSuccess: successCallback,
+        //         onFailure: function() { console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); },
+        //         invocationContext: server
+        //     });   
 
-            client._client.onMessageArrived = function( message )
-            {
-                var server = this.connectOptions.invocationContext;
-                //console.log( server );
-                //console.log( 'Received [topic] "message": [', message.destinationName.trim(), '] "' );//, message.payloadString, '"' );
-                if( message.destinationName == server.settings.configuration.subscribeTopic )
-                {
-                    updateConfiguration( server, message.payloadString );
+        //     client._client.onMessageArrived = function( message )
+        //     {
+        //         var server = this.connectOptions.invocationContext;
+        //         //console.log( server );
+        //         //console.log( 'Received [topic] "message": [', message.destinationName.trim(), '] "' );//, message.payloadString, '"' );
+        //         if( message.destinationName == server.settings.configuration.subscribeTopic )
+        //         {
+        //             updateConfiguration( server, message.payloadString );
                     
-                    // if( server.houses && server.houses.length > 0 )
-                    // {
-                    //     unsubscribeHouses( server.client, server.houses );
-                    //     removeHouses( server.houses );
-                    // }
-                    // server.houses = Configuration.generateHousesList( angular.fromJson( message.payloadString ) );                        
-                    // addHouses( server.houses );
-                    // subscribeHouses( server.client, server.houses );
-                    return;
-                }
+        //             // if( server.houses && server.houses.length > 0 )
+        //             // {
+        //             //     unsubscribeHouses( server.client, server.houses );
+        //             //     removeHouses( server.houses );
+        //             // }
+        //             // server.houses = Configuration.generateHousesList( angular.fromJson( message.payloadString ) );                        
+        //             // addHouses( server.houses );
+        //             // subscribeHouses( server.client, server.houses );
+        //             return;
+        //         }
 
-                // if this is not a new houses-configuration message then it must be a message for the subscribed devices of the current house configuration
-                if( message.destinationName == 'A///MOTION/M/status' )
-                {
-                    console.log( message.payloadString );
-                }
-                for( var i = 0 ; i < server.client.observerDevices.length ; i++ )
-                {
-                    // console.log( client.observerDevices[i] );
-                    $scope.$apply( function() { server.client.observerDevices[i].update( message.destinationName, message.payloadString ); } );
-                }
-            }
+        //         // if this is not a new houses-configuration message then it must be a message for the subscribed devices of the current house configuration
+        //         if( message.destinationName == 'A///MOTION/M/status' )
+        //         {
+        //             console.log( message.payloadString );
+        //         }
+        //         for( var i = 0 ; i < server.client.observerDevices.length ; i++ )
+        //         {
+        //             // console.log( client.observerDevices[i] );
+        //             $scope.$apply( function() { server.client.observerDevices[i].update( message.destinationName, message.payloadString ); } );
+        //         }
+        //     }
 
-            client._client.onConnectionLost = function( error ) { 
-                console.log( 'Connection lost with error: ', error, ' attempting to reconnect.' );
-                client.connect( {
-                    onSuccess: successCallback,
-                    onFailure: function() 
-                    { 
-                        var server = invocationContext;
-                        console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); 
-                    },
-                    invocationContext: server
-                } );
-            }
+        //     client._client.onConnectionLost = function( error ) { 
+        //         console.log( 'Connection lost with error: ', error, ' attempting to reconnect.' );
+        //         client.connect( {
+        //             onSuccess: successCallback,
+        //             onFailure: function() 
+        //             { 
+        //                 var server = invocationContext;
+        //                 console.log( 'Failed to connect to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port ); 
+        //             },
+        //             invocationContext: server
+        //         } );
+        //     }
 
-            function successCallback()
-            {
-                console.log( this );
-                var server = this.invocationContext;
-                // console.log( server );
-                console.log( 'Successfully connected to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, ' subscribing to subscribeTopic...', server.settings.configuration.subscribeTopic );
-                client.subscribe( server.settings.configuration.subscribeTopic );
+        //     function successCallback()
+        //     {
+        //         console.log( this );
+        //         var server = this.invocationContext;
+        //         // console.log( server );
+        //         console.log( 'Successfully connected to mqtt broker ', server.settings.mqtt_broker_ip, server.settings.mqtt_broker_port, ' subscribing to subscribeTopic...', server.settings.configuration.subscribeTopic );
+        //         client.subscribe( server.settings.configuration.subscribeTopic );
                 
-                console.log( 'Will publish to publshTopic to get house-configuration...', server.settings.configuration.publishTopic );
-                var message = new Paho.MQTT.Message( server.settings.configuration.publishMessage );
-                message.destinationName = server.settings.configuration.publishTopic ;
-                client.send( message );
-            }
-        }
+        //         console.log( 'Will publish to publshTopic to get house-configuration...', server.settings.configuration.publishTopic );
+        //         var message = new Paho.MQTT.Message( server.settings.configuration.publishMessage );
+        //         message.destinationName = server.settings.configuration.publishTopic ;
+        //         client.send( message );
+        //     }
+        // }
 
-        function successCallback()
-        {
-            console.log( 'Successfully connected to mqtt broker ', mqtt_broker_ip, mqtt_broker_port, ' subscribing to vm.vm.houseConfigurationMqtt().subscribeTopic...', vm.houseConfigurationMqtt().subscribeTopic );
-            client.subscribe( vm.houseConfigurationMqtt().subscribeTopic );
+        // function successCallback()
+        // {
+        //     console.log( 'Successfully connected to mqtt broker ', mqtt_broker_ip, mqtt_broker_port, ' subscribing to vm.vm.houseConfigurationMqtt().subscribeTopic...', vm.houseConfigurationMqtt().subscribeTopic );
+        //     client.subscribe( vm.houseConfigurationMqtt().subscribeTopic );
             
-            console.log( 'Will publish to vm.houseConfigurationMqtt().publshTopic to get house-configuration...', vm.houseConfigurationMqtt().publishTopic );
-            var message = new Paho.MQTT.Message( '{"cmd": "SEND"}' );
-            message.destinationName = vm.houseConfigurationMqtt().publishTopic ;
-            client.send( message );
-        }
+        //     console.log( 'Will publish to vm.houseConfigurationMqtt().publshTopic to get house-configuration...', vm.houseConfigurationMqtt().publishTopic );
+        //     var message = new Paho.MQTT.Message( '{"cmd": "SEND"}' );
+        //     message.destinationName = vm.houseConfigurationMqtt().publishTopic ;
+        //     client.send( message );
+        // }
 
-        function updateConfiguration( server, messagePayloadString )
-        {
-            if( server.houses && server.houses.length > 0 )
-            {
-                unsubscribeHouses( server.client, server.houses );
-                removeHouses( server.houses );
-            }
-            server.houses = Configuration.generateHousesList( angular.fromJson( messagePayloadString ) );
-            console.log( 'generated ', server.houses.length, ' houses' );
+        // function updateConfiguration( server, messagePayloadString )
+        // {
+        //     if( server.houses && server.houses.length > 0 )
+        //     {
+        //         unsubscribeHouses( server.client, server.houses );
+        //         removeHouses( server.houses );
+        //     }
+        //     server.houses = Configuration.generateHousesList( angular.fromJson( messagePayloadString ) );
+        //     console.log( 'generated ', server.houses.length, ' houses' );
             
-            $scope.$apply( addHouses( server.houses ) );
-            subscribeHouses( server.client, server.houses );
-        }
+        //     $scope.$apply( addHouses( server.houses ) );
+        //     subscribeHouses( server.client, server.houses );
+        // }
 
-        function unsubscribeHouses( client, houses )
-        {
-            console.log( 'unsubscribeHouses for ', houses.length, ' houses' );
-            for( var h = 0 ; h < houses.length ; h++ )
-            {
-                // console.log( 'Doing house "', vm.houses[h].name, '":' )
-                for( var f = 0 ; f < houses[h].floors.length ; f++ )
-                {
-                    // console.log( '\tfloor "', vm.houses[h].floors[f].name, '":' )
-                    for( var r = 0 ; r < houses[h].floors[f].rooms.length ; r++ )
-                    {
-                        // console.log( '\t\troom "', vm.houses[h].floors[f].rooms[r].name, '":' )
-                        for( var i = 0 ; i < houses[h].floors[f].rooms[r].items.length ; i++ )
-                        {
-                            if( houses[h].floors[f].rooms[r].items[i].protocol = 'mqtt' )
-                            {
-                                unsubscribe( client, houses[h].floors[f].rooms[r].items[i] );
-                            }
-                        }
-                    }
-                }
-                if( houses[h].items )
-                {
-                    for( var i = 0 ; i < houses[h].items.length ; i++ )
-                    {
-                        if( houses[h].items[i].protocol = 'mqtt' )
-                        {
-                            unsubscribe( client, houses[h].items[i] );
-                        }
-                    }
-                }
-            }
-            client.observerDevices = [];
-        }
+        // function unsubscribeHouses( client, houses )
+        // {
+        //     console.log( 'unsubscribeHouses for ', houses.length, ' houses' );
+        //     for( var h = 0 ; h < houses.length ; h++ )
+        //     {
+        //         // console.log( 'Doing house "', vm.houses[h].name, '":' )
+        //         for( var f = 0 ; f < houses[h].floors.length ; f++ )
+        //         {
+        //             // console.log( '\tfloor "', vm.houses[h].floors[f].name, '":' )
+        //             for( var r = 0 ; r < houses[h].floors[f].rooms.length ; r++ )
+        //             {
+        //                 // console.log( '\t\troom "', vm.houses[h].floors[f].rooms[r].name, '":' )
+        //                 for( var i = 0 ; i < houses[h].floors[f].rooms[r].items.length ; i++ )
+        //                 {
+        //                     if( houses[h].floors[f].rooms[r].items[i].protocol = 'mqtt' )
+        //                     {
+        //                         unsubscribe( client, houses[h].floors[f].rooms[r].items[i] );
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //         if( houses[h].items )
+        //         {
+        //             for( var i = 0 ; i < houses[h].items.length ; i++ )
+        //             {
+        //                 if( houses[h].items[i].protocol = 'mqtt' )
+        //                 {
+        //                     unsubscribe( client, houses[h].items[i] );
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     client.observerDevices = [];
+        // }
 
-        function removeHouses( houses )
-        {
-            console.log( 'removing ', houses.length, ' houses' );
-            for( var rm = 0 ; rm < houses.length ; rm++ )
-            {
-                for( var h = 0 ; h < vm.houses.length ; h++ )
-                {
-                    if( vm.houses[h].name == houses[rm].name )
-                    {
-                        console.log( 'removing house ', houses[rm].name );
-                        vm.houses.splice( h, 1 );
-                        vm.isCollapsed.splice( h, 1 );
-                    }
-                }
-            }
-        }
+        // function removeHouses( houses )
+        // {
+        //     console.log( 'removing ', houses.length, ' houses' );
+        //     for( var rm = 0 ; rm < houses.length ; rm++ )
+        //     {
+        //         for( var h = 0 ; h < vm.houses.length ; h++ )
+        //         {
+        //             if( vm.houses[h].name == houses[rm].name )
+        //             {
+        //                 console.log( 'removing house ', houses[rm].name );
+        //                 vm.houses.splice( h, 1 );
+        //                 vm.isCollapsed.splice( h, 1 );
+        //             }
+        //         }
+        //     }
+        // }
 
-        function addHouses( houses )
-        {
-            console.log( 'adding ', houses.length, ' houses' );
-            var add = houses.sort( function( a, b ) { return a.name.localeCompare( b.name ); } );
-            for( var a = 0 ; a < add.length ; a++ )
-            {
-                var added = false;
-                for( var h = 0 ; h < vm.houses ; h++ )
-                {
-                    if( a.name.localeCompare( vm.houses[h].name ) > 0 )
-                    {
-                        vm.houses.splice( h, 0, add[a] );
-                        vm.isCollapsed.splice( h, 0, createCollapsedHouse( add[a] ) );
-                        added = true;
-                        break;
-                    }
-                }
-                if( !added )
-                {
-                    vm.houses.push( add[a] );
-                    vm.isCollapsed.push( createCollapsedHouse( add[a] ) );
-                }
-                console.log( 'added house ', add[a] );
+        // function addHouses( houses )
+        // {
+        //     console.log( 'adding ', houses.length, ' houses' );
+        //     var add = houses.sort( function( a, b ) { return a.name.localeCompare( b.name ); } );
+        //     for( var a = 0 ; a < add.length ; a++ )
+        //     {
+        //         var added = false;
+        //         for( var h = 0 ; h < vm.houses ; h++ )
+        //         {
+        //             if( a.name.localeCompare( vm.houses[h].name ) > 0 )
+        //             {
+        //                 vm.houses.splice( h, 0, add[a] );
+        //                 vm.isCollapsed.splice( h, 0, createCollapsedHouse( add[a] ) );
+        //                 added = true;
+        //                 break;
+        //             }
+        //         }
+        //         if( !added )
+        //         {
+        //             vm.houses.push( add[a] );
+        //             vm.isCollapsed.push( createCollapsedHouse( add[a] ) );
+        //         }
+        //         console.log( 'added house ', add[a] );
 
-            }
-        }
+        //     }
+        // }
 
-        function subscribeHouses( client, houses )
-        {
-            console.log( 'subscribing ', houses.length, ' houses' );
-            // subscribe to all topics
-            for( var h = 0 ; h < houses.length ; h++ )
-            {
-                // console.log( 'Doing house "', vm.houses[h].name, '":' )
-                for( var f = 0 ; f < houses[h].floors.length ; f++ )
-                {
-                    // console.log( '\tfloor "', vm.houses[h].floors[f].name, '":' )
-                    for( var r = 0 ; r < houses[h].floors[f].rooms.length ; r++ )
-                    {
-                        // console.log( '\t\troom "', vm.houses[h].floors[f].rooms[r].name, '":' )
-                        for( var i = 0 ; i < houses[h].floors[f].rooms[r].items.length ; i++ )
-                        {
-                            if( houses[h].floors[f].rooms[r].items[i].protocol = 'mqtt' )
-                            {
-                                subscribe( client, houses[h].floors[f].rooms[r].items[i] );
-                            }
-                        }
-                    }
-                }
-                if( houses[h].items )
-                {
-                    for( var i = 0 ; i < houses[h].items.length ; i++ )
-                    {
-                        if( houses[h].items[i].protocol = 'mqtt' )
-                        {
-                            subscribe( client, houses[h].items[i] );
-                        }
-                    }
-                }
-            }
-        }
+        // function subscribeHouses( client, houses )
+        // {
+        //     console.log( 'subscribing ', houses.length, ' houses' );
+        //     // subscribe to all topics
+        //     for( var h = 0 ; h < houses.length ; h++ )
+        //     {
+        //         // console.log( 'Doing house "', vm.houses[h].name, '":' )
+        //         for( var f = 0 ; f < houses[h].floors.length ; f++ )
+        //         {
+        //             // console.log( '\tfloor "', vm.houses[h].floors[f].name, '":' )
+        //             for( var r = 0 ; r < houses[h].floors[f].rooms.length ; r++ )
+        //             {
+        //                 // console.log( '\t\troom "', vm.houses[h].floors[f].rooms[r].name, '":' )
+        //                 for( var i = 0 ; i < houses[h].floors[f].rooms[r].items.length ; i++ )
+        //                 {
+        //                     if( houses[h].floors[f].rooms[r].items[i].protocol = 'mqtt' )
+        //                     {
+        //                         subscribe( client, houses[h].floors[f].rooms[r].items[i] );
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //         if( houses[h].items )
+        //         {
+        //             for( var i = 0 ; i < houses[h].items.length ; i++ )
+        //             {
+        //                 if( houses[h].items[i].protocol = 'mqtt' )
+        //                 {
+        //                     subscribe( client, houses[h].items[i] );
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        function subscribe( client, item )
-        {
-            // console.log( '\t\titem:', item );
-            switch( item.type )
-            {
-                case 'ALARM':
-                case 'NET':
-                case 'DOOR1':
-                case 'DOOR2R':
-                case 'LIGHT1':
-                case 'LIGHT2':
-                case 'MOTIONCAMERA':
-                case 'MOTIONCAMERAPANTILT':
-                case 'ROLLER1':
-                case 'ROLLER1_AUTO':
-                case 'TEMPERATURE_HUMIDITY':
-                case 'WINDOW1':
-                case 'WINDOW1R':
-                case 'WINDOW2R':
-                    if( !item.device )
-                    {
-                        // console.log( 'No device property found!' );
-                    }
-                    else if( item.device.mqtt_subscribe_topic )
-                    {
-                        // console.log( 'Subscribing ', item.device );
-                        client.observerDevices.push( item.device );
-                        client.subscribe( item.device.mqtt_subscribe_topic );
-                    }
-                    break;
-                default: 
-                    // console.log( 'Unknown item type [', item.type, ']' );
-                    break;
-            }
-            switch( item.type )
-            {
-                case 'ALARM':
-                case 'LIGHT1':
-                case 'LIGHT2':
-                case 'MOTIONCAMERA':
-                case 'MOTIONCAMERAPANTILT':
-                case 'ROLLER1_AUTO':
-                    if( item.device )
-                    {
-                        item.device.setPublisher( client );
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
+        // function subscribe( client, item )
+        // {
+        //     // console.log( '\t\titem:', item );
+        //     switch( item.type )
+        //     {
+        //         case 'ALARM':
+        //         case 'NET':
+        //         case 'DOOR1':
+        //         case 'DOOR2R':
+        //         case 'LIGHT1':
+        //         case 'LIGHT2':
+        //         case 'MOTIONCAMERA':
+        //         case 'MOTIONCAMERAPANTILT':
+        //         case 'ROLLER1':
+        //         case 'ROLLER1_AUTO':
+        //         case 'TEMPERATURE_HUMIDITY':
+        //         case 'WINDOW1':
+        //         case 'WINDOW1R':
+        //         case 'WINDOW2R':
+        //             if( !item.device )
+        //             {
+        //                 console.log( 'No device property found for ', item );
+        //             }
+        //             else if( item.device.mqtt_publish_topic )
+        //             {
+        //                 console.log( 'Subscribing ', item.device, " to ", item.device.mqtt_publish_topic );
+        //                 // console.log( 'Subscribing ', item.device );
+        //                 client.observerDevices.push( item.device );
+        //                 client.subscribe( item.device.mqtt_publish_topic );
+        //             }
+        //             else
+        //             {
+        //                 console.log( 'No publish topic in the device of ', item );
+        //             }
+        //             break;
+        //         default: 
+        //             console.log( 'Unknown item type [', item.type, ']' );
+        //             break;
+        //     }
+        //     switch( item.type )
+        //     {
+        //         case 'ALARM':
+        //         case 'LIGHT1':
+        //         case 'LIGHT2':
+        //         case 'MOTIONCAMERA':
+        //         case 'MOTIONCAMERAPANTILT':
+        //         case 'ROLLER1_AUTO':
+        //             if( item.device )
+        //             {
+        //                 item.device.setPublisher( client );
+        //             }
+        //             break;
+        //         default:
+        //             break;
+        //     }
+        // }
 
-        function unsubscribe( client, item )
-        {
-            // console.log( '\t\titem:', item );
-            switch( item.type )
-            {
-                case 'ALARM':
-                case 'NET':
-                case 'DOOR1':
-                case 'DOOR2R':
-                case 'LIGHT1':
-                case 'LIGHT2':
-                case 'MOTIONCAMERA':
-                case 'MOTIONCAMERAPANTILT':
-                case 'ROLLER1':
-                case 'ROLLER1_AUTO':
-                case 'TEMPERATURE_HUMIDITY':
-                case 'WINDOW1':
-                case 'WINDOW1R':
-                case 'WINDOW2R':
-                    if( !item.device )
-                    {
-                        // console.log( 'No device property found!' );
-                    }
-                    else if( item.device.mqtt_subscribe_topic )
-                    {
-                        // console.log( 'Subscribing ', item.device );
-                        client.unsubscribe( item.device.mqtt_subscribe_topic );
-                    }
-                    break;
-                default: 
-                    // console.log( 'Unknown item type [', item.type, ']' );
-                    break;
-            }
-        }
+        // function unsubscribe( client, item )
+        // {
+        //     // console.log( '\t\titem:', item );
+        //     switch( item.type )
+        //     {
+        //         case 'ALARM':
+        //         case 'NET':
+        //         case 'DOOR1':
+        //         case 'DOOR2R':
+        //         case 'LIGHT1':
+        //         case 'LIGHT2':
+        //         case 'MOTIONCAMERA':
+        //         case 'MOTIONCAMERAPANTILT':
+        //         case 'ROLLER1':
+        //         case 'ROLLER1_AUTO':
+        //         case 'TEMPERATURE_HUMIDITY':
+        //         case 'WINDOW1':
+        //         case 'WINDOW1R':
+        //         case 'WINDOW2R':
+        //             if( !item.device )
+        //             {
+        //                 // console.log( 'No device property found!' );
+        //             }
+        //             else if( item.device.mqtt_publish_topic )
+        //             {
+        //                 console.log( 'Unsubscribing ', item.device, " from ", item.device.mqtt_publish_topic );
+        //                 client.unsubscribe( item.device.mqtt_publish_topic );
+        //             }
+        //             break;
+        //         default: 
+        //             // console.log( 'Unknown item type [', item.type, ']' );
+        //             break;
+        //     }
+        // }
 
     }
 })();

@@ -9,9 +9,9 @@
 
     function MotionCameraPanTilt( $http, MotionCamera ) {
         //Constructor
-        function MotionCameraPanTilt( mqtt_subscribe_topic, mqtt_publish_topic, cameraId, videostream, state, detection )
+        function MotionCameraPanTilt( mqtt_subscribe_topic, mqtt_publish_topic, cameraId, videostream, state, detection, scope )
         {
-            MotionCamera.call( this, mqtt_subscribe_topic, mqtt_publish_topic, cameraId, videostream, state, detection );
+            MotionCamera.call( this, mqtt_subscribe_topic, mqtt_publish_topic, cameraId, videostream, state, detection, scope );
         }
 
         MotionCameraPanTilt.prototype = Object.create( MotionCamera.prototype );

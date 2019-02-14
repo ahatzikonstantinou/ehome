@@ -12,6 +12,7 @@
     function ServerController( $scope, Configuration, Server ) {
         var vm = this;
         vm.server = $scope.server;
+        vm.scope = $scope;
         
         vm.account = null;
         vm.isAuthenticated = true; //null;
@@ -113,11 +114,11 @@
                 console.log( 'before unsubscribing server: ', server.type, ' has ', server.observerDevices.length, ' observerDevices: ', server.observerDevices );
                 server.unsubscribeConf(); //server.unsubscribeHouses(); //unsubscribeHouses( server, server.houses );
                 console.log( 'after unsubscribing server: ', server.type, ' has ', server.observerDevices.length, ' observerDevices: ', server.observerDevices );
-                server.removeConf; //server.removeHouses(); //removeHouses( server.houses );
+                server.removeConf(); //server.removeHouses(); //removeHouses( server.houses );
             }
 
             // server.setHouses( Configuration.generateList( angular.fromJson( messagePayloadString ) ).houses );
-            server.setConf( Configuration.generateList( angular.fromJson( messagePayloadString ) ) );
+            server.setConf( Configuration.generateList( angular.fromJson( messagePayloadString ), vm.scope ) );
             console.log( 'generated ', server.conf.items.length, ' items and ',  server.conf.houses.length, ' houses' );
 
             $scope.$apply( addConf( server.conf ) ); //$scope.$apply( addHouses( server.conf.houses ) );
@@ -172,11 +173,11 @@
             for( var i = 0 ; i < items.length ; i++ )
             {
                 var added = false;
-                for( var a = 0 ; a < vm.items ; a++ )
+                for( var j = 0 ; j < vm.items ; j++ )
                 {
-                    if( a.name.localeCompare( vm.items[a].name ) > 0 )
+                    if( items[i].name.localeCompare( vm.items[j].name ) > 0 )
                     {
-                        vm.items.splice( a, 0, items[i] );
+                        vm.items.splice( j, 0, items[i] );
                         added = true;
                         break;
                     }
@@ -199,7 +200,7 @@
                 var added = false;
                 for( var h = 0 ; h < vm.houses ; h++ )
                 {
-                    if( a.name.localeCompare( vm.houses[h].name ) > 0 )
+                    if( add[a].name.localeCompare( vm.houses[h].name ) > 0 )
                     {
                         vm.houses.splice( h, 0, add[a] );
                         vm.isCollapsed.splice( h, 0, createCollapsedHouse( add[a] ) );
