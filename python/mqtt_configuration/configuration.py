@@ -190,8 +190,13 @@ class Configuration( object ):
         """Executed when an mqtt arrives
         """
         h = HTMLParser()
-        text = h.unescape( message.payload ) #.decode( "utf-8" )        
-        print( 'Received message "{}"'.format( text.encode( 'utf-8' ) ) )
+        text = h.unescape( message.payload )
+        try:
+            print( 'Received message "{}"'.format( text ).encode( 'utf-8' ) )
+        except Exception, e:
+            print( 'A message arrived for topic {} that could not be utf-8 decoded, passing...'.format( message.topic ) )
+            pass
+
         if( mqtt.topic_matches_sub( self.mqttParams.subscribeTopic, message.topic ) ):            
             try:
                 jsonMessage = json.loads( text )
