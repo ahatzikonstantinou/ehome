@@ -108,7 +108,7 @@
                     name: 'Antonis Athens',
                     type: 'mqtt',
                     settings: { 
-                        mqtt_broker_ip : 'localhost', // '192.168.1.79',
+                        mqtt_broker_ip : '192.168.1.31', // '192.168.1.79',
                         mqtt_broker_port : 1884,
                         //uuid is necessary because if two clients connect to the same mqtt broker with the same
                         // client id, the second client will disconnect the first, such a case is when multiple users 
