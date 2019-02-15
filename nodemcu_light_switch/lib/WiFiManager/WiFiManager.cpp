@@ -177,6 +177,9 @@ boolean WiFiManager::autoConnect( char const *apName, char const *apPassword, ch
   // attempt to connect; should it fail, fall back to AP
   WiFi.mode(WIFI_STA);
 
+  // ahat:
+  _ssid = connectSSID;
+  _pass = connectPassword;
   // ahat: changed this line to be able to connect with explicitly defined (or saved in eeprom) credentials
   if (connectWifi( connectSSID == NULL ? "" : connectSSID, connectPassword == NULL ? "" : connectPassword ) == WL_CONNECTED)   {
   // if (connectWifi("", "") == WL_CONNECTED)   {

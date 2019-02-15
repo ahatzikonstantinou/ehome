@@ -56,7 +56,7 @@ void WifiManagerWrapper::setup( bool autoConnect, bool timeout )
   WiFiManager wifiManager( portal_idle_callback );
 
   //set config save notify callback
-  wifiManager.setSaveConfigCallback( saveWifiManagerConfigCallback );
+  wifiManager.setSaveConfigCallback( saveWifiManagerConfigCallback ); //ahat: this does not seem to work
 
   //set static ip
   // wifiManager.setSTAStaticIPConfig(IPAddress(10,0,1,99), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
@@ -76,6 +76,7 @@ void WifiManagerWrapper::setup( bool autoConnect, bool timeout )
   if( resetSettings )
   {
     resetSettings = false; //reset the flag
+    Serial.println( "Reseting wifi manager settings..." );
     wifiManager.resetSettings();
   }
 
@@ -89,6 +90,7 @@ void WifiManagerWrapper::setup( bool autoConnect, bool timeout )
   if( timeout )
   {
     wifiManager.setTimeout( WIFIMANAGER_PORTAL_TIMEOUT_SECS );
+    Serial.println( "Setting wifimanager timeout to " + String( WIFIMANAGER_PORTAL_TIMEOUT_SECS ) + " seconds." );
   }
 
   Buzzer::playWifiPortalStart();
@@ -102,6 +104,7 @@ void WifiManagerWrapper::setup( bool autoConnect, bool timeout )
         Serial.println( "AutoConnectAP with old credentials \"" + SSID + "\", \"" + password + "\" failed to connect and hit timeout" );
 
         reconnects++;
+        configuration->wifi.reconnects = reconnects;
         // saveJsonConfig( SSID, password ); //keep the last saved credentials because the current connection attempt failed
         saveConfiguration(); //keep the last saved credentials because the current connection attempt failed
         Serial.println( "Saved " + String( reconnects ) + " reconnects in jsonConfig" );
@@ -120,6 +123,7 @@ void WifiManagerWrapper::setup( bool autoConnect, bool timeout )
       Serial.println( "AutoConnectAP failed to connect and hit timeout" );
 
       reconnects++;
+      configuration->wifi.reconnects = reconnects;
       // saveJsonConfig( SSID, password ); //keep the last saved credentials because the current connection attempt failed
       saveConfiguration(); //keep the last saved credentials because the current connection attempt failed
       Serial.println( "Saved " + String( reconnects ) + " reconnects in jsonConfig" );
@@ -139,6 +143,7 @@ void WifiManagerWrapper::setup( bool autoConnect, bool timeout )
       Serial.println( "OnDemandAP failed to connect and hit timeout" );
 
       reconnects++;
+      configuration->wifi.reconnects = reconnects;
       // saveJsonConfig( SSID, password ); //keep the last saved credentials because the current connection attempt failed
       saveConfiguration(); //saveJsonConfig( SSID, password ); //keep the last saved credentials because the current connection attempt failed
       Serial.println( "Saved " + String( reconnects ) + " reconnects in jsonConfig" );
@@ -155,6 +160,7 @@ void WifiManagerWrapper::setup( bool autoConnect, bool timeout )
   Serial.println("connected...yeey :)");
 
   //read updated parameters
+  Serial.println( "After successfull connection SSID: " + wifiManager.getSSID() + ", password: " + wifiManager.getPassword() );
   configuration->wifi.SSID = wifiManager.getSSID();
   configuration->wifi.password = wifiManager.getPassword();
   configuration->wifi.reconnects = reconnects;
@@ -171,11 +177,12 @@ void WifiManagerWrapper::setup( bool autoConnect, bool timeout )
   mqtt->setup();  //re-setup mqtt based on the new configuration values
 
   //save the custom parameters to FS
-  if( WifiManagerWrapper::shouldSaveConfig )
-  {
+  // the saveWifiManagerConfigCallback does not seem to work
+  // if( WifiManagerWrapper::shouldSaveConfig )
+  // {
     // saveJsonConfig( wifiManager.getSSID(), wifiManager.getPassword() );
     saveConfiguration();
-  }
+  // }
 
   Serial.println("local ip");
   Serial.println( WiFi.localIP() );
