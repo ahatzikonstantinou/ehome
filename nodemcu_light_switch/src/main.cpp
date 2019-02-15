@@ -167,8 +167,9 @@ void setup()
       if( !wifiManagerWrapper.reconnectsExceeded() )
       {
         Serial.println( "wifiManagerWrapper reconnects NOT exceeded, attempting autoconnectWithOldValues..." );
-        configuration.wifi.SSID = "ST-VIRUS";
-        configuration.wifi.password = "ap2109769675ap";
+        // debugging
+        // configuration.wifi.SSID = "ST-VIRUS";
+        // configuration.wifi.password = "ap2109769675ap";
         wifiManagerWrapper.autoconnectWithOldValues();
       }
       else
