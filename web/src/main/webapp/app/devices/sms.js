@@ -9,9 +9,9 @@
 
     function Sms( $uibModal ) {
         //Constructor
-        function Sms( mqtt_subscribe_topic, mqtt_publish_topic, state, scope )
+        function Sms( mqtt_publish_topic, mqtt_subscribe_topic, state, scope )
         {
-            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, mqtt_subscribe_topic, scope );
             this.listCmd = '{"cmd":"list", "params":{ "lastSms":#lastSms#, "updates": []} }';
             this.allowedDestinationsCmd = '{"cmd":"allowed_destinations"}';
             this.modems = [];
@@ -257,7 +257,7 @@
         {
             //send a message to retrieve sms list
             var message = new Paho.MQTT.Message( this.allowedDestinationsCmd );
-            message.destinationName = this.mqtt_publish_topic ;
+            message.destinationName = this.mqtt_subscribe_topic ;
             message.qos = 2;
             console.log( 'Sms sending getAllowedDestinations message: ', message );
             this.publisher.send( message );
@@ -274,7 +274,7 @@
         {
             //send a message to retrieve sms list
             var message = new Paho.MQTT.Message( this.listCmd.replace( '#lastSms#', this._lastSmsHash() ).replace( '[]', '['+ this._getPendingSmsHashes() + ']' ) );
-            message.destinationName = this.mqtt_publish_topic ;
+            message.destinationName = this.mqtt_subscribe_topic ;
             message.qos = 2;
             console.log( 'Sms sending message: ', message );
             this.publisher.send( message );
@@ -314,7 +314,7 @@
             }
 
             var message = new Paho.MQTT.Message( '{ "cmd":"delete", "params":{ "smsList":[' + hashes + '] } }' );
-            message.destinationName = this.mqtt_publish_topic ;
+            message.destinationName = this.mqtt_subscribe_topic ;
             console.log( 'Sms sending message: ', message );
             this.publisher.send( message );
         }
@@ -393,7 +393,7 @@
             console.log( 'Sms will send the mqtt command: ', cmd );
 
             var message = new Paho.MQTT.Message( cmd );
-            message.destinationName = this.mqtt_publish_topic ;
+            message.destinationName = this.mqtt_subscribe_topic ;
             message.qos = 2;
             console.log( 'Sms sending message: ', message );
             this.publisher.send( message );

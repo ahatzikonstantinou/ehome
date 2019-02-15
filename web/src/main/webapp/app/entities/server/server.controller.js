@@ -35,6 +35,7 @@
         //     $state.go('register');
         // }
 
+        vm.container = null;
         vm.items = [];
         vm.houses = [];
         
@@ -118,7 +119,7 @@
             }
 
             // server.setHouses( Configuration.generateList( angular.fromJson( messagePayloadString ) ).houses );
-            server.setConf( Configuration.generateList( angular.fromJson( messagePayloadString ), vm.scope ) );
+            server.setConf( Configuration.generateList( angular.fromJson( messagePayloadString ), vm.scope ), true );
             console.log( 'generated ', server.conf.items.length, ' items and ',  server.conf.houses.length, ' houses' );
 
             $scope.$apply( addConf( server.conf ) ); //$scope.$apply( addHouses( server.conf.houses ) );
@@ -166,29 +167,31 @@
                 }
             }
         }
-
+         
         function addConf( conf )
         {
-            var items = conf.items.sort( function( a, b ) { return a.name.localeCompare( b.name ); } );
-            for( var i = 0 ; i < items.length ; i++ )
-            {
-                var added = false;
-                for( var j = 0 ; j < vm.items ; j++ )
-                {
-                    if( items[i].name.localeCompare( vm.items[j].name ) > 0 )
-                    {
-                        vm.items.splice( j, 0, items[i] );
-                        added = true;
-                        break;
-                    }
-                }
-                if( !added )
-                {
-                    vm.items.push( items[i] );
-                }
-                console.log( 'added item ', items[i] );
-            }
-            addHouses( conf.houses );
+            vm.container = conf.container;
+
+            // var items = conf.items.sort( function( a, b ) { return a.name.localeCompare( b.name ); } );
+            // for( var i = 0 ; i < items.length ; i++ )
+            // {
+            //     var added = false;
+            //     for( var j = 0 ; j < vm.items ; j++ )
+            //     {
+            //         if( items[i].name.localeCompare( vm.items[j].name ) > 0 )
+            //         {
+            //             vm.items.splice( j, 0, items[i] );
+            //             added = true;
+            //             break;
+            //         }
+            //     }
+            //     if( !added )
+            //     {
+            //         vm.items.push( items[i] );
+            //     }
+            //     console.log( 'added item ', items[i] );
+            // }
+            // addHouses( conf.houses );
         }
 
         function addHouses( houses )

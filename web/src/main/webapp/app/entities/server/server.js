@@ -108,94 +108,136 @@
 
             server.baseUnsubscribeConf = function( configuration )
             {
-                console.log( 'unsubscribeConf for server: ', this.type );
-                for( var i = 0 ; i < configuration.items.length ; i++ )
-                {
-                    this.baseUnsubscribeItem( server, configuration.items[i] );
-                }
-                this.baseUnsubscribeHouses( configuration.houses );
+                console.log( 'baseUnsubscribeConf for server: ', this.type );
+                // for( var i = 0 ; i < configuration.items.length ; i++ )
+                // {
+                //     this.baseUnsubscribeItem( server, configuration.items[i] );
+                // }
+                // this.baseUnsubscribeHouses( configuration.houses );
+
+                this.baseUnsubscribeContainer( configuration.container );
             }
 
-            server.baseUnsubscribeHouses = function( houses )
+            server.baseUnsubscribeContainer = function( container )
             {
-                console.log( 'unsubscribeHouses for ', houses.length, ' houses for server: ', this.type );
-                for( var h = 0 ; h < houses.length ; h++ )
+                if( container.items )
                 {
-                    // console.log( 'Doing house "', vm.houses[h].name, '":' )
-                    for( var f = 0 ; f < houses[h].floors.length ; f++ )
+                    for( var i = 0 ; i < container.items.length ; i++ )
                     {
-                        // console.log( '\tfloor "', vm.houses[h].floors[f].name, '":' )
-                        for( var r = 0 ; r < houses[h].floors[f].rooms.length ; r++ )
-                        {
-                            // console.log( '\t\troom "', vm.houses[h].floors[f].rooms[r].name, '":' )
-                            for( var i = 0 ; i < houses[h].floors[f].rooms[r].items.length ; i++ )
-                            {
-                                if( houses[h].floors[f].rooms[r].items[i].protocol = 'mqtt' )
-                                {
-                                    this.baseUnsubscribeItem( houses[h].floors[f].rooms[r].items[i] );
-                                }
-                            }
-                        }
-                    }
-                    if( houses[h].items )
-                    {
-                        for( var i = 0 ; i < houses[h].items.length ; i++ )
-                        {
-                            if( houses[h].items[i].protocol = 'mqtt' )
-                            {
-                                this.baseUnsubscribeItem( server, houses[h].items[i] );
-                            }
-                        }
+                        this.baseUnsubscribeItem( container.items[i] );
                     }
                 }
-                // server.observerDevices = [];
+                if( container. containers )
+                {
+                    for( var c = 0 ; c < container.containers.length ; c++ )
+                    {
+                        this.baseUnsubscribeContainer( container.containers[c] );
+                    }
+                }
             }
+
+            // server.baseUnsubscribeHouses = function( houses )
+            // {
+            //     console.log( 'unsubscribeHouses for ', houses.length, ' houses for server: ', this.type );
+            //     for( var h = 0 ; h < houses.length ; h++ )
+            //     {
+            //         // console.log( 'Doing house "', vm.houses[h].name, '":' )
+            //         for( var f = 0 ; f < houses[h].floors.length ; f++ )
+            //         {
+            //             // console.log( '\tfloor "', vm.houses[h].floors[f].name, '":' )
+            //             for( var r = 0 ; r < houses[h].floors[f].rooms.length ; r++ )
+            //             {
+            //                 // console.log( '\t\troom "', vm.houses[h].floors[f].rooms[r].name, '":' )
+            //                 for( var i = 0 ; i < houses[h].floors[f].rooms[r].items.length ; i++ )
+            //                 {
+            //                     if( houses[h].floors[f].rooms[r].items[i].protocol = 'mqtt' )
+            //                     {
+            //                         this.baseUnsubscribeItem( houses[h].floors[f].rooms[r].items[i] );
+            //                     }
+            //                 }
+            //             }
+            //         }
+            //         if( houses[h].items )
+            //         {
+            //             for( var i = 0 ; i < houses[h].items.length ; i++ )
+            //             {
+            //                 if( houses[h].items[i].protocol = 'mqtt' )
+            //                 {
+            //                     this.baseUnsubscribeItem( server, houses[h].items[i] );
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     // server.observerDevices = [];
+            // }
     
             server.subscribeConf = function()
-            {
-                for( var i = 0 ; i < this.conf.items.length ; i++ )
-                {
-                    this.baseSubscribeItem( this.conf.items[i] );
-                }
+            {                
+                this.subscribeContainer( this.conf.container );
 
-                this.subscribeHouses();
+                // for( var i = 0 ; i < this.conf.items.length ; i++ )
+                // {
+                //     this.baseSubscribeItem( this.conf.items[i] );
+                // }
+
+                // this.subscribeHouses();
             }
 
-            server.subscribeHouses = function ()
+            server.subscribeContainer = function( container )
             {
-                var houses = this.conf.houses;
-                console.log( 'subscribing ', houses.length, ' houses to server: ', this.type );
-                // subscribe to all topics
-                for( var h = 0 ; h < houses.length ; h++ )
+                // console.log( 'subscribing container: ', container );
+                if( container.items )
                 {
-                    // console.log( 'Doing house "', vm.houses[h].name, '":' )
-                    for( var f = 0 ; f < houses[h].floors.length ; f++ )
+                    // console.log( 'subscribing container items: ' );
+                    for( var i = 0 ; i < container.items.length ; i++ )
                     {
-                        // console.log( '\tfloor "', vm.houses[h].floors[f].name, '":' )
-                        for( var r = 0 ; r < houses[h].floors[f].rooms.length ; r++ )
+                        if( 'mqtt' == container.items[i].protocol )
                         {
-                            // console.log( '\t\troom "', vm.houses[h].floors[f].rooms[r].name, '":' )
-                            for( var i = 0 ; i < houses[h].floors[f].rooms[r].items.length ; i++ )
-                            {
-                                if( houses[h].floors[f].rooms[r].items[i].protocol = 'mqtt' )
-                                {
-                                    this.baseSubscribeItem( houses[h].floors[f].rooms[r].items[i] );
-                                }
-                            }
-                        }
-                    }
-                    if( houses[h].items )
-                    {
-                        for( var i = 0 ; i < houses[h].items.length ; i++ )
-                        {
-                            if( houses[h].items[i].protocol = 'mqtt' )
-                            {
-                                this.baseSubscribeItem( houses[h].items[i] );
-                            }
+                            this.baseSubscribeItem( container.items[i] );
                         }
                     }
                 }
+                for( var c = 0 ; c < container.containers.length ; c++ )
+                {
+                    this.subscribeContainer( container.containers[c] );
+                }
             }
+
+            // server.subscribeHouses = function ()
+            // {
+            //     var houses = this.conf.houses;
+            //     console.log( 'subscribing ', houses.length, ' houses to server: ', this.type );
+            //     // subscribe to all topics
+            //     for( var h = 0 ; h < houses.length ; h++ )
+            //     {
+            //         // console.log( 'Doing house "', vm.houses[h].name, '":' )
+            //         for( var f = 0 ; f < houses[h].floors.length ; f++ )
+            //         {
+            //             // console.log( '\tfloor "', vm.houses[h].floors[f].name, '":' )
+            //             for( var r = 0 ; r < houses[h].floors[f].rooms.length ; r++ )
+            //             {
+            //                 // console.log( '\t\troom "', vm.houses[h].floors[f].rooms[r].name, '":' )
+            //                 for( var i = 0 ; i < houses[h].floors[f].rooms[r].items.length ; i++ )
+            //                 {
+            //                     if( houses[h].floors[f].rooms[r].items[i].protocol = 'mqtt' )
+            //                     {
+            //                         this.baseSubscribeItem( houses[h].floors[f].rooms[r].items[i] );
+            //                     }
+            //                 }
+            //             }
+            //         }
+            //         if( houses[h].items )
+            //         {
+            //             for( var i = 0 ; i < houses[h].items.length ; i++ )
+            //             {
+            //                 if( houses[h].items[i].protocol = 'mqtt' )
+            //                 {
+            //                     this.baseSubscribeItem( houses[h].items[i] );
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
     
             server.baseSubscribeItem = function( item )
             {

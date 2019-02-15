@@ -9,9 +9,9 @@
 
     function ServerConfiguration() {
         //Constructor
-        function ServerConfiguration( server, mqtt_subscribe_topic, state, guiUpdateCb, scope )
+        function ServerConfiguration( server, mqtt_publish_topic, state, guiUpdateCb, scope )
         {
-            MqttDevice.call( this, mqtt_subscribe_topic, state, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, scope );
             this.server = server;
             this.status = 'NOT_SET'; //'UNAVAILABLE'; //SUCCESS, ERROR
             this.guiUpdateCb = guiUpdateCb;
@@ -22,7 +22,7 @@
 
         ServerConfiguration.prototype.update = function( topic, message )
         {
-            if( topic == this.mqtt_subscribe_topic )
+            if( topic == this.mqtt_publish_topic )
             {
                 try
                 {
@@ -43,7 +43,7 @@
                 catch( error )
                 {
                     this.status = 'ERROR';
-                    console.log( error );
+                    console.error( error );
                 }
             }
         }

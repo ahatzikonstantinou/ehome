@@ -9,10 +9,10 @@
 
     function Net() {
         //Constructor
-        function Net( mqtt_subscribe_topic, state, scope )
+        function Net( mqtt_publish_topic, state, scope )
         {
             //public properties
-            MqttDevice.call( this, mqtt_subscribe_topic, state, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, scope );
         }
         
         Net.prototype = Object.create( MqttDevice.prototype );

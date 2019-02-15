@@ -9,10 +9,10 @@
 
     function TemperatureHumidity() {
         //Constructor
-        function TemperatureHumidity( mqtt_subscribe_topic, state, scope )
+        function TemperatureHumidity( mqtt_publish_topic, state, scope )
         {
             //public properties
-            MqttDevice.call( this, mqtt_subscribe_topic, state, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, scope );
         }
         
         TemperatureHumidity.prototype = Object.create( MqttDevice.prototype );

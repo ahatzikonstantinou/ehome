@@ -29,12 +29,13 @@
     </div>
     <div ng-if="showXmppErrorFlag" class="alert alert-dismissable alert-danger" role="alert" data-translate="server.xmpp-error" translate-values="{xmppUrl: '{{server.getXmmpHost().replace( 'wss', 'https' )}}'}">
     </div>
-    <div ng-repeat="i in vm.items" ng-init="showMqttTopics = false" ng-show="!collapsed">
+    <!-- <div ng-repeat="i in vm.items" ng-init="showMqttTopics = false" ng-show="!collapsed">
         <div class="items">            
             <item item="i" filter="filter" show-mqtt-topics="showMqttTopics"/>
         </div>
     </div>
     <div ng-repeat="h in vm.houses" ng-init="houseIndex = $index; isCollapsed=vm.isCollapsed[$index]">
         <house house="h" is-collapsed="vm.isCollapsed[houseIndex]" expand-all-children="vm.expandAllChildren( house, expand )"/>
-    </div>
+    </div> -->
+    <container container="vm.container" level="0" showLabel="false" is-collapsed="true"/>
 </div>

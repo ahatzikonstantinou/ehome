@@ -38,7 +38,10 @@
 
             server.unsubscribeConf = function()
             {
-                this.baseUnsubscribeConf( this.conf );
+                if( this.conf )
+                {
+                    this.baseUnsubscribeConf( this.conf );
+                }
                 if( this.failover )
                 {
                     this.failover.unsubscribeConf();
@@ -89,7 +92,7 @@
 
             server.subscribeDevice = function( device, topic )
             {
-                console.log( 'my mqtt server subscribe for device topic ', topic );
+                // console.log( 'my mqtt server subscribe for device topic ', topic );
                 if( server.connectionStatus == 'CONNECTED')
                 {
                     this.client.subscribe( topic );

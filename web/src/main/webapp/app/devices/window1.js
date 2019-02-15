@@ -9,10 +9,10 @@
 
     function Window1() {
         //Constructor
-        function Window1( mqtt_subscribe_topic, state, scope )
+        function Window1( mqtt_publish_topic, state, scope )
         {
             //public properties
-            MqttDevice.call( this, mqtt_subscribe_topic, state, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, scope );
         }
         
         Window1.prototype = Object.create( MqttDevice.prototype );

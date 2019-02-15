@@ -9,10 +9,10 @@
 
     function Roller1() {
         //Constructor
-        function Roller1( mqtt_subscribe_topic, state, scope )
+        function Roller1( mqtt_publish_topic, state, scope )
         {
             //public properties
-            MqttDevice.call( this, mqtt_subscribe_topic, state, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, scope );
         }
         
         Roller1.prototype = Object.create( MqttDevice.prototype );

@@ -9,7 +9,7 @@ Device.prototype.equals = function( device )
     return this.id == device.id
 }
 
-function MqttDevice( mqtt_subscribe_topic, state, mqtt_publish_topic, $scope )
+function MqttDevice( mqtt_publish_topic, state, mqtt_subscribe_topic, $scope )
 {
     Device.call( this );
 

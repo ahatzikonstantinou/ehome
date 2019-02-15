@@ -102,7 +102,8 @@
             "items": [ { "id": "101", "name": "Συναγερμός", "domain": "ALARM", "type": "ALARM", "protocol": "mqtt", "publish": "A///ALARM/A/status", "subscribe": "A///ALARM/A/set" } ]
         },
         { 
-            "name": "Διαμέρισμα Ειρήνης", 
+            "name": "Διαμέρισμα Ειρήνης",
+            "mqtt": "E",
             "floors": [ 
                 { 
                     "name": "3ος", 

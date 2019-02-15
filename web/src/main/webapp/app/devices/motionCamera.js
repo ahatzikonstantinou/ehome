@@ -9,9 +9,9 @@
 
     function MotionCamera( $interval ) {
         //Constructor
-        function MotionCamera( mqtt_subscribe_topic, mqtt_publish_topic, cameraId, videostream, state, detection, scope )
+        function MotionCamera( mqtt_publish_topic, mqtt_subscribe_topic, cameraId, videostream, state, detection, scope )
         {
-            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, mqtt_subscribe_topic, scope );
 
             //public properties
             this.cameraId = cameraId

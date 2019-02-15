@@ -157,7 +157,7 @@
                     //     },    
                     //     conf: { items:[], houses:[] }
                     // },
-                    conf: { items:[], houses:[] }
+                    conf: { items:[], houses:[], container: {} }
                 },
                 // {
                 //     name: 'Antonis Alyki',

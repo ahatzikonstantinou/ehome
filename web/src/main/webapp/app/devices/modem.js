@@ -9,9 +9,9 @@
 
     function Modem() {
         //Constructor
-        function Modem( mqtt_subscribe_topic, mqtt_publish_topic, state, scope )
+        function Modem( mqtt_publish_topic, mqtt_subscribe_topic, state, scope )
         {
-            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, mqtt_subscribe_topic, scope );
             this.listCmd = '{"cmd":"list"}';
             this.observers = [];
             this.modems = [];
@@ -82,7 +82,7 @@
 
             //send a message to retrieve modem list as soon as we are assigned a publisher
             var message = new Paho.MQTT.Message( this.listCmd );
-            message.destinationName = this.mqtt_publish_topic ;
+            message.destinationName = this.mqtt_subscribe_topic ;
             console.log( 'Modem sending message: ', message );
             this.publisher.send( message );
         }
@@ -100,11 +100,11 @@
         Modem.prototype._enable = function( modemId, enable )
         {
             var payload = '{"cmd":"' + ( enable ? 'enable': 'disable' ) + '", "params":' + modemId + '}';
-            console.log( 'Modem (', this, ') will send payload ', payload, ' to topic ', this.mqtt_publish_topic );
+            console.log( 'Modem (', this, ') will send payload ', payload, ' to topic ', this.mqtt_subscribe_topic );
             if( this.publisher )
             {                
                 var message = new Paho.MQTT.Message( payload );
-                message.destinationName = this.mqtt_publish_topic ;
+                message.destinationName = this.mqtt_subscribe_topic ;
                 console.log( 'Modem sending message: ', message );
                 this.publisher.send( message );
 
@@ -115,11 +115,11 @@
         Modem.prototype.refresh = function( modemId )
         {
             var payload = '{"cmd":"status", "params":' + modemId + '}';
-            console.log( 'Modem (', this, ') will send payload ', payload, ' to topic ', this.mqtt_publish_topic );
+            console.log( 'Modem (', this, ') will send payload ', payload, ' to topic ', this.mqtt_subscribe_topic );
             if( this.publisher )
             {                
                 var message = new Paho.MQTT.Message( payload );
-                message.destinationName = this.mqtt_publish_topic ;
+                message.destinationName = this.mqtt_subscribe_topic ;
                 console.log( 'Modem sending message: ', message );
                 this.publisher.send( message );
 

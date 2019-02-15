@@ -9,10 +9,10 @@
 
     function Roller1_Auto() {
         //Constructor
-        function Roller1_Auto( mqtt_subscribe_topic, mqtt_publish_topic, state, scope )
+        function Roller1_Auto( mqtt_publish_topic, mqtt_subscribe_topic, state, scope )
         {
             //public properties
-            MqttDevice.call( this, mqtt_subscribe_topic, state, mqtt_publish_topic, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, mqtt_subscribe_topic, scope );
             this.tempPercent = state.percent;
         }
 

@@ -12,18 +12,81 @@
         return {
             generateList: function( data, $scope )
             {
+                console.log( 'Generated containers:', generateContainer( data, $scope ) );
+                
                 var items = []
-                for( var i = 0 ; i < data.items.length ; i++ )
+                for( var i = 0 ; data.items && Array.isArray( data.items ) && i < data.items.length ; i++ )
                 {
                     items.push( generateItem( data.items[i], $scope ) );
                 }
 
                 return {
-                    items: items,
-                    houses: generateHousesList( data.houses, $scope )
+                    items: [], //items,
+                    houses: [], //generateHousesList( data.houses, $scope ),
+                    container: generateContainer( data, $scope )
                 };
+                
             }
         };
+
+        function generateContainer( data, $scope )
+        {
+            function Container()
+            { 
+                return {
+                name: '', 
+                mqtt: '', 
+                items: [], 
+                containers: [],
+                //the following properties are required for the GUI container.html
+
+                gui: {
+                    collapsed: true,
+                    filter: { DOOR: true, WINDOW: true, LIGHT: true, CLIMATE: true, COVER: true, ALARM: true, CAMERA: true, MOTION: true },
+                    allChildrenExpanded: false,
+                    showMqttTopics: false
+                },                
+                expandAllChildren: function( expand ) { this.gui.collapsed = expand; for( var c = 0 ; c < this.containers.length ; c++ ) { this.containers[c].expandAllChildren( expand ); } }
+            }
+            }
+            var container = Container();
+
+            for( var p in data ) 
+            { 
+                // console.log( 'Doing p: ', p );
+                if( Array.isArray( data[p] ) )
+                {
+                    if( p.toLowerCase() == 'items' )
+                    {
+                        for( var i = 0; i < data.items.length ; i++ )
+                        {
+                            container.items.push( generateItem( data.items[i], $scope ) );
+                        }
+                        container.items = container.items.sort( function( a, b ){ return a.name.localeCompare( b.name ); } );            
+                    }
+                    else
+                    {
+                        for( var i = 0 ; i < data[p].length ; i++ )
+                        {
+                            container.containers.push( generateContainer( data[p][i], $scope ) );
+                        }
+                    }
+                }
+                else
+                {
+                    if( p.toLowerCase() == 'name' )
+                    {
+                        container.name = data[p];
+                    }
+                    else if( p.toLowerCase() == 'mqtt' )
+                    {
+                        container.mqtt = data[p];
+                    }
+                }
+            } 
+
+            return container;
+        }
 
         function generateHousesList( data, $scope )
         {
@@ -80,16 +143,16 @@
             switch( item.type )
             {
                 case 'ALARM':
-                    item.device = new Alarm( def.subscribe, def.publish, { main: 'UNAVAILABLE' }, $scope );
+                    item.device = new Alarm( def.publish, def.subscribe, { main: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'NET':
-                    item.device = new Net( def.subscribe, { main: 'UNAVAILABLE' }, $scope );
+                    item.device = new Net( def.publish, { main: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'DOOR1':
-                    item.device = new Door1( def.subscribe, { main: 'UNAVAILABLE' }, $scope );
+                    item.device = new Door1( def.publish, { main: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'DOOR2R':                
-                    item.device = new Door2R( def.subscribe, { left: 'UNAVAILABLE', right: 'UNAVAILABLE', recline: 'UNAVAILABLE' }, $scope );
+                    item.device = new Door2R( def.publish, { left: 'UNAVAILABLE', right: 'UNAVAILABLE', recline: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'IPCAMERA':
                     item.device = new IPCamera( def.url );
@@ -98,40 +161,40 @@
                     item.device = new IPCameraPanTilt( def.baseUrl, def.videostream, def.right, def.left, def.up, def.down, def.stop );
                     break;
                 case 'LIGHT1':
-                    item.device = new Light1( def.subscribe, def.publish, { state: 'offline' }, $scope );
+                    item.device = new Light1( def.publish, def.subscribe, { state: 'offline' }, $scope );
                     break;
                 case 'LIGHT2':
-                    item.device = new Light2( def.subscribe, def.publish, { left: 'UNAVAILABLE', right: 'UNAVAILABLE' }, $scope );
+                    item.device = new Light2( def.publish, def.subscribe, { left: 'UNAVAILABLE', right: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'MOTIONCAMERA':
-                    item.device = new MotionCamera( def.subscribe, def.publish, def.cameraId, def.videostream, 'UNAVAILABLE', 'NO_MOTION', $scope );
+                    item.device = new MotionCamera( def.publish, def.subscribe, def.cameraId, def.videostream, 'UNAVAILABLE', 'NO_MOTION', $scope );
                     break;
                 case 'MOTIONCAMERAPANTILT':
-                    item.device = new MotionCameraPanTilt( def.subscribe, def.publish, def.cameraId, def.videostream, 'UNAVAILABLE', 'NO_MOTION', $scope );
+                    item.device = new MotionCameraPanTilt( def.publish, def.subscribe, def.cameraId, def.videostream, 'UNAVAILABLE', 'NO_MOTION', $scope );
                     break;
                 case 'ROLLER1':
-                    item.device = new Roller1( def.subscribe, { main: 'UNAVAILABLE' }, $scope );
+                    item.device = new Roller1( def.publish, { main: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'ROLLER1_AUTO':
-                    item.device = new Roller1_Auto( def.subscribe, def.publish, { main: 'UNAVAILABLE', percent: -1 }, $scope );
+                    item.device = new Roller1_Auto( def.publish, def.subscribe, { main: 'UNAVAILABLE', percent: -1 }, $scope );
                     break;
                 case 'TEMPERATURE_HUMIDITY':
-                    item.device = new TemperatureHumidity( def.subscribe, { main: 'UNAVAILABLE', temperature: 0, humidity: 0 }, $scope );
+                    item.device = new TemperatureHumidity( def.publish, { main: 'UNAVAILABLE', temperature: 0, humidity: 0 }, $scope );
                     break;
                 case 'WINDOW1':
-                    item.device = new Window1( def.subscribe, { main: 'UNAVAILABLE' }, $scope);
+                    item.device = new Window1( def.publish, { main: 'UNAVAILABLE' }, $scope);
                     break;
                 case 'WINDOW1R':
-                    item.device = new Window1R( def.subscribe, { main: 'UNAVAILABLE', recline: 'UNAVAILABLE' }, $scope );
+                    item.device = new Window1R( def.publish, { main: 'UNAVAILABLE', recline: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'WINDOW2R':
-                    item.device = new Window2R( def.subscribe, { left: 'UNAVAILABLE', right: 'UNAVAILABLE', recline: 'UNAVAILABLE' }, $scope );
+                    item.device = new Window2R( def.publish, { left: 'UNAVAILABLE', right: 'UNAVAILABLE', recline: 'UNAVAILABLE' }, $scope );
                     break;
                 case 'MODEM':
-                    item.device = new Modem( def.subscribe, def.publish, {}, $scope );
+                    item.device = new Modem( def.publish, def.subscribe, {}, $scope );
                     break;
                 case 'SMS':
-                    item.device = new Sms( def.subscribe, def.publish, {}, $scope );
+                    item.device = new Sms( def.publish, def.subscribe, {}, $scope );
                     break;
             }
 
