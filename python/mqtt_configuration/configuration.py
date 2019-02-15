@@ -122,7 +122,7 @@ class Configuration( object ):
             with open( os.path.dirname( os.path.abspath(__file__) ) + '/' + Configuration.ConfigurationFile ) as json_file:
                 configurationTxt = json.load( json_file )
                 print( json.dumps( configurationTxt, ensure_ascii=False, encoding='utf8' ).encode( 'utf-8' ) )
-                self.client.publish( self.mqttParams.publishTopic, json.dumps( configurationTxt ), qos = 2, retain = False )
+                self.client.publish( self.mqttParams.publishTopic, json.dumps( configurationTxt ), qos = 2, retain = True )
 
                 # remove old subscriptions and subcribe to publish topics of items in the new configuration
                 for i in range( 0, len( self.expirationItemList ) ):
@@ -220,8 +220,8 @@ class Configuration( object ):
                     data = jsonMessage[ 'data' ]
                     with open( os.path.dirname(os.path.abspath(__file__) ) + '/' + Configuration.ConfigurationFile, 'w' ) as outfile:
                         json.dump( data, outfile )
-                        #publish the new configurationso all subscribers are updated
-                        self.client.publish( self.mqttParams.publishTopic, data, qos = 2, retain = False )
+                    
+                    #the new configuration will be published in the next stat check of the file
                 except Exception, e:
                     print( 'Failed saving new configuration. Error: {}'.format( e.message ) )
                     pass
