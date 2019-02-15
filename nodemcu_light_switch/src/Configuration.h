@@ -33,6 +33,14 @@ public:
   } MQTTConfiguration;
   MQTTConfiguration mqtt;
 
+  typedef struct
+  {
+    double offMaxAmpsThreshold;
+    double onMinAmpsThreshold;
+  } RelayConfiguration;
+  RelayConfiguration relay;
+  
+
   unsigned int operation_mode;
 
   Configuration();

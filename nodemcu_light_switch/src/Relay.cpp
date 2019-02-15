@@ -12,10 +12,12 @@ void Relay::deactivate()
   Relay::active = false;
 }
 
-void Relay::setup()
+void Relay::setup( const Configuration& configuration )
 {
   pinMode( pin, OUTPUT );
   digitalWrite( pin, state );
+  offMaxAmpsThreshold = configuration.relay.offMaxAmpsThreshold;
+  onMinAmpsThreshold = configuration.relay.onMinAmpsThreshold;
 }
 
 int Relay::off()

@@ -1,6 +1,8 @@
 #ifndef _relay_h_
 #define _relay_h_
 
+#include "Configuration.h"
+
 class Relay
 {
 private:
@@ -22,7 +24,7 @@ public:
     onMinAmpsThreshold = _onMinAmpsThreshold;
   }
 
-  void setup();
+  void setup( const Configuration& configuration );
   int toggle();
   int on();
   int off();

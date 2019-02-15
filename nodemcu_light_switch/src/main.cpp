@@ -130,7 +130,7 @@ void setup()
   configuration.setup();
   configuration.operation_mode = OPERATION_MANUAL_WIFI; //hardcode this because OPERATION_MANUAL_ONLY does not seem to work properly
 
-  relay.setup();
+  relay.setup( configuration );
   Serial.println( "relay setup finished" );
 
   manualSwitch.setup();
@@ -426,6 +426,11 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length )
         Serial.println( "Calibrating..." );
         Calibration c;
         c.run( relay );
+
+        configuration.relay.offMaxAmpsThreshold = relay.offMaxAmpsThreshold;
+        configuration.relay.onMinAmpsThreshold = relay.onMinAmpsThreshold;
+        configuration.write();
+
         // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
         manualSwitch.last_trigger = millis();
 
@@ -444,7 +449,7 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length )
         Serial.println( "Checking..." );
         CheckAmps c;
         c.run( relay );
-        // set last_trigger again to avoid follow-on triggers because calibration lasts longer than the min allowed time between triggers
+        // set last_trigger again to avoid follow-on triggers because checking lasts longer than the min allowed time between triggers
         manualSwitch.last_trigger = millis();
         mqtt.publishReport( relay.state, relay.active, triggerToStr(), relay.offMaxAmpsThreshold, relay.onMinAmpsThreshold, c );
       }

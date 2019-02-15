@@ -55,6 +55,9 @@ bool Configuration::read()
           mqtt.subscribe_topic = json["mqtt_subscribe_topic"].as<String>();
           mqtt.configurator_publish_topic = json["mqtt_configurator_publish_topic"].as<String>();
           mqtt.configurator_subscribe_topic = json["mqtt_configurator_subscribe_topic"].as<String>();
+
+          relay.offMaxAmpsThreshold = json["relay_offMaxAmpsThreshold"].as<double>();
+          relay.onMinAmpsThreshold = json["relay_onMinAmpsThreshold"].as<double>();
           return true;
         }
         else
@@ -90,6 +93,8 @@ void Configuration::write()
   json["mqtt_subscribe_topic"] = mqtt.subscribe_topic;
   json["mqtt_configurator_publish_topic"] = mqtt.configurator_publish_topic;
   json["mqtt_configurator_subscribe_topic"] = mqtt.configurator_subscribe_topic;
+  json["relay_offMaxAmpsThreshold"] = String( relay.offMaxAmpsThreshold );
+  json["relay_onMinAmpsThreshold"] = String( relay.onMinAmpsThreshold );
 
   File configFile = SPIFFS.open( configFileName , "w");
   if( !configFile )
