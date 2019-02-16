@@ -99,7 +99,7 @@
                     //     },    
                     //     conf: { items:[], houses:[] }
                     // },
-                    conf: { items:[], houses:[], container: {} }
+                    conf: { container: {} }
                 },
                 // {
                 //     name: 'Antonis Alyki',
