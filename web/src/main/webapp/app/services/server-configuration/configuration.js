@@ -12,17 +12,9 @@
         return {
             generateList: function( data, $scope )
             {
-                console.log( 'Generated containers:', generateContainer( data, $scope ) );
-                
-                var items = []
-                for( var i = 0 ; data.items && Array.isArray( data.items ) && i < data.items.length ; i++ )
-                {
-                    items.push( generateItem( data.items[i], $scope ) );
-                }
+                console.log( 'Generated containers:', generateContainer( data, $scope ) );                            
 
                 return {
-                    items: [], //items,
-                    houses: [], //generateHousesList( data.houses, $scope ),
                     container: generateContainer( data, $scope )
                 };
                 
@@ -86,49 +78,6 @@
             } 
 
             return container;
-        }
-
-        function generateHousesList( data, $scope )
-        {
-            var housesList = []
-            for( var h = 0 ; h < data.length ; h++ )
-            {
-                var house = {
-                        name: data[h].name,
-                        floors: [],
-                        items: []
-                };
-                for( var f = 0 ; f < data[h].floors.length ; f++ )
-                {
-                    var floor = {
-                        name: data[h].floors[f].name,
-                        rooms: []
-                    }
-
-                    for( var r = 0 ; r < data[h].floors[f].rooms.length ; r ++ )
-                    {
-                        var room = {
-                            name: data[h].floors[f].rooms[r].name,
-                            items: []
-                        }
-                        for( var i = 0 ; i < data[h].floors[f].rooms[r].items.length ; i++ )
-                        {
-                            room.items.push( generateItem( data[h].floors[f].rooms[r].items[i], $scope ) )
-                        }
-                        floor.rooms.push( room );
-                    }
-                    house.floors.push( floor );
-                }
-
-                for( var i = 0 ; data[h].items && i < data[h].items.length ; i++ )
-                {
-                    house.items.push( generateItem( data[h].items[i], $scope ) )
-                }
-                
-                // console.log( house );
-                housesList.push( house );
-            }
-            return housesList;
         }
 
         function generateItem( def, $scope )

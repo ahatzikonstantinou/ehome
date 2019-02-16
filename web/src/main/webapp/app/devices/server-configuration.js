@@ -38,6 +38,7 @@
                     {
                         this.guiUpdateCb( this.server, data );
                         this.status = 'SUCCESS';
+                        localStorage.setItem('configuration', JSON.stringify( data ) ); 
                     }                    
                 }
                 catch( error )

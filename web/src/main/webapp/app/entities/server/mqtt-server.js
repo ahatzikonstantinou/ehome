@@ -13,12 +13,12 @@
             init: init
         };
 
-        function init( server, updateConfiguration, removeConf, removeHouses, baseInit )
+        function init( server, updateConfiguration, removeConf, baseInit )
         {
             if( server.failover )
             {
                 console.log( 'Initialising failover of server ', server.name );
-                baseInit( server.failover, updateConfiguration, removeConf, removeHouses, true, server, server.connectionDevice, server.configurationDevice );
+                baseInit( server.failover, updateConfiguration, removeConf, true, server, server.connectionDevice, server.configurationDevice );
                 // switch( server.failover.type )
                 // {
                 //     case 'xmpp':                    
@@ -48,31 +48,12 @@
                 }
             }
 
-            server.unsubscribeHouses = function()
-            {
-                // unsubscribeHouses( this, this.houses );
-                this.baseUnsubscribeHouses( this.houses );
-                if( this.failover )
-                {
-                    this.failover.unsubscribeHouses();
-                }
-            }
-
             server.removeConf = function()
             {
                 removeConf( this.conf );
                 if( this.failover )
                 {
                     removeConf( this.failover.conf );
-                }
-            }
-
-            server.removeHouses = function()
-            {
-                removeHouses( this.houses );
-                if( this.failover )
-                {
-                    removeHouses( this.failover.houses );
                 }
             }
 

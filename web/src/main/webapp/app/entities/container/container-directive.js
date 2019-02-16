@@ -14,7 +14,8 @@
                     showLabel: '=',
                     isCollapsed: '=',
                     expandAllChildren: '&expandAllChildren',
-                    filter: '='
+                    filter: '=',
+                    showMqttTopics: '='
                 },
                 templateUrl: '/app/entities/container/container.html'
             };

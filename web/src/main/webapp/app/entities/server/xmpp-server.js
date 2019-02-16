@@ -13,7 +13,7 @@
             init: init
         };
 
-        function init( server, removeConf, removeHouses, primaryServer, failover )
+        function init( server, removeConf, primaryServer, failover )
         {
             console.log( 'initXmppServer( server: ', server, ',\n failover ): ', failover );
             server.isFailover = ( typeof failover !== 'undefined' ) ? failover : false;
@@ -58,20 +58,9 @@
                 this.baseUnsubscribeConf( this.conf );
             }
 
-            server.unsubscribeHouses = function()
-            {
-                // unsubscribeHouses( server, server.houses );
-                this.baseUnsubscribeHouses( this.houses );
-            }
-
             server.removeConf = function()
             {
                 removeConf( this.conf );
-            }
-
-            server.removeHouses = function()
-            {
-                removeHouses( server.houses );
             }
 
             server.subscribe = function( topic )

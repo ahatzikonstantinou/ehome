@@ -13,7 +13,7 @@
             init: init
         };
 
-        function init( server, updateConfiguration, removeConf, removeHouses, failover, primaryServer, connectionDevice, configurationDevice )
+        function init( server, updateConfiguration, removeConf, failover, primaryServer, connectionDevice, configurationDevice )
         {            
             // console.log( 'Server::init with configurationDevice: ', configurationDevice );
             server.showXmppError = false; //used in order to display a message when xmpp cannot connect
@@ -78,20 +78,6 @@
                 }
             }
 
-            server.setHouses = function( houses, removeExisting )
-            {
-                if( removeExisting )
-                {
-                    this.unsubscribeHouses();
-                    this.removeHouses();
-                }
-                this.houses = houses;
-                if( this.failover )
-                {
-                    this.failover.setHouses( houses );
-                }
-            }
-
             server.setConf = function( configuration, removeExisting )
             {
                 if( removeExisting )
@@ -136,51 +122,9 @@
                 }
             }
 
-            // server.baseUnsubscribeHouses = function( houses )
-            // {
-            //     console.log( 'unsubscribeHouses for ', houses.length, ' houses for server: ', this.type );
-            //     for( var h = 0 ; h < houses.length ; h++ )
-            //     {
-            //         // console.log( 'Doing house "', vm.houses[h].name, '":' )
-            //         for( var f = 0 ; f < houses[h].floors.length ; f++ )
-            //         {
-            //             // console.log( '\tfloor "', vm.houses[h].floors[f].name, '":' )
-            //             for( var r = 0 ; r < houses[h].floors[f].rooms.length ; r++ )
-            //             {
-            //                 // console.log( '\t\troom "', vm.houses[h].floors[f].rooms[r].name, '":' )
-            //                 for( var i = 0 ; i < houses[h].floors[f].rooms[r].items.length ; i++ )
-            //                 {
-            //                     if( houses[h].floors[f].rooms[r].items[i].protocol = 'mqtt' )
-            //                     {
-            //                         this.baseUnsubscribeItem( houses[h].floors[f].rooms[r].items[i] );
-            //                     }
-            //                 }
-            //             }
-            //         }
-            //         if( houses[h].items )
-            //         {
-            //             for( var i = 0 ; i < houses[h].items.length ; i++ )
-            //             {
-            //                 if( houses[h].items[i].protocol = 'mqtt' )
-            //                 {
-            //                     this.baseUnsubscribeItem( server, houses[h].items[i] );
-            //                 }
-            //             }
-            //         }
-            //     }
-            //     // server.observerDevices = [];
-            // }
-    
             server.subscribeConf = function()
             {                
                 this.subscribeContainer( this.conf.container );
-
-                // for( var i = 0 ; i < this.conf.items.length ; i++ )
-                // {
-                //     this.baseSubscribeItem( this.conf.items[i] );
-                // }
-
-                // this.subscribeHouses();
             }
 
             server.subscribeContainer = function( container )
@@ -201,43 +145,7 @@
                 {
                     this.subscribeContainer( container.containers[c] );
                 }
-            }
-
-            // server.subscribeHouses = function ()
-            // {
-            //     var houses = this.conf.houses;
-            //     console.log( 'subscribing ', houses.length, ' houses to server: ', this.type );
-            //     // subscribe to all topics
-            //     for( var h = 0 ; h < houses.length ; h++ )
-            //     {
-            //         // console.log( 'Doing house "', vm.houses[h].name, '":' )
-            //         for( var f = 0 ; f < houses[h].floors.length ; f++ )
-            //         {
-            //             // console.log( '\tfloor "', vm.houses[h].floors[f].name, '":' )
-            //             for( var r = 0 ; r < houses[h].floors[f].rooms.length ; r++ )
-            //             {
-            //                 // console.log( '\t\troom "', vm.houses[h].floors[f].rooms[r].name, '":' )
-            //                 for( var i = 0 ; i < houses[h].floors[f].rooms[r].items.length ; i++ )
-            //                 {
-            //                     if( houses[h].floors[f].rooms[r].items[i].protocol = 'mqtt' )
-            //                     {
-            //                         this.baseSubscribeItem( houses[h].floors[f].rooms[r].items[i] );
-            //                     }
-            //                 }
-            //             }
-            //         }
-            //         if( houses[h].items )
-            //         {
-            //             for( var i = 0 ; i < houses[h].items.length ; i++ )
-            //             {
-            //                 if( houses[h].items[i].protocol = 'mqtt' )
-            //                 {
-            //                     this.baseSubscribeItem( houses[h].items[i] );
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
+            }            
     
             server.baseSubscribeItem = function( item )
             {
@@ -282,15 +190,17 @@
             {
                 case 'mqtt':
                     // initMqttServer( server );
-                    MqttServer.init( server, updateConfiguration, removeConf, removeHouses, init );
+                    MqttServer.init( server, updateConfiguration, removeConf, init );
                     break;
                 case 'xmpp':
                     // initXmppServer( server, failover );
-                    XmppServer.init( server, removeConf, removeHouses, primaryServer, failover );
+                    XmppServer.init( server, removeConf, primaryServer, failover );
                     break;
                 default:
                     console.log( 'Unknown server type [', server.type, ']: ', server );
-            }                
+            }                           
+            
+            return this;
         }       
     }
 })();

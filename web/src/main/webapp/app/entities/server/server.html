@@ -2,6 +2,9 @@
     <div class="server-info">
         <span class="mdi mdi-server"/>
         <label class="server">{{server.name}}</label>
+        <button type="button" class="btn btn-default btn-xs" ng-click="server.configurationDevice.refresh()">
+            <span class="mdi database-sync" ></span>
+        </button>
         <button type="button" class="btn btn-default btn-xs" ng-click="collapsed = !collapsed">
             <span class="mdi mdi-chevron-down" ng-if="collapsed"></span>
             <span class="mdi mdi-chevron-up" ng-if="!collapsed"></span>

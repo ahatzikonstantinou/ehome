@@ -31,9 +31,17 @@ MqttDevice.prototype.update = function( topic, message )
     if( topic == this.mqtt_publish_topic )
     {
         // console.log( 'MqttDevice[' + this.mqtt_publish_topic +']: this message is for me.' );
-        this.scope.$apply( this.state = angular.fromJson( message ) );  // without $scope.$apply there is a long delay until the gui of the device is refreshed
-        this.lastUpdate = Date.now();
-        return true;
+        try
+        {
+            this.scope.$apply( this.state = angular.fromJson( message ) );  // without $scope.$apply there is a long delay until the gui of the device is refreshed
+            this.lastUpdate = Date.now();
+            return true;
+        }
+        catch( error )
+        {
+            console.error( error );
+            return false;
+        }
     }
     return false;
 }
