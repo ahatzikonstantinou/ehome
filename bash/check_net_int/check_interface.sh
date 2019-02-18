@@ -14,16 +14,16 @@ echo "ETH0:$ETH0, ALT_INT:$ALT_INT"
     while true; do
         mosquitto_sub -k 5 -C 1 -R -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_sub_topic"
         echo "past mosquitto_sub with $?"
-        #ahat: Note. ping -I will return a flase positive if another interface is up. Therefore use ifconfig and grep
+        #ahat: Note. ping -I will return a false positive if another interface is up. Therefore use ifconfig and grep
         if ifconfig "${ETH0}" | grep "inet addr" > /dev/null 2>&1; then
             echo "publish $ETH0 is up"
-            mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "type": "'"$primary"'", "primary": true }' -q 2
+            mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "type": "'"$primary"'", "primary": true }' -q 2 --will-topic "$mqtt_pub_topic" --will-payload '{ "state": "offline" }' --will-retain --will-qos 2
         elif [ -n "${ALT_INT}" ] && ifconfig "${ALT_INT}" | grep "inet addr" > /dev/null 2>&1; then
             echo "publish $ALT_INT is up"
-            mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "type": "'"$alternative"'", "primary": false }' -q 2
+            mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "type": "'"$alternative"'", "primary": false }' -r -q 2 --will-topic "$mqtt_pub_topic" --will-payload '{ "state": "offline" }' --will-retain --will-qos 2
         else
             echo "publish NOT_CONNECTED"
-            mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "type": "NOT_CONNECTED", "primary": true }' -q 2
+            mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "type": "NOT_CONNECTED", "primary": true }' -r -q 2 --will-topic "$mqtt_pub_topic" --will-payload '{ "state": "offline" }' --will-retain --will-qos 2
         fi
     done
 )&
@@ -46,13 +46,13 @@ while true; do
         echo "publish disconnection from ALT_INT"
         on_disconnect_alt_int=false
         sleep 3 #ahat: Note. Without this delay the published message seems to get lost...
-        mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "type": "'"$primary"'", "primary": true }' -q 2
+        mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -r -m '{ "type": "'"$primary"'", "primary": true }' -q 2 --will-topic "$mqtt_pub_topic" --will-payload '{ "state": "offline" }' --will-retain --will-qos 2
     fi
     if [ "$on_connect_alt_int" = true ] && ( ./ping_interface.sh "$ALT_INT" > /dev/null 2>&1 ); then
         echo "publish connection to ALT_INT"
         on_connect_alt_int=false
         sleep 3 #ahat: Note. Without this delay the published message seems to get lost...
-        mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -m '{ "type": "'"$alternative"'", "primary": false }' -q 2
+        mosquitto_pub -h "$mqtt_broker" -p "$mqtt_port" -t "$mqtt_pub_topic" -r -m '{ "type": "'"$alternative"'", "primary": false }' -q 2 --will-topic "$mqtt_pub_topic" --will-payload '{ "state": "offline" }' --will-retain --will-qos 2
     fi
 
     eth0_down=false
