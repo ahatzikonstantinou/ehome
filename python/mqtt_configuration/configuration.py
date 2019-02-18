@@ -46,6 +46,7 @@ class Configuration( object ):
         self.mqttParams = mqttParams
         self.mqttId = mqttId
         self.expirationItemList = []
+        self.lastModdate = None
         signal.signal( signal.SIGINT, self.__signalHandler )
 
     def run( self ):
@@ -56,14 +57,13 @@ class Configuration( object ):
         #set last will and testament before connecting
         self.client.will_set( self.mqttParams.publishTopic, json.dumps({ 'main': 'UNAVAILABLE' }), qos = 2, retain = True )
         self.client.connect( self.mqttParams.address, self.mqttParams.port )
-        self.client.loop_start()
-        lastModdate = None
+        self.client.loop_start()        
         now = datetime.now()
         lastReport = now
         lastExpirationCheck = now
         try:
-            lastModdate = os.stat( os.path.dirname(os.path.abspath(__file__) ) + '/' + Configuration.ConfigurationFile )[8]
-            self.__readAndSendConfiguration()
+            self.lastModdate = os.stat( os.path.dirname(os.path.abspath(__file__) ) + '/' + Configuration.ConfigurationFile )[8]
+            self.__readAndSendConfiguration( False )
         except Exception, e:
             print( 'Error stating {}. Error: {}'.format( Configuration.ConfigurationFile, e.message ) )
         #go in infinite loop        
@@ -72,10 +72,10 @@ class Configuration( object ):
             try:
                 moddate = os.stat( os.path.dirname(os.path.abspath(__file__) ) + '/' + Configuration.ConfigurationFile )[8]
                 # print( 'last [{}], currrent [{}]'.format( time.ctime( lastModdate ), time.ctime( moddate ) ) )
-                if( lastModdate != moddate ):
+                if( self.lastModdate != moddate ):
                     print( '{} has changed. Reading and resending'.format( Configuration.ConfigurationFile ) )
-                    self.__readAndSendConfiguration()
-                    lastModdate = moddate
+                    self.__readAndSendConfiguration( True )
+                    self.lastModdate = moddate
 
                 now = datetime.now()
                 lapsed = now - lastReport 
@@ -117,12 +117,17 @@ class Configuration( object ):
         #subscribe to start listening for incomming commands
         self.client.subscribe( self.mqttParams.subscribeTopic )
 
-    def __readAndSendConfiguration( self ):
+    def __readAndSendConfiguration( self, resubscribeOnlyIfChanged ):
         try:
             with open( os.path.dirname( os.path.abspath(__file__) ) + '/' + Configuration.ConfigurationFile ) as json_file:
                 configurationTxt = json.load( json_file )
                 print( json.dumps( configurationTxt, ensure_ascii=False, encoding='utf8' ).encode( 'utf-8' ) )
                 self.client.publish( self.mqttParams.publishTopic, json.dumps( configurationTxt ), qos = 2, retain = True )
+
+                #if the file has not changed, exit, else remove odl subscriptions and re-subscribe
+                moddate = os.stat( os.path.dirname(os.path.abspath(__file__) ) + '/' + Configuration.ConfigurationFile )[8]
+                if( self.lastModdate == moddate and resubscribeOnlyIfChanged ):
+                    return
 
                 # remove old subscriptions and subcribe to publish topics of items in the new configuration
                 for i in range( 0, len( self.expirationItemList ) ):
@@ -213,7 +218,7 @@ class Configuration( object ):
                 return
             if( cmd == 'SEND' ):
                 print( 'Will read and send the configuration' )
-                self.__readAndSendConfiguration()
+                self.__readAndSendConfiguration( True )
             elif( cmd == 'SAVE' ):
                 print( 'Will store new configuration in file {}'.format( Configuration.ConfigurationFile ) )
                 try:
