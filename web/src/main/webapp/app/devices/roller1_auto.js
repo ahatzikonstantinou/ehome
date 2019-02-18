@@ -12,7 +12,7 @@
         function Roller1_Auto( mqtt_publish_topic, mqtt_subscribe_topic, state, scope )
         {
             //public properties
-            MqttDevice.call( this, mqtt_publish_topic, state, mqtt_subscribe_topic, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, scope, mqtt_subscribe_topic );
             this.tempPercent = state.percent;
         }
 

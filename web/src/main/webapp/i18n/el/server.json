@@ -9,6 +9,30 @@
             "UNAVAILABLE": "Πληροφορίες συσκευών μη διαθέσιμες",
             "ERROR": "Σφάλμα στις πληροφορίες συσκευών"
         },
-        "xmpp-error": "Αποτυχία σύνδεσης xmpp. Επισκεφθείτε το <a class=\"alert-link\" target=\"_blank\" href=\"{{xmppUrl}}\">{{xmppUrl}}</a>, προσθέσετε security exception και επαναφορτώστε την τρέχουσα οθόνη, σε περίπτωση που το σφάλμα οφείλεται σε self-signed ssl certificate."
+        "xmpp-error": "Αποτυχία σύνδεσης xmpp. Επισκεφθείτε το <a class=\"alert-link\" target=\"_blank\" href=\"{{xmppUrl}}\">{{xmppUrl}}</a>, προσθέσετε security exception και επαναφορτώστε την τρέχουσα οθόνη, σε περίπτωση που το σφάλμα οφείλεται σε self-signed ssl certificate.",
+        "settings": {
+            "title": "Ρυθμίσεις server",
+            "name": "Όνομα",
+            "type": "Τύπος",
+            "mqtt" : {
+                "settings": "Ρυθμίσεις",
+                "broker_ip": "Broker IP διεύθυνση",
+                "broker_port": "Broker port",
+                "client_id": "Client ID",
+                "configuration": {
+                    "title": "Configuration",
+                    "publish_topic": "Publish topic",
+                    "publish_message": "Publish message",
+                    "subscribe_topic": "Subscribe topic"
+                },
+                "connection": {
+                    "title": "Connection",
+                    "publish_topic": "Publish topic",
+                    "subscribe_topic": "Subscribe topic",
+                    "keepAliveInterval": "Keep alive interval (δευτερόλεπτα)",
+                    "timeout": "Timeout (δευτερόλεπτα)"
+                }
+            }
+        }
     }
 }

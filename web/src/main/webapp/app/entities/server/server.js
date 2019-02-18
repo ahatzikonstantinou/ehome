@@ -43,11 +43,12 @@
             server.lastUpdate = null;
             server.connectionStatus = 'DISCONNECTED'; //CONNECTING, CONNECTED            
             
-            server.connectionDevice = (typeof connectionDevice !== 'undefined' ) ? connectionDevice : new ServerConnection( server, server.settings.connection.subscribeTopic, server.settings.connection.publishTopic, {} );
+            server.connectionDevice = (typeof connectionDevice !== 'undefined' ) ? connectionDevice : new ServerConnection( server, server.settings.connection.publishTopic, server.settings.connection.subscribeTopic, {}, server.scope );
             server.connectionDevice.disconnected();
             // console.log( 'server.connectionDevice: ', server.connectionDevice );
 
-            server.configurationDevice = (typeof configurationDevice !== 'undefined' ) ? configurationDevice : new ServerConfiguration( server, server.settings.configuration.subscribeTopic, {}, updateConfiguration );
+            server.configurationDevice = (typeof configurationDevice !== 'undefined' ) ? configurationDevice : new ServerConfiguration( server, server.settings.configuration.publishTopic, server.settings.configuration.subscribeTopic, {}, updateConfiguration, server.scope );
+            server.configurationDevice.initFromLocalStorage();           
             
             server.observerDevices = [];
             server.observerDevices.push( server.connectionDevice );
@@ -106,6 +107,7 @@
 
             server.baseUnsubscribeContainer = function( container )
             {
+                // console.log( 'unsubscribing container ', container );
                 if( container.items )
                 {
                     for( var i = 0 ; i < container.items.length ; i++ )
@@ -113,7 +115,7 @@
                         this.baseUnsubscribeItem( container.items[i] );
                     }
                 }
-                if( container. containers )
+                if( container.containers )
                 {
                     for( var c = 0 ; c < container.containers.length ; c++ )
                     {
@@ -141,9 +143,12 @@
                         }
                     }
                 }
-                for( var c = 0 ; c < container.containers.length ; c++ )
+                if( container.containers )
                 {
-                    this.subscribeContainer( container.containers[c] );
+                    for( var c = 0 ; c < container.containers.length ; c++ )
+                    {
+                        this.subscribeContainer( container.containers[c] );
+                    }
                 }
             }            
     
@@ -155,11 +160,12 @@
                 {
                     if( item.device.mqtt_publish_topic )
                     {
-                        // console.log( 'Subscribing ', item.device );        
+                        // console.log( 'Subscribing ', item.device );
                         this.subscribeDevice( item.device, item.device.mqtt_publish_topic );
                     }
                     if( item.device.mqtt_subscribe_topic )
                     {
+                        // console.log( 'Settings publisher ', this );
                         item.device.setPublisher( this );
                     }
                     if( item.device.setModemUpdater )   // devices such as Sms

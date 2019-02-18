@@ -11,7 +11,7 @@
         //Constructor
         function Modem( mqtt_publish_topic, mqtt_subscribe_topic, state, scope )
         {
-            MqttDevice.call( this, mqtt_publish_topic, state, mqtt_subscribe_topic, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, scope, mqtt_subscribe_topic );
             this.listCmd = '{"cmd":"list"}';
             this.observers = [];
             this.modems = [];
@@ -83,7 +83,7 @@
             //send a message to retrieve modem list as soon as we are assigned a publisher
             var message = new Paho.MQTT.Message( this.listCmd );
             message.destinationName = this.mqtt_subscribe_topic ;
-            console.log( 'Modem sending message: ', message );
+            console.log( 'Modem sending message: ', message.payloadString );
             this.publisher.send( message );
         }
 
@@ -105,7 +105,7 @@
             {                
                 var message = new Paho.MQTT.Message( payload );
                 message.destinationName = this.mqtt_subscribe_topic ;
-                console.log( 'Modem sending message: ', message );
+                console.log( 'Modem sending message: ', message.payloadString );
                 this.publisher.send( message );
 
                 // this.state.main = value;//debugging
@@ -120,7 +120,7 @@
             {                
                 var message = new Paho.MQTT.Message( payload );
                 message.destinationName = this.mqtt_subscribe_topic ;
-                console.log( 'Modem sending message: ', message );
+                console.log( 'Modem sending message: ', message.payloadString );
                 this.publisher.send( message );
 
                 // this.state.main = value;//debugging

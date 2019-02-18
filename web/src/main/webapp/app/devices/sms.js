@@ -11,7 +11,7 @@
         //Constructor
         function Sms( mqtt_publish_topic, mqtt_subscribe_topic, state, scope )
         {
-            MqttDevice.call( this, mqtt_publish_topic, state, mqtt_subscribe_topic, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, scope, mqtt_subscribe_topic );
             this.listCmd = '{"cmd":"list", "params":{ "lastSms":#lastSms#, "updates": []} }';
             this.allowedDestinationsCmd = '{"cmd":"allowed_destinations"}';
             this.modems = [];
@@ -276,7 +276,7 @@
             var message = new Paho.MQTT.Message( this.listCmd.replace( '#lastSms#', this._lastSmsHash() ).replace( '[]', '['+ this._getPendingSmsHashes() + ']' ) );
             message.destinationName = this.mqtt_subscribe_topic ;
             message.qos = 2;
-            console.log( 'Sms sending message: ', message );
+            console.log( 'Sms sending message: ', message.payloadString );
             this.publisher.send( message );
         }
 
@@ -315,7 +315,7 @@
 
             var message = new Paho.MQTT.Message( '{ "cmd":"delete", "params":{ "smsList":[' + hashes + '] } }' );
             message.destinationName = this.mqtt_subscribe_topic ;
-            console.log( 'Sms sending message: ', message );
+            console.log( 'Sms sending message: ', message.payloadString );
             this.publisher.send( message );
         }
 
@@ -395,7 +395,7 @@
             var message = new Paho.MQTT.Message( cmd );
             message.destinationName = this.mqtt_subscribe_topic ;
             message.qos = 2;
-            console.log( 'Sms sending message: ', message );
+            console.log( 'Sms sending message: ', message.payloadString );
             this.publisher.send( message );
         }
 

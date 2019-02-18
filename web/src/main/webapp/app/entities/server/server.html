@@ -2,8 +2,11 @@
     <div class="server-info">
         <span class="mdi mdi-server"/>
         <label class="server">{{server.name}}</label>
-        <button type="button" class="btn btn-default btn-xs" ng-click="server.configurationDevice.refresh()">
-            <span class="mdi database-sync" ></span>
+        <button type="button" class="btn btn-default btn-xs" ng-click="server.configurationDevice.refresh()" ng-enabled="server.connectionStatus == 'CONNECTED'">
+            <span class="mdi mdi-database-refresh" ></span>
+        </button>
+        <button type="button" class="btn btn-default btn-xs" ng-click="vm.openSettingsDialog( server )">
+            <span class="mdi mdi-settings" ></span>
         </button>
         <button type="button" class="btn btn-default btn-xs" ng-click="collapsed = !collapsed">
             <span class="mdi mdi-chevron-down" ng-if="collapsed"></span>

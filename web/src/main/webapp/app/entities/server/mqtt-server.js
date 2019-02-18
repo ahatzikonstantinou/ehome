@@ -19,6 +19,7 @@
             {
                 console.log( 'Initialising failover of server ', server.name );
                 baseInit( server.failover, updateConfiguration, removeConf, true, server, server.connectionDevice, server.configurationDevice );
+                server.configurationDevice.setPublisher( this );
                 // switch( server.failover.type )
                 // {
                 //     case 'xmpp':                    
@@ -122,7 +123,7 @@
 
             server.send = function( message )
             {
-                console.log( 'mqtt server will send "', message, '", server: ', this );
+                console.log( 'mqtt server will send "', message.payloadString, '"' );//, server: ', this );
                 if( this.failover && this.failover.active )
                 {
                     this.failover.send( message );
@@ -139,10 +140,14 @@
             server.initialSubscriptions = function()
             {
                 console.log( 'Subscribing to connection topic...', server.connectionDevice.mqtt_subscribe_topic );
-                server.subscribe( server.connectionDevice.mqtt_subscribe_topic );
+                // server.subscribe( server.connectionDevice.mqtt_subscribe_topic );
+                server.subscribeDevice( server.connectionDevice, server.connectionDevice.mqtt_subscribe_topic);
+                server.connectionDevice.setPublisher( this );
 
                 console.log( 'Subscribing to configuration topic...', server.settings.configuration.subscribeTopic );
-                server.subscribe( server.settings.configuration.subscribeTopic );
+                // server.subscribe( server.settings.configuration.subscribeTopic );
+                server.subscribeDevice( server.configurationDevice, server.configurationDevice.mqtt_subscribe_topic );
+                server.configurationDevice.setPublisher( this );
                 
                 console.log( 'Will publish to get server connection...', server.settings.connection.publishTopic );
                 var message = new Paho.MQTT.Message( "no_data" );
@@ -152,7 +157,7 @@
                 console.log( 'Will publish to publishTopic to get house-configuration...', server.settings.configuration.publishTopic );
                 message = new Paho.MQTT.Message( server.settings.configuration.publishMessage );
                 message.destinationName = server.settings.configuration.publishTopic ;
-                server.send( message );
+                server.send( message );                
             }
 
             client.connect({
@@ -233,6 +238,13 @@
                         var message = new Paho.MQTT.Message( server.settings.configuration.publishMessage );
                         message.destinationName = server.settings.configuration.publishTopic ;
                         server.send( message );
+                    }
+                    if( server.connectionStatus == 'CONNECTED' && 
+                        server.configurationDevice.status == 'SUCCESS' && 
+                        !server.configurationDevice.subscribed 
+                    )
+                    {
+                        server.configurationDevice.subscribe();
                     }
                 }, 10000, 0, true, client 
             );

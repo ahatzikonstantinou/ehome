@@ -11,7 +11,7 @@
         //Constructor
         function ServerConnection( server, mqtt_publish_topic, mqtt_subscribe_topic, state, scope )
         {
-            MqttDevice.call( this, mqtt_publish_topic, state, mqtt_subscribe_topic, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, scope, mqtt_subscribe_topic );
             this.server = server;
         }
         
@@ -20,17 +20,24 @@
 
         ServerConnection.prototype.update = function( topic, message )
         {
-            if( topic == this.mqtt_publish_topic )
+            if( topic == this.mqtt_subscribe_topic )
             {
-                var data = angular.fromJson( message );
-                // console.log( 'data: ',  data );
-                this.state = data;
-                this.lastUpdate = Date.now();
+                try
+                {
+                    var data = angular.fromJson( message );
+                    // console.log( 'data: ',  data );
+                    this.state = data;
+                    this.lastUpdate = Date.now();
 
-                this.server.connection.type = data.type;
-                this.server.connection.primary = data.primary;
-                this.server.connection.connecting = false;
-                this.server.connection.connectingProtocol = '';
+                    this.server.connection.type = data.type;
+                    this.server.connection.primary = data.primary;
+                    this.server.connection.connecting = false;
+                    this.server.connection.connectingProtocol = '';
+                }
+                catch( error )
+                {
+                    console.error( error );
+                }
             }
         }
 
@@ -40,7 +47,7 @@
             if( this.publisher )
             {
                 var message = new Paho.MQTT.Message( "" );
-                message.destinationName = this.mqtt_subscribe_topic ;
+                message.destinationName = this.mqtt_publish_topic ;
                 // console.log( 'ServerConnection sending message: ', message, ' with publisher: ', this.publisher );
                 this.publisher.send( message );
             }
@@ -48,25 +55,66 @@
 
         ServerConnection.prototype.disconnected = function()
         {
-            this.server.connection.type = 'NOT_CONNECTED';
-            this.server.connection.connecting = false;
+            // console.log( 'this.scope.$$phase : ', this.scope.$$phase );
+            // console.log( 'this.scope.$root.$$phase : ', this.scope.$root.$$phase );
+            // if( !this.scope.$$phase && !this.scope.$root.$$phase )
+            // {
+            //     this.scope.$apply( function() {
+            //         this.server.connection.type = 'NOT_CONNECTED';
+            //         this.server.connection.connecting = false;
+            //     });
+            // }
+            // else
+            // {
+                this.server.connection.type = 'NOT_CONNECTED';
+                this.server.connection.connecting = false;
+            // }
         }
 
         ServerConnection.prototype.connecting = function( protocol )
         {
-            this.server.connection.connecting = true;
-            this.server.connection.connectingProtocol = protocol;
+            // if( !this.scope.$$phase && !this.scope.$root.$$phase )
+            // {
+            //     this.scope.$apply( function() {
+            //         this.server.connection.connecting = true;
+            //         this.server.connection.connectingProtocol = protocol;
+            //     });
+            // }
+            // else
+            // {
+                this.server.connection.connecting = true;
+                this.server.connection.connectingProtocol = protocol;
+            // }
         }
 
         ServerConnection.prototype.connected = function( type )
         {
-            this.server.connection.type = type;
-            this.server.connection.connecting = false;
+            // if( !this.scope.$$phase && !this.scope.$root.$$phase )
+            // {
+            //     this.scope.$apply( function() {
+            //         this.server.connection.type = type;
+            //         this.server.connection.connecting = false;
+            //     });
+            // }
+            // else
+            // {
+                this.server.connection.type = type;
+                this.server.connection.connecting = false;
+            // }
         }
 
         ServerConnection.prototype.setProtocol = function( protocol )
         {
-            this.server.connection.protocol = protocol;
+            // if( !this.scope.$$phase && !this.scope.$root.$$phase )
+            // {
+            //     this.scope.$apply( function() {
+            //         this.server.connection.protocol = protocol;
+            //     });
+            // }
+            // else
+            // {
+                this.server.connection.protocol = protocol;
+            // }
         }
 
         return ServerConnection;

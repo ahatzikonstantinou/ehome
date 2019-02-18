@@ -9,6 +9,30 @@
             "UNAVAILABLE": "Configuration unavailable",
             "ERROR": "Configuration error"
         },
-        "xmpp-error": "xmpp is not able to connect. Please try visiting <a class=\"alert-link\" target=\"_blank\" href=\"{{xmppUrl}}\">{{xmppUrl}}</a> to add a security exception and then reload this screen, in case the error is due to a self-signed ssl certificate."
+        "xmpp-error": "xmpp is not able to connect. Please try visiting <a class=\"alert-link\" target=\"_blank\" href=\"{{xmppUrl}}\">{{xmppUrl}}</a> to add a security exception and then reload this screen, in case the error is due to a self-signed ssl certificate.",
+        "settings": {
+            "title": "Server settings",
+            "name": "Name",
+            "type": "Type",
+            "mqtt" : {
+                "settings": "Settings",
+                "broker_ip": "Broker IP address",
+                "broker_port": "Broker port",
+                "client_id": "Client ID",
+                "configuration": {
+                    "title": "Configuration",
+                    "publish_topic": "Publish topic",
+                    "publish_message": "Publish message",
+                    "subscribe_topic": "Subscribe topic"
+                },
+                "connection": {
+                    "title": "Connection",
+                    "publish_topic": "Publish topic",
+                    "subscribe_topic": "Subscribe topic",
+                    "keepAliveInterval": "Keep alive interval (seconds)",
+                    "timeout": "Timeout (seconds)"
+                }
+            }
+        }
     }
 }

@@ -1,0 +1,10 @@
+server settings dialog:
+    add failover
+    add xmpp fields in primary and failover
+    hide/show mqtt/xmpp fields according to select input
+
+    add "use failover" checkbox in order to be able to save but not use failover settings
+    change code where if( server.failover ), to if( server.useFailover && server.failover )
+
+mqtt-server:
+    connectionStatus is not in sync with the client connection when updating (re-initing) a server

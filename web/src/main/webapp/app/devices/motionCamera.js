@@ -11,7 +11,7 @@
         //Constructor
         function MotionCamera( mqtt_publish_topic, mqtt_subscribe_topic, cameraId, videostream, state, detection, scope )
         {
-            MqttDevice.call( this, mqtt_publish_topic, state, mqtt_subscribe_topic, scope );
+            MqttDevice.call( this, mqtt_publish_topic, state, scope, mqtt_subscribe_topic );
 
             //public properties
             this.cameraId = cameraId

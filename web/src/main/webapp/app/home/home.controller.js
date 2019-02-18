@@ -6,10 +6,10 @@
         .controller('HomeController', HomeController);
 
     // HomeController.$inject = ['$scope', 'Principal', 'LoginService', '$state'];
-    HomeController.$inject = [ '$http', '$scope', '$state', 'MqttClient', 'Door1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', 'Configuration' ];
+    HomeController.$inject = [ '$http', '$scope', '$rootScope', '$state', 'MqttClient', 'Door1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', 'Configuration' ];
 
     // function HomeController ($scope, Principal, LoginService, $state) {
-    function HomeController( $http, $scope, $state, MqttClient, Door1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, Configuration ) {
+    function HomeController( $http, $scope, $rootScope, $state, MqttClient, Door1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, Configuration ) {
         var vm = this;
 
         vm.account = null;
@@ -45,8 +45,37 @@
 
         function getAllServers()
         {
+            var servers = [];
+            for ( var i = 0, len = localStorage.length; i < len; ++i ) 
+            {
+                // console.log( localStorage.getItem( localStorage.key( i ) ) );
+                var key = localStorage.key( i );
+                if( !key.startsWith( 'server_' ) )
+                {
+                    continue;
+                }
+                var data = angular.fromJson( localStorage.getItem( key ) );
+                
+                servers.push({
+                    id: data.id,
+                    name: data.name,
+                    type: data.type,
+                    settings: data.settings,
+                    connection: {
+                        type: 'ADSL', // '3G', //NOT_CONNECTED',
+                        primary: true,
+                        protocol: 'Mqtt' // 'UNAVAILABLE'
+                    },
+                    failover: null,
+                    conf: { container: {} }
+                });
+            }
+
+            return servers;
+
             return [
                 {
+                    id: uuidv4(),
                     name: 'Antonis Athens',
                     type: 'mqtt',
                     settings: { 
@@ -57,13 +86,17 @@
                         // connect simultaneously to the mqtt broker using this web app
                         mqtt_client_id : uuidv4(), 
                         configuration: {
+                            //subscribeTopic is the topic to subscribe to, in order to get configuration updates
                             subscribeTopic: 'Configurator/status', //'A///CONFIGURATION/C/status',
+                            //publishTopic is the topic to subscribe to in order to ask for configuration updates to be sent
                             publishTopic: 'Configurator/set', //'A///CONFIGURATION/C/cmd',
                             publishMessage: '{"cmd": "SEND"}'
                         },
                         connection: {
-                            subscribeTopic: 'connection',
+                            //publishTopic is the topic to subscribe to in order to ask for connection  updates to be sent
                             publishTopic: 'connection/report',
+                            //subscribeTopic is the topic to subscribe to, in order to get connection updates
+                            subscribeTopic: 'connection',
                             keepAliveInterval: 5, //seconds,
                             timeout: 10 //seconds
                         }
@@ -102,6 +135,7 @@
                     conf: { container: {} }
                 },
                 // {
+                //     id: uuidv4(),
                 //     name: 'Antonis Alyki',
                 //     type: 'xmpp',
                 //     settings: {
@@ -140,6 +174,10 @@
             ];
         }
         var servers = getAllServers();
+        for( var i = 0 ; i < servers.length ; i++ )
+        {
+            servers[i].scope = $scope;
+        }
         vm.servers = servers;
         console.log( 'servers: ', vm.servers );
         
@@ -153,7 +191,25 @@
         //     console.log( 'xmpp.publish override, topic: ', topic );
         // }
 
+        $rootScope.$on( 'server-settings:update', 
+            function( event, server ) { 
+                console.log( server );
+                server.scope = $scope;
+                for( var i = 0 ; i < vm.servers.length ; i++ )
+                {
+                    if( vm.servers[i].id == server.id )
+                    {
+                        console.log( 'Found and updated server ', vm.servers[i] );
+                        vm.servers[i] = server;
+                        return;
+                    }
+                }
+
+                console.log( 'Did not find server ', server, ', adding to the list of servers' );
+                vm.servers.push( server );
+            }
         
+        );
 
     }
 })();
