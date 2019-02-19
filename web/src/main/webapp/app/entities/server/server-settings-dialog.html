@@ -6,62 +6,72 @@
                 ng-click="vm.clear()">&times;</button>
         <h4 class="modal-title" id="serverSettingsLabel" data-translate="server.settings.title">Server settings</h4>
     </div>
-    <div class="modal-body" >
+    <div class="modal-body">
         <jhi-alert-error></jhi-alert-error>
         <div class="form-group" ng-show="vm.server.id">
-            <label for="id" data-translate="global.field.id">ID</label>
-            <input type="text" class="form-control" id="id" name="id"
-                    ng-model="vm.server.id" readonly />
-        </div>
-        <div class="form-group">
-            <label class="control-label" data-translate="server.settings.name" for="field_name">Name</label>
-            <input type="text" class="form-control" name="name" id="field_name"
-                    ng-model="vm.server.name"
-                    required/>
-            <div ng-show="editForm.name.$invalid">
-                <p class="help-block"
-                    ng-show="editForm.name.$error.required" data-translate="entity.validation.required">
-                    This field is required.
-                </p>
+            <label for="id" data-translate="global.field.id" class="col-md-2 col-form-label text-right">ID</label>
+            <div class="col-md-10">
+                <input type="text" class="form-control" id="id" name="id" ng-model="vm.server.id" readonly />
             </div>
         </div>
-        <div class="form-group">
+        <div class="form-group row settings">
+            <label data-translate="server.settings.name" for="field_name">Name</label>
+            <div class="value">
+                <input type="text" class="form-control" name="name" id="field_name" ng-model="vm.server.name" required/>
+                <div ng-show="editForm.name.$invalid">
+                    <p class="help-block"
+                        ng-show="editForm.name.$error.required" data-translate="entity.validation.required">
+                        This field is required.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row settings">
             <label class="control-label" data-translate="server.settings.type" for="field_type">Type</label>
-            <select name="type" id="field_type" ng-model="vm.server.type" required>
-                <option value="mqtt"> Mqtt</option>
-                <option value="xmpp"> Xmpp</option>
-            </select>
-            <div ng-show="editForm.type.$invalid">
-                <p class="help-block"
-                    ng-show="editForm.type.$error.required" data-translate="entity.validation.required">
-                    This field is required.
-                </p>
+            <div class="value">
+                <select name="type" id="field_type" ng-model="vm.server.type" required>
+                    <option value="mqtt"> Mqtt</option>
+                    <option value="xmpp"> Xmpp</option>
+                </select>
+                <div ng-show="editForm.type.$invalid">
+                    <p class="help-block"
+                        ng-show="editForm.type.$error.required" data-translate="entity.validation.required">
+                        This field is required.
+                    </p>
+                </div>
             </div>
         </div>   
         <fieldset>
             <legend class="col-form-legend" data-translate="server.settings.mqtt.settings">Mqtt settings</legend>
-            <div class="form-group">
+            <div class="form-group row settings">
                 <label class="control-label" data-translate="server.settings.mqtt.broker_ip" for="field_broker_ip">Broker IP</label>
-                <input type="text" class="form-control" name="broker_ip" id="field_broker_ip" ng-model="vm.server.settings.mqtt_broker_ip" ng-pattern='/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/' required/>
-                <div ng-show="editForm.broker_ip.$invalid">
-                    <p class="help-block"
-                        ng-show="editForm.broker_ip.$error.required" data-translate="entity.validation.required">
-                        This field is required.
-                    </p>
+                <div class="value">
+                    <input type="text" class="form-control" name="broker_ip" id="field_broker_ip" ng-model="vm.server.settings.mqtt_broker_ip" ng-pattern='/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/' required/>
+                    <div ng-show="editForm.broker_ip.$invalid">
+                        <p class="help-block"
+                            ng-show="editForm.broker_ip.$error.required" data-translate="entity.validation.required">
+                            This field is required.
+                        </p>
+                    </div>
                 </div>
             </div>
-            <div class="form-group">
+            <div class="form-group row settings">
                 <label class="control-label" data-translate="server.settings.mqtt.broker_port" for="field_broker_port">Broker Port</label>
-                <input type="text" class="form-control" name="broker_port" id="field_broker_port" ng-model="vm.server.settings.mqtt_broker_port" ng-pattern='/\d+/' required/>
-                <div ng-show="editForm.broker_port.$invalid">
-                    <p class="help-block"
-                        ng-show="editForm.broker_port.$error.required" data-translate="entity.validation.required">
-                        This field is required.
-                    </p>
+                <div class="value">
+                    <input type="text" class="form-control" name="broker_port" id="field_broker_port" ng-model="vm.server.settings.mqtt_broker_port" ng-pattern='/\d+/' required/>
+                    <div ng-show="editForm.broker_port.$invalid">
+                        <p class="help-block"
+                            ng-show="editForm.broker_port.$error.required" data-translate="entity.validation.required">
+                            This field is required.
+                        </p>
+                    </div>
                 </div>
             </div>
-            <div class="form-group">
+
+
+            <div class="form-group row settings">
                 <label class="control-label" data-translate="server.settings.mqtt.client_id" for="field_client_id">Client ID</label>
+                <div class="value">
                 <input type="text" class="form-control" name="client_id" id="field_client_id" ng-model="vm.server.settings.mqtt_client_id" required/>
                 <div ng-show="editForm.client_id.$invalid">
                     <p class="help-block"
@@ -69,11 +79,13 @@
                         This field is required.
                     </p>
                 </div>
+                </div>
             </div>
             <fieldset>
                 <legend class="col-form-legend" data-translate="server.settings.mqtt.configuration.title">Configuration</legend>
-                <div class="form-group">
+                <div class="form-group row settings">
                     <label class="control-label" data-translate="server.settings.mqtt.configuration.publish_topic" for="field_mqtt_configuration_publish_topic">Publish topic</label>
+                    <div class="value">
                     <input type="text" class="form-control" name="mqtt_configuration_publish_topic" id="field_mqtt_configuration_publish_topic" ng-model="vm.server.settings.configuration.publishTopic" required/>
                     <div ng-show="editForm.mqtt_configuration_publish_topic.$invalid">
                         <p class="help-block"
@@ -81,9 +93,11 @@
                             This field is required.
                         </p>
                     </div>
+                    </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group row settings">
                     <label class="control-label" data-translate="server.settings.mqtt.configuration.publish_message" for="field_mqtt_configuration_publish_message">Publish message</label>
+                    <div class="value">
                     <input type="text" class="form-control" name="mqtt_configuration_publish_message" id="field_mqtt_configuration_publish_message" ng-model="vm.server.settings.configuration.publishMessage" required/>
                     <div ng-show="editForm.mqtt_configuration_publish_message.$invalid">
                         <p class="help-block"
@@ -91,9 +105,11 @@
                             This field is required.
                         </p>
                     </div>
+                    </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group row settings">
                     <label class="control-label" data-translate="server.settings.mqtt.configuration.subscribe_topic" for="field_configuration_mqtt_subscribe_topic">Subscribe topic</label>
+                    <div class="value">
                     <input type="text" class="form-control" name="configuration_mqtt_subscribe_topic" id="field_configuration_mqtt_subscribe_topic" ng-model="vm.server.settings.configuration.subscribeTopic" required/>
                     <div ng-show="editForm.configuration_mqtt_subscribe_topic.$invalid">
                         <p class="help-block"
@@ -101,13 +117,15 @@
                             This field is required.
                         </p>
                     </div>
+                    </div>
                 </div>
             </fieldset>
 
             <fieldset>
                 <legend class="col-form-legend" data-translate="server.settings.mqtt.connection.title">Connection</legend>
-                <div class="form-group">
+                <div class="form-group row settings">
                     <label class="control-label" data-translate="server.settings.mqtt.connection.publish_topic" for="field_mqtt_connection_publish_topic">Publish topic</label>
+                    <div class="value">
                     <input type="text" class="form-control" name="mqtt_connection_publish_topic" id="field_mqtt_connection_publish_topic" ng-model="vm.server.settings.connection.publishTopic" required/>
                     <div ng-show="editForm.mqtt_connection_publish_topic.$invalid">
                         <p class="help-block"
@@ -115,9 +133,11 @@
                             This field is required.
                         </p>
                     </div>
+                    </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group row settings">
                     <label class="control-label" data-translate="server.settings.mqtt.connection.subscribe_topic" for="field_mqtt_connection_subscribe_topic">Subscribe topic</label>
+                    <div class="value">
                     <input type="text" class="form-control" name="mqtt_connection_subscribe_topic" id="field_mqtt_connection_subscribe_topic" ng-model="vm.server.settings.connection.subscribeTopic" required/>
                     <div ng-show="editForm.mqtt_connection_subscribe_topic.$invalid">
                         <p class="help-block"
@@ -125,9 +145,11 @@
                             This field is required.
                         </p>
                     </div>
+                    </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group row settings">
                     <label class="control-label" data-translate="server.settings.mqtt.connection.keepAliveInterval" for="field_keepAliveInterval">Keep alive interval (seconds)</label>
+                    <div class="value">
                     <input type="text" class="form-control" name="keepAliveInterval" id="field_keepAliveInterval" ng-model="vm.server.settings.connection.keepAliveInterval" ng-pattern='/\d+/' required/>
                     <div ng-show="editForm.keepAliveInterval.$invalid">
                         <p class="help-block"
@@ -135,15 +157,18 @@
                             This field is required.
                         </p>
                     </div>
+                    </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group row settings">
                     <label class="control-label" data-translate="server.settings.mqtt.connection.timeout" for="field_timeoutl">Timeout (seconds)</label>
+                    <div class="value">
                     <input type="text" class="form-control" name="timeout" id="field_timeout" ng-model="vm.server.settings.connection.timeout" ng-pattern='/\d+/' required/>
                     <div ng-show="editForm.timeout.$invalid">
                         <p class="help-block"
                             ng-show="editForm.timeout.$error.required" data-translate="entity.validation.required">
                             This field is required.
                         </p>
+                    </div>
                     </div>
                 </div>
             </fieldset>
@@ -154,6 +179,10 @@
         <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="vm.clear()">
             <span class="glyphicon glyphicon-ban-circle"></span>&nbsp;<span data-translate="entity.action.cancel">Cancel</span>
         </button>
+        <button ng-if="vm.server.id" type="button" class="btn btn-danger" data-dismiss="modal" ng-click="vm.deleteServer()">
+            <span class="glyphicon glyphicon-remove"></span>&nbsp;<span data-translate="entity.action.delete">Cancel</span>
+        </button>
+        
         <button type="submit" ng-disabled="editForm.$invalid || vm.isSaving" class="btn btn-primary">
             <span class="glyphicon glyphicon-save"></span>&nbsp;<span data-translate="entity.action.save">Save</span>
         </button>

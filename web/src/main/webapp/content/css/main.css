@@ -1,3 +1,25 @@
+.settings label {
+    width: 20%;
+    text-align: right;
+    /* display: inline-flex; */
+    vertical-align: -webkit-baseline-middle;
+    vertical-align: middle;
+    margin-right: 0.5em;
+    margin-left: 1em;
+}
+
+.settings .value {
+    width: 70%; /*although the rest of the grid line is the label at 25% width, if this width = 75% then the "value" div moves to the next line*/
+    display: inline-grid;   /* the only way to keep label and input in the same line*/
+}
+
+/* the width of the select element e.g. settings type, should not be maximized*/
+.settings .value select {
+    width: -webkit-min-content;
+    width: -moz-min-content;
+    width: min-content;
+}
+
 /* the folowing two classes were not used after all because they don't look nice on smpartphone
 .sms-send.allowed-destinations {
     height: 100px; 

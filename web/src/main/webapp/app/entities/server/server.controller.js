@@ -110,6 +110,16 @@
                 console.log( 'failure' );
             });
         }
+
+        //ahat: This does not seem to work
+        $scope.$on( 'server-settings:update', 
+            function( event, server ) { 
+                console.log( server );
+                server.scope = $scope;
+                vm.server = server;
+            }
+        
+        );
     }
     
 })();

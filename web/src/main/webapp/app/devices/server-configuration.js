@@ -24,7 +24,7 @@
         ServerConfiguration.prototype.initFromLocalStorage= function()
         {
             // attempt to initialise with last saved configuration
-            var configurationString = localStorage.getItem( 'configuration' );
+            var configurationString = localStorage.getItem( 'configuration_' + this.server.id );
             if( configurationString )
             {
                 this.server.confString = configurationString; 
@@ -108,8 +108,7 @@
                         this.status = 'SUCCESS';
 
                         console.log( 'saving new configuration' );
-                        localStorage.setItem('configuration', message ); 
-                        localStorage.setItem('configurationLastUpdate', this.lastUpdate ); 
+                        this.saveToLocalStorage( message );
 
                         this.subscribe();
                     }                    
@@ -131,6 +130,35 @@
                 message.destinationName = this.mqtt_publish_topic ;
                 console.log( 'ServerConfiguration sending message: ', message.payloadString );
                 this.publisher.send( message );
+            }
+        }
+
+        ServerConfiguration.prototype.saveToLocalStorage = function( text )
+        {
+            try
+            {
+                console.log( 'saving to localStorage' );
+                localStorage.setItem('configuration_' + this.server.id, text ); 
+                localStorage.setItem('configurationLastUpdate_' + this.server.id, this.lastUpdate ); 
+            }
+            catch( error )
+            {
+                console.error( error );
+            }
+        }
+
+        ServerConfiguration.prototype.deleteFromLocalStorage = function()
+        {
+            try
+            {
+                console.log( 'Deleting from localStorage' );
+                localStorage.removeItem('configuration_' + this.server.id ); 
+                localStorage.removeItem('configurationLastUpdate_' + this.server.id ); 
+
+            }
+            catch( error )
+            {
+                console.error( error );
             }
         }
 

@@ -6,10 +6,10 @@
         .controller('HomeController', HomeController);
 
     // HomeController.$inject = ['$scope', 'Principal', 'LoginService', '$state'];
-    HomeController.$inject = [ '$http', '$scope', '$rootScope', '$state', 'MqttClient', 'Door1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', 'Configuration' ];
+    HomeController.$inject = [ '$http', '$scope', '$rootScope', '$state', 'MqttClient', 'Door1', 'Window1R', 'Light1', 'TemperatureHumidity', 'Door2R', 'Net', 'Roller1_Auto', 'Window2R', 'Roller1', 'Light2', 'Alarm', 'IPCamera', 'IPCameraPanTilt', 'MotionCamera', 'MotionCameraPanTilt', 'Configuration', '$uibModal' ];
 
     // function HomeController ($scope, Principal, LoginService, $state) {
-    function HomeController( $http, $scope, $rootScope, $state, MqttClient, Door1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, Configuration ) {
+    function HomeController( $http, $scope, $rootScope, $state, MqttClient, Door1, Window1R, Light1, TemperatureHumidity, Door2R, Net, Roller1_Auto, Window2R, Roller1, Light2, Alarm, IPCamera, IPCameraPanTilt, MotionCamera, MotionCameraPanTilt, Configuration, $uibModal ) {
         var vm = this;
 
         vm.account = null;
@@ -205,11 +205,83 @@
                     }
                 }
 
-                console.log( 'Did not find server ', server, ', adding to the list of servers' );
+                console.log( 'Did not find server ', server, ', adding to the list of servers' );                
                 vm.servers.push( server );
             }
         
         );
+
+        $rootScope.$on( 'server-settings:deleted', 
+            function( event, deletedId ) { 
+                console.log( "Deleted server id:", deletedId );
+                for( var i = 0 ; i < vm.servers.length ; i++ )
+                {
+                    if( vm.servers[i].id == deletedId )
+                    {
+                        console.log( 'Found and removed server ', vm.servers[i] );
+                        vm.servers[i].configurationDevice.deleteFromLocalStorage();
+                        vm.servers.splice( i, 1 );
+                        return;
+                    }
+                }
+
+                console.log( 'Did not find server to delete' );
+            }
+        
+        );
+
+
+        vm.openSettingsDialog = function()
+        {
+            // console.log( 'in ServerController.openSettingsDialog server param: ', server );
+            $uibModal.open({
+                templateUrl: 'app/entities/server/server-settings-dialog.html',
+                controller: 'ServerSettingsDialogController',
+                controllerAs: 'vm',
+                backdrop: 'static',
+                size: 'lg',
+                resolve: {
+                    server: function() { 
+                        return {
+                            id: null,
+                            name: "",
+                            type: "mqtt",
+                            settings: { 
+                                mqtt_broker_ip : '',
+                                mqtt_broker_port : 1884,
+                                mqtt_client_id : uuidv4(), 
+                                configuration: {
+                                    subscribeTopic: 'Configurator/status',
+                                    publishTopic: 'Configurator/set',
+                                    publishMessage: '{"cmd": "SEND"}'
+                                },
+                                connection: {
+                                    publishTopic: 'connection/report',
+                                    subscribeTopic: 'connection',
+                                    keepAliveInterval: 5, //seconds,
+                                    timeout: 10 //seconds
+                                }
+                            },
+                            connection: {
+                                type: 'ADSL', // '3G', //NOT_CONNECTED',
+                                primary: true,
+                                protocol: 'Mqtt' // 'UNAVAILABLE'
+                            },
+                            failover: null
+                        };
+                    },
+                    
+                    translatePartialLoader: ['$translate', '$translatePartialLoader', function ($translate,$translatePartialLoader) {
+                        $translatePartialLoader.addPart('server');
+                        return $translate.refresh();
+                    }]
+                }
+            }).result.then(function() {
+                console.log( 'success' );
+            }, function() {
+                console.log( 'failure' );
+            });
+        }
 
     }
 })();

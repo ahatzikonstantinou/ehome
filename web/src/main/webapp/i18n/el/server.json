@@ -33,6 +33,12 @@
                     "timeout": "Timeout (δευτερόλεπτα)"
                 }
             }
+        },
+        "action": {
+            "add": "Προσθήκη νέου server"
+        },
+        "delete": {
+            "question": "Είστε σίγουροι για την διαγραφή του Server \"{{ name }}\" (id:\"{{id}}\");"
         }
     }
 }

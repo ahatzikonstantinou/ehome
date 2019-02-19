@@ -4,9 +4,9 @@
             <server server="s"/>
          </div>
     </div>
-    <!-- <div ng-repeat="h in vm.houses" ng-init="houseIndex = $index; isCollapsed=vm.isCollapsed[$index]">
-        <div class="well">
-            <house house="h" is-collapsed="vm.isCollapsed[houseIndex]" expand-all-children="vm.expandAllChildren( house, expand )"/>
-         </div>
-    </div> -->
+    <div>
+        <button type="button" class="btn btn-default btn-xs" ng-click="vm.openSettingsDialog()">
+            <span class="mdi mdi-server" ></span>&nbsp;<span data-translate="server.action.add">Add server</span>
+        </button>        
+    </div>
 </div>

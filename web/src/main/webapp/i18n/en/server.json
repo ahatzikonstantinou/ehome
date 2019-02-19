@@ -33,6 +33,12 @@
                     "timeout": "Timeout (seconds)"
                 }
             }
+        },
+        "action": {
+            "add": "Add new server"
+        },
+        "delete": {
+            "question": "Are you sure you want to delete Server \"{{ name }}\" (id: \"{{id}}\")?"
         }
     }
 }
