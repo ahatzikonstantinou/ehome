@@ -15,7 +15,7 @@
 
         function init( server, updateConfiguration, removeConf, baseInit )
         {
-            if( server.failover )
+            if( server.failover && this.useFailover )
             {
                 console.log( 'Initialising failover of server ', server.name );
                 baseInit( server.failover, updateConfiguration, removeConf, true, server, server.connectionDevice, server.configurationDevice );
@@ -43,7 +43,7 @@
                 {
                     this.baseUnsubscribeConf( this.conf );
                 }
-                if( this.failover )
+                if( this.failover && this.useFailover )
                 {
                     this.failover.unsubscribeConf();
                 }
@@ -52,7 +52,7 @@
             server.removeConf = function()
             {
                 removeConf( this.conf );
-                if( this.failover )
+                if( this.failover && this.useFailover )
                 {
                     removeConf( this.failover.conf );
                 }
@@ -66,7 +66,7 @@
                 {
                     this.client.subscribe( topic );
                 }
-                if( this.failover )
+                if( this.failover && this.useFailover )
                 {
                     this.failover.subscribe( topic );
                 }
@@ -80,7 +80,7 @@
                     this.client.subscribe( topic );
                     this.observerDevices.push( device );
                 }
-                if( this.failover )
+                if( this.failover && this.useFailover )
                 {
                     this.failover.subscribeDevice( device, topic );
                 }
@@ -93,7 +93,7 @@
                 {
                     this.client.unsubscribe( topic );
                 }
-                if( server.failover )
+                if( server.failover && this.useFailover )
                 {
                     server.failover.unsubscribe( topic );
                 }
@@ -115,7 +115,7 @@
                         }
                     }
                 }
-                if( server.failover )
+                if( server.failover && this.useFailover )
                 {
                     server.failover.unsubscribeDevice( device, topic );
                 }
@@ -124,7 +124,7 @@
             server.send = function( message )
             {
                 console.log( 'mqtt server will send "', message.payloadString, '"' );//, server: ', this );
-                if( this.failover && this.failover.active )
+                if( this.failover && this.useFailover && this.failover.active )
                 {
                     this.failover.send( message );
                     return;
@@ -168,7 +168,7 @@
                     // $scope.$apply( server.connectionDevice.disconnected() );
                     server.connectionDevice.disconnected();
 
-                    if( server.failover )
+                    if( server.failover && this.useFailover )
                     {
                         console.log( 'Activating failover until mqtt reconnects, failover: ', server.failover );                    
                         server.failover.activate( true );
@@ -190,7 +190,7 @@
             server.connectionStatus = 'CONNECTING';
             server.connectionDevice.connecting( server.type );
 
-            $interval( function() {
+            server.connectionCheckInterval = $interval( function() {
                     // console.log( '$interval client connected: ', client._client.connected, ', socket: ', client._client.socket );
                     // console.log( '$interval _client: ', client._client );
                     console.log( '$interval server.connectionStatus: ', server.connectionStatus );
@@ -210,7 +210,7 @@
                                     server.connectionDevice.disconnected()
                                 }
 
-                                if( server.failover && !server.failover.active )
+                                if( server.failover && this.useFailover && !server.failover.active )
                                 {
                                     console.log( 'Activating failover until mqtt reconnects, failover: ', server.failover );                    
                                     server.failover.activate( true );
@@ -231,7 +231,7 @@
                 }, 30000, 0, true, client 
             );
             
-            $interval( function() {
+            server.configurationCheckInterval = $interval( function() {
                     if( server.connectionStatus == 'CONNECTED' && server.configurationDevice.status != 'SUCCESS' )
                     {
                         console.log( 'Mqtt server still gets house configuration ', server.configurationDevice.status, ', republishing to get configuration' );
@@ -241,13 +241,23 @@
                     }
                     if( server.connectionStatus == 'CONNECTED' && 
                         server.configurationDevice.status == 'SUCCESS' && 
-                        !server.configurationDevice.subscribed 
+                        !server.configurationDevice.subscribed &&
+                        server.conf && server.conf.container
                     )
                     {
                         server.configurationDevice.subscribe();
                     }
                 }, 10000, 0, true, client 
             );
+
+            server.stopCheckIntervals = function()
+            {
+                server.baseStopCheckIntervals();
+                if( server.failover && server.failover.stopCheckIntervals )
+                {
+                    server.failover.stopCheckIntervals();
+                }
+            }
 
             client._client.onMessageArrived = function( message )
             {
@@ -280,7 +290,7 @@
                 // $scope.$apply( server.connectionDevice.disconnected() );
                 server.connectionDevice.disconnected();
 
-                if( server.failover && !server.failover.active )
+                if( server.failover && this.useFailover && !server.failover.active )
                 {
                     console.log( 'Activating failover until mqtt reconnects, failover: ', server.failover );                    
                     server.failover.activate( true );

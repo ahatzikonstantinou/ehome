@@ -15,24 +15,36 @@
             "name": "Όνομα",
             "type": "Τύπος",
             "mqtt" : {
-                "settings": "Ρυθμίσεις",
+                "settings-title": "Ρυθμίσεις Mqtt",
                 "broker_ip": "Broker IP διεύθυνση",
                 "broker_port": "Broker port",
                 "client_id": "Client ID",
                 "configuration": {
-                    "title": "Configuration",
+                    "title": "Mqtt Configuration topics",
                     "publish_topic": "Publish topic",
                     "publish_message": "Publish message",
                     "subscribe_topic": "Subscribe topic"
                 },
                 "connection": {
-                    "title": "Connection",
+                    "title": "Mqtt Connection topics",
                     "publish_topic": "Publish topic",
                     "subscribe_topic": "Subscribe topic",
                     "keepAliveInterval": "Keep alive interval (δευτερόλεπτα)",
                     "timeout": "Timeout (δευτερόλεπτα)"
                 }
-            }
+            },
+            "xmpp": {
+                "settings-title": "Ρυθμίσεις XMPP",
+                "host": "Host",
+                "user": "User",
+                "password": "Password",
+                "destination": "Destination (email)",
+                "email": "Email"
+            },
+            "failover" : {
+                "failover-title": "Failover ρυθμίσεις Xmpp"
+            },
+            "use_failover": "Να γίνει χρήση failover server"
         },
         "action": {
             "add": "Προσθήκη νέου server"

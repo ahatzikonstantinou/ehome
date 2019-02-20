@@ -1,0 +1,36 @@
+<div class="form-group row settings">
+    <label class="control-label" data-translate="server.settings.mqtt.broker_ip" for="field_broker_ip">Broker IP</label>
+    <div class="value">
+        <input type="text" class="form-control" name="broker_ip" id="field_broker_ip" ng-model="server.broker_ip" ng-pattern='/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/' ng-required="required"/>
+        <div ng-show="editForm.broker_ip.$invalid">
+            <p class="help-block"
+                ng-show="editForm.broker_ip.$error.required" data-translate="entity.validation.required">
+                This field is required.
+            </p>
+        </div>
+    </div>
+</div>
+<div class="form-group row settings">
+    <label class="control-label" data-translate="server.settings.mqtt.broker_port" for="field_broker_port">Broker Port</label>
+    <div class="value">
+        <input type="text" class="form-control" name="broker_port" id="field_broker_port" ng-model="server.broker_port" ng-pattern='/\d+/' ng-required="required"/>
+        <div ng-show="editForm.broker_port.$invalid">
+            <p class="help-block"
+                ng-show="editForm.broker_port.$error.required" data-translate="entity.validation.required">
+                This field is required.
+            </p>
+        </div>
+    </div>
+</div>
+<div class="form-group row settings">
+    <label class="control-label" data-translate="server.settings.mqtt.client_id" for="field_client_id">Client ID</label>
+    <div class="value">
+    <input type="text" class="form-control" name="client_id" id="field_client_id" ng-model="server.client_id" ng-required="required"/>
+    <div ng-show="editForm.client_id.$invalid">
+        <p class="help-block"
+            ng-show="editForm.client_id.$error.required" data-translate="entity.validation.required">
+            This field is required.
+        </p>
+    </div>
+    </div>
+</div>

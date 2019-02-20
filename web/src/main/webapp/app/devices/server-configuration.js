@@ -78,8 +78,12 @@
                     {
                         console.log( 'New configuration is same as current, nothing to do...' );
                         this.status = 'SUCCESS';
-                        if( !this.subscribed )
+                        // Check for conf and container because we might have started and keep operating without
+                        // a configuration server, therefore the messages we are recieving are retained last will
+                        // message "{main: "UNAVAILABLE"}"
+                        if( !this.subscribed && this.server.conf && this.server.conf.container )
                         {
+                            console.log( "but will subscribe existing configuration" );
                             this.subscribe();
                         }
                         return;

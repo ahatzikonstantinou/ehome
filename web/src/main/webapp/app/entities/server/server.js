@@ -5,9 +5,9 @@
         .module('eHomeApp')
         .factory('Server', Server);
 
-    Server.$inject = [ 'MqttServer', 'XmppServer', 'ServerConnection', 'ServerConfiguration' ];
+    Server.$inject = [ '$interval', 'MqttServer', 'XmppServer', 'ServerConnection', 'ServerConfiguration' ];
 
-    function Server( MqttServer, XmppServer, ServerConnection, ServerConfiguration ) {
+    function Server( $interval, MqttServer, XmppServer, ServerConnection, ServerConfiguration ) {
 
         return {
             init: init
@@ -131,6 +131,11 @@
 
             server.subscribeContainer = function( container )
             {
+                if( !container )
+                {
+                    return;
+                }
+
                 // console.log( 'subscribing container: ', container );
                 if( container.items )
                 {
@@ -190,7 +195,19 @@
                     // console.log( 'Unsubscribing ', item.device, ' from server: ', server.type );
                     this.unsubscribeDevice( item.device, item.device.mqtt_publish_topic );
                 }
-            }            
+            }
+
+            server.baseStopCheckIntervals = function()
+            {
+                if( server.connectionCheckInterval )
+                {
+                    $interval.cancel( server.connectionCheckInterval );
+                }
+                if( server.configurationCheckInterval )
+                {
+                    $interval.cancel( server.configurationCheckInterval );
+                }
+            }
             
             switch( server.type )
             {

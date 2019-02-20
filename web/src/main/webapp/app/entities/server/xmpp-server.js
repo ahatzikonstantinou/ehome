@@ -36,7 +36,7 @@
                     boshURL: server.settings.host
                 });                
             }
-            else if( server.settings.host.startsWith( "ws" ) || server.settings.host.startsWith( "ws" ) )
+            else if( server.settings.host.startsWith( "ws" ) || server.settings.host.startsWith( "wss" ) )
             {
                 server.client = XMPP.createClient({
                     jid: server.settings.user,
@@ -285,7 +285,7 @@
             client.connect();
             // client.server.showXmppErrorFn( true );
 
-            $interval( function() {
+            server.connectionCheckInterval = $interval( function() {
                 if( !client.sessionStarted )
                 {
                     console.log( 'Xmpp client still not connected. Attempting reconnection' );
@@ -300,7 +300,7 @@
                 }
             }, 5000, 0, true, client );
 
-            $interval( function() {
+            server.configurationCheckInterval = $interval( function() {
                 if( client.sessionStarted && server.configurationDevice.status != 'SUCCESS' && 
                     ( !server.isFailover || server.active )
                 )
@@ -314,6 +314,11 @@
                     );
                 }
             }, 5000, 0, true, client );
+
+            server.stopCheckIntervals = function()
+            {
+                server.baseStopCheckIntervals();
+            }
         }
     }
 })();

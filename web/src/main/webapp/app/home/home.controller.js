@@ -55,6 +55,8 @@
                     continue;
                 }
                 var data = angular.fromJson( localStorage.getItem( key ) );
+                data.settings.connection.keepAliveInterval = parseInt( data.settings.connection.keepAliveInterval );
+                data.settings.connection.timeout = parseInt( data.settings.connection.timeout );
                 
                 servers.push({
                     id: data.id,
@@ -66,7 +68,8 @@
                         primary: true,
                         protocol: 'Mqtt' // 'UNAVAILABLE'
                     },
-                    failover: null,
+                    useFailover: data.useFailover,
+                    failover: data.failover,
                     conf: { container: {} }
                 });
             }
@@ -199,7 +202,9 @@
                 {
                     if( vm.servers[i].id == server.id )
                     {
-                        console.log( 'Found and updated server ', vm.servers[i] );
+                        console.log( 'Found and updating server ', vm.servers[i] );
+                        console.log( 'Stopping checkIntervals' );
+                        vm.servers[i].stopCheckIntervals();
                         vm.servers[i] = server;
                         return;
                     }
@@ -218,7 +223,9 @@
                 {
                     if( vm.servers[i].id == deletedId )
                     {
-                        console.log( 'Found and removed server ', vm.servers[i] );
+                        console.log( 'Found and removing server ', vm.servers[i] );
+                        console.log( 'Stopping checkIntervals' );
+                        vm.servers[i].stopCheckIntervals();                        
                         vm.servers[i].configurationDevice.deleteFromLocalStorage();
                         vm.servers.splice( i, 1 );
                         return;
