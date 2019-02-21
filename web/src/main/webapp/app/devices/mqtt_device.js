@@ -21,6 +21,7 @@ function MqttDevice( mqtt_publish_topic, state, $scope, mqtt_subscribe_topic )
     this.publisher = null;
     this.scope = $scope;    // $scope is needed for $scope.$apply
     // console.log( this.mqtt_publish_topic, ' this.scope: ', this.scope );
+    this.mqtt_message = ""; //store the incoming raw mqtt messages as strings for debugging
 }
 
 MqttDevice.prototype = Object.create( Device.prototype );
@@ -32,9 +33,11 @@ MqttDevice.prototype.update = function( topic, message )
     {
         // console.log( 'MqttDevice[' + this.mqtt_publish_topic +']: this message is for me.' );
         try
-        {
-            this.scope.$apply( this.state = angular.fromJson( message ) );  // without $scope.$apply there is a long delay until the gui of the device is refreshed
-            this.lastUpdate = Date.now();
+        {            
+            // without $scope.$apply there is a long delay until the gui of the device is refreshed
+            this.scope.$apply( this.state = angular.fromJson( message ) );  
+            this.scope.$apply( this.lastUpdate = Date.now() );
+            this.scope.$apply( this.mqtt_message = message );
             return true;
         }
         catch( error )

@@ -12,4 +12,6 @@ mqtt-server:
 
 add filter buttons according to state per domain e.g. on/off light, open/close/reclined door etc.
 
-add extra commands to light e.g. calibrate, check, ap, report
+
+
+add "delete expired items" dialog and send DELETE_ITEMS command to configurator

@@ -263,6 +263,14 @@ and (max-width : 360px) {
     content: ']';
 }
 
+.device-mqtt-state
+{
+    font-family: Courier New, Courier, monospace;
+    font-size: 12px;
+    color: gray;
+    display: inline-block;
+}
+
 .state-row > .last-update
 {
     display: inline-block;
@@ -530,16 +538,16 @@ and (min-width : 361px) {
     border-color: #ddd;
 }
 
-.item > div:nth-of-type(2)
+.separator
 {
-    padding: 4px 0px 4px 0px;
-    margin-bottom: 5px 0px 5px 0px;
-    font-size: 13px;
-    vertical-align: top;
-    line-height: normal;
     border-style: solid;
     border-width: 0px 0px 1px 0px;
     border-color: #ddd;
+    width: 100%;
+    /* background-color: red; */
+    height: 1px;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 label.house

@@ -25,10 +25,38 @@
             {
                 var message = new Paho.MQTT.Message( value == 'ON' ? '1' : '0' );
                 message.destinationName = this.mqtt_subscribe_topic ;
-                console.log( 'Light1 sending message: ', message );
+                console.log( 'Light1 sending message: ', message.payloadString );
                 this.publisher.send( message );
 
                 // this.state.main = value;//debugging
+            }
+        }
+
+        Light1.prototype.sendCommand = function( command )
+        {
+            console.log( 'Light1 will send command ', command );
+            if( this.publisher )
+            {
+                var text = "";
+                switch( command )
+                {
+                    case "calibrate": text = "l";
+                        break;
+                    case "check": text = "c";
+                        break;
+                    case "report": text = "r";
+                        break;
+                    case "access-point": text = "w";
+                        break;
+                    case "activate": text = "a";
+                        break;
+                    case "deactivate": text = "d";
+                        break;
+                }
+                var message = new Paho.MQTT.Message( text );
+                message.destinationName = this.mqtt_subscribe_topic ;
+                console.log( 'Light1 sending message: ', message.payloadString );
+                this.publisher.send( message );
             }
         }
 
