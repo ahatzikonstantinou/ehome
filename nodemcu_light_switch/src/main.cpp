@@ -350,6 +350,10 @@ String triggerToStr()
   {
     text = "calibration";
   }
+  else if( trigger == TRIGGER_CHECK )
+  {
+    text = "check";
+  }
 
   return text;
 }

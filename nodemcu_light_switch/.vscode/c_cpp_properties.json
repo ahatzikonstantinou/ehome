@@ -107,5 +107,6 @@
             "cppStandard": "c++11",
             "compilerPath": "/home/antonis/.platformio/packages/toolchain-xtensa/bin/xtensa-lx106-elf-gcc -mlongcalls -mtext-section-literals"
         }
-    ]
+    ],
+    "version": 4
 }
