@@ -86,6 +86,7 @@ void wifi_portal_idle()
 {
   // This runs with almost no delay, do not print to Serial or it will "clog" the output terminal
   // Serial.println( "Doing other staff while wifi portal is idle" );
+  digitalWrite( AP_LED_PIN, HIGH );
   manualSwitch.loop( false );
   mqtt.loop();
   ArduinoOTA.handle();
@@ -121,8 +122,14 @@ void wifiSetup()
 
 void setup()
 {
-  Buzzer::setup();
-  Buzzer::playStart();
+  pinMode( ON_LED_PIN, OUTPUT );
+  digitalWrite( ON_LED_PIN, HIGH );
+
+  pinMode( MQTT_LED_PIN, OUTPUT );
+  digitalWrite( MQTT_LED_PIN, LOW );
+
+  pinMode( AP_LED_PIN, OUTPUT );
+  digitalWrite( AP_LED_PIN, LOW );
 
   Serial.begin( 115200 );
   wifi_set_sleep_type( NONE_SLEEP_T );

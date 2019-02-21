@@ -93,7 +93,8 @@ void WifiManagerWrapper::setup( bool autoConnect, bool timeout )
     Serial.println( "Setting wifimanager timeout to " + String( WIFIMANAGER_PORTAL_TIMEOUT_SECS ) + " seconds." );
   }
 
-  Buzzer::playWifiPortalStart();
+  digitalWrite( MQTT_LED_PIN, LOW );  //This is the led that indicates MQTT connections. Switch off and let mqtt switch it on when it connects
+
   if( autoConnect )
   {
     if( connectWithOldCredentials )
@@ -155,7 +156,7 @@ void WifiManagerWrapper::setup( bool autoConnect, bool timeout )
   }
 
   reconnects = 0;
-  Buzzer::playWifiConnected();
+  digitalWrite( AP_LED_PIN, LOW );
   //if you get here you have connected to the WiFi
   Serial.println("connected...yeey :)");
 

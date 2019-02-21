@@ -7,6 +7,8 @@ bool MQTT::reconnect()
   uint32_t start = millis();
   if( !client.connected() && ( start - lastReconnect > MIN_MQTT_RECONNECT_MILLIS ) )
   {
+    digitalWrite( MQTT_LED_PIN, LOW );
+
     lastReconnect = start;
     reconnectAttempts++;
     Serial.print( "Client rc=" + String( client.state() ) + ", " );
@@ -21,7 +23,8 @@ bool MQTT::reconnect()
     );
     if( success )
     {
-      Buzzer::playMQTTConnected();
+      digitalWrite( MQTT_LED_PIN, HIGH );
+
       Serial.println( "connected, rc=" + String( client.state() ) );
       reconnectAttempts = 0;
       // ... and subscribe to topic

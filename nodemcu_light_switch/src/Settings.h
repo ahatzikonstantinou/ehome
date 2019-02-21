@@ -13,7 +13,9 @@
 // The pin were the relay control input is connected
 #define RELAY_PIN D0
 
-#define BUZZER_PIN D1
+#define ON_LED_PIN D4
+#define MQTT_LED_PIN D5
+#define AP_LED_PIN D7
 
 // The initial state of the relay. The light is connected on the NORMALLY OPEN contact so that
 // when power in the house is initially switched on the light will remain OFF. Same for initial

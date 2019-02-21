@@ -5,8 +5,8 @@
 void Buzzer::setup()
 {
   // The following lines have failed. They generate A continuous tone that never stops.
-  pinMode( BUZZER_PIN, OUTPUT );
-  digitalWrite( BUZZER_PIN, HIGH );
+  // pinMode( BUZZER_PIN, OUTPUT );
+  // digitalWrite( BUZZER_PIN, HIGH );
 }
 
 void Buzzer::play( unsigned int frequency, uint32_t duration )
