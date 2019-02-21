@@ -44,6 +44,10 @@
                 console.log( "attempting to initialize with last saved configuration: ", configurationString );
                 this.server.conf = Configuration.generateList( angular.fromJson( configurationString ), this.scope );
 
+                // Configuration.generateList will start all containers collapsed, but it is nicer if the top
+                // container which is more like a placeholder to be expanded
+                this.server.conf.container.gui.collapsed = false;
+
                 this.guiUpdateCb( this.server, this.server.conf );
                 this.status = 'SUCCESS';
 

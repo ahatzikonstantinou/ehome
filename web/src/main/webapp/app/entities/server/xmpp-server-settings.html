@@ -1,7 +1,7 @@
 <div class="form-group row settings">
     <label class="control-label" data-translate="server.settings.xmpp.host" for="field_xmpp_host">Host</label>
     <div class="value">
-        <input type="url" class="form-control" name="{{fieldNamePrefix}}host" id="field_xmpp_host" ng-model="server.host" ng-disabled="!enabled" ng-required="enabled"/>
+        <input type="url" class="form-control" name="{{fieldNamePrefix}}host" id="field_xmpp_host" ng-model="server.host" ng-required="required"/>
         <div ng-show="editForm.{{fieldNamePrefix}}host.$invalid">
             <p class="help-block"
                 ng-show="editForm.{{fieldNamePrefix}}host.$error.required" data-translate="entity.validation.required">
@@ -13,7 +13,7 @@
 <div class="form-group row settings">
     <label class="control-label" data-translate="server.settings.xmpp.user" for="field_xmpp_user">User</label>
     <div class="value">
-        <input type="text" class="form-control" name="{{fieldNamePrefix}}user" id="field_xmpp_user" ng-model="server.user" ng-disabled="!enabled" ng-required="enabled"/>
+        <input type="text" class="form-control" name="{{fieldNamePrefix}}user" id="field_xmpp_user" ng-model="server.user" ng-required="required"/>
         <div ng-show="editForm.{{fieldNamePrefix}}user.$invalid">
             <p class="help-block"
                 ng-show="editForm.{{fieldNamePrefix}}user.$error.required" data-translate="entity.validation.required">
@@ -25,7 +25,7 @@
 <div class="form-group row settings">
     <label class="control-label" data-translate="server.settings.xmpp.password" for="field_xmpp_password">Password</label>
     <div class="value">
-    <input type="text" class="form-control" name="{{fieldNamePrefix}}password" id="field_xmpp_password" ng-model="server.password" ng-disabled="!enabled" ng-required="enabled"/>
+    <input type="text" class="form-control" name="{{fieldNamePrefix}}password" id="field_xmpp_password" ng-model="server.password" ng-required="required"/>
     <div ng-show="editForm.{{fieldNamePrefix}}password.$invalid">
         <p class="help-block"
             ng-show="editForm.{{fieldNamePrefix}}password.$error.required" data-translate="entity.validation.required">
@@ -37,7 +37,7 @@
 <div class="form-group row settings">
     <label class="control-label" data-translate="server.settings.xmpp.destination" for="field_xmpp_destination">Destination</label>
     <div class="value">
-    <input type="email" class="form-control" name="{{fieldNamePrefix}}destination" id="field_xmpp_destination" ng-model="server.destination" ng-disabled="!enabled" ng-required="enabled"/>
+    <input type="email" class="form-control" name="{{fieldNamePrefix}}destination" id="field_xmpp_destination" ng-model="server.destination" ng-required="required"/>
     <div ng-show="editForm.{{fieldNamePrefix}}destination.$invalid">
         <p class="help-block"
             ng-show="editForm.{{fieldNamePrefix}}destination.$error.required" data-translate="entity.validation.required">
@@ -49,7 +49,7 @@
 <div class="form-group row settings">
     <label class="control-label" data-translate="server.settings.xmpp.email" for="field_xmpp_email">Email</label>
     <div class="value">
-    <input type="email" class="form-control" name="{{fieldNamePrefix}}email" id="field_xmpp_email" ng-model="server.email" ng-disabled="!enabled" ng-required="enabled"/>
+    <input type="email" class="form-control" name="{{fieldNamePrefix}}email" id="field_xmpp_email" ng-model="server.email" ng-required="required"/>
     <div ng-show="editForm.{{fieldNamePrefix}}email.$invalid">
         <p class="help-block"
             ng-show="editForm.{{fieldNamePrefix}}email.$error.required" data-translate="entity.validation.required">

@@ -55,11 +55,11 @@
         
         <fieldset ng-show="vm.server.type == 'xmpp'">
             <legend class="col-form-legend" data-translate="server.settings.xmpp.settings-title">Xmpp settings</legend>
-            <xmpp-server-settings server="vm.server.xmpp" enabled="vm.server.type == 'xmpp'" field_name_prefix="'xmpp_'" form="editForm"></xmpp-server-settings>
+            <xmpp-server-settings server="vm.server.xmpp" required="vm.server.type == 'xmpp'" field_name_prefix="'xmpp_'" form="editForm"></xmpp-server-settings>
         </fieldset>
         <fieldset ng-show="vm.server.type == 'mqtt'">
             <legend class="col-form-legend" data-translate="server.settings.failover.failover-title">Failover Xmpp settings</legend>
-            <xmpp-server-settings server="vm.server.failover" enabled="vm.server.useFailover" field_name_prefix="'failover_xmpp_'" form="editForm"></xmpp-server-settings>
+            <xmpp-server-settings server="vm.server.failover" required="vm.server.useFailover" field_name_prefix="'failover_xmpp_'" form="editForm"></xmpp-server-settings>
         </fieldset>
 
 

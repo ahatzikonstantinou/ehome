@@ -2,18 +2,19 @@
     <div class="server-info">
         <span class="mdi mdi-server"/>
         <label class="server">{{server.name}}</label>
+        <button type="button" class="btn btn-default btn-xs" ng-click="vm.container.gui.collapsed = !vm.container.gui.collapsed">
+            <span class="mdi mdi-chevron-down" ng-if="vm.container.gui.collapsed"></span>
+            <span class="mdi mdi-chevron-up" ng-if="!vm.container.gui.collapsed"></span>
+        </button>
+        <button ng-show="server.showXmppError" type="button" class="btn btn-default btn-xs" ng-click="showXmppErrorFlag = !showXmppErrorFlag">
+            <span class="glyphicon glyphicon-warning-sign"></span>
+        </button>
+        <div style="display: inline">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
         <button type="button" class="btn btn-default btn-xs" ng-click="server.configurationDevice.refresh()" ng-enabled="server.connectionStatus == 'CONNECTED'">
             <span class="mdi mdi-database-refresh" ></span>
         </button>
         <button type="button" class="btn btn-default btn-xs" ng-click="vm.openSettingsDialog( server )">
             <span class="mdi mdi-settings" ></span>
-        </button>
-        <button type="button" class="btn btn-default btn-xs" ng-click="collapsed = !collapsed">
-            <span class="mdi mdi-chevron-down" ng-if="collapsed"></span>
-            <span class="mdi mdi-chevron-up" ng-if="!collapsed"></span>
-        </button>
-        <button ng-show="server.showXmppError" type="button" class="btn btn-default btn-xs" ng-click="showXmppErrorFlag = !showXmppErrorFlag">
-            <span class="glyphicon glyphicon-warning-sign"></span>
         </button>
         <div class="state-container">
             <span class="state connection" ng-click="server.connectionDevice.refresh()" ng-class="{ 
@@ -43,5 +44,7 @@
     <div ng-repeat="h in vm.houses" ng-init="houseIndex = $index; isCollapsed=vm.isCollapsed[$index]">
         <house house="h" is-collapsed="vm.isCollapsed[houseIndex]" expand-all-children="vm.expandAllChildren( house, expand )"/>
     </div> -->
-    <container container="vm.container" level="0" showLabel="false" is-collapsed="true"/>
+    <div uib-collapse="vm.container.gui.collapsed"> 
+        <container container="vm.container" level="0" showLabel="false" is-collapsed="vm.container.gui.collapsed"/>
+    </div>        
 </div>

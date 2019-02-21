@@ -1,4 +1,5 @@
-server settings dialog:
+
+Done. server settings dialog:
     add failover
     add xmpp fields in primary and failover
     hide/show mqtt/xmpp fields according to select input
@@ -8,3 +9,7 @@ server settings dialog:
 
 mqtt-server:
     connectionStatus is not in sync with the client connection when updating (re-initing) a server
+
+add filter buttons according to state per domain e.g. on/off light, open/close/reclined door etc.
+
+add extra commands to light e.g. calibrate, check, ap, report

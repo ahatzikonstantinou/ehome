@@ -10,7 +10,7 @@
                     restrict: 'E',
                     scope: { 
                         server: '=server',
-                        enabled: '=',
+                        required: '=',
                         fieldNamePrefix: '=',
                         editForm: '=form'
                     },
