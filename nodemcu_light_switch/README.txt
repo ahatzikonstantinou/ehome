@@ -21,3 +21,8 @@ If a valid trigger occurs less than MAX_TWO_TRIGGER_MILLIS milliseconds after th
 A DOUBLE trigger will toggle operation mode between MANUAL_WIFI and MANUAL_ONLY. In MANUAL_WIFI the device operates as described above. In MANUAL_ONLY the device starts a wifi portal that will not timeout, awaiting for user input. Meanwhile, the manual switch, OTA and the flash button continue to function.
 
 UPDATE: the DOUBLE trigger seems to cause a lot of false operation mode switches, therefore it is currently disabled. MIN_TRIGGER_MILLIS was set back to 500 (was 300 and MAX_TWO_TRIGGER_MILLIS was 500 )
+
+Replaced the indications given with buzzer, with indications given by leds. 
+-Red led on means that nodemcu is functioning properly. 
+-Green led on/of fmeans mqtt connected/disconnected. 
+-Yellow led on/off means that the nodemcu wifi is in AP/STA mode.
