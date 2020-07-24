@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# based on https://www.raspberrypi.org/forums/viewtopic.php?f=37&t=47466&sid=42448fa05da78d6e2ceb9670c317a2c8
+#put it in rc.local to start running at boot
+
+#Global VARS:
+#AC:72:89:2F:3E:D7	antonis-laptop
+#F4:7D:EF:4C:AF:BF	Galaxy S10
+device="F4:7D:EF:4C:AF:BF"
+#device="AC:72:89:2F:3E:D7"
+btconnected=0
+btcurrent=-1
+counter=0
+notconnected="0"
+connected="1"
+rssi=-1
+
+max_consecutive_notconnected=5
+notconnected_count=0
+max_consecutive_low_rssi=5
+max_consecutive_high_rssi=5
+low_rssi_count=0
+high_rssi_count=0
+rssi_threshold=-32
+#in practice any sleep time more than 2 secs results in always unable to connect to mobile phone
+sleep_secs=2
+
+
+#motion_srvc_started=0
+#changed var to function
+function motion_srvc_started {
+	/usr/sbin/service  motion status | /bin/grep running >/dev/null 2>&1
+}
+
+#example how to call in if statement
+#if motion_srvc_started; then
+#	echo "Motion service started"
+#else
+#	echo "Motion service stopped"
+#fi
+
+
+#Command loop:
+while [ 1 ]; do
+
+cmdout=$(/usr/bin/hcitool rssi $device)
+btcurrent=$(echo $cmdout | /bin/grep -c "RSSI return value") 2> /dev/null
+rssi=$(echo $cmdout | /bin/sed -e 's/RSSI return value: //g')
+
+if [ $btcurrent = $notconnected ]; then
+	if [ $notconnected_count -lt $max_consecutive_notconnected ]; then
+		((notconnected_count=notconnected_count+1))
+	fi
+        echo "Attempting connection..."
+        /usr/bin/rfcomm connect 0 $device 1 2> /dev/null >/dev/null &
+        /bin/sleep $sleep_secs
+fi
+
+if [ $btcurrent = $connected ]; then
+        echo "Device connected. RSSI: "$rssi
+	if [[ $rssi -le $rssi_threshold ]]; then
+		high_rssi_count=0
+		((low_rssi_count=low_rssi_count+1))
+	else
+		low_rssi_count=0
+		((high_rssi_count=high_rssi_count+1))
+		if motion_srvc_started && [[ $high_rssi_count -ge $max_consecutive_high_rssi ]]; then
+			#motion_srvc_started=0
+			echo "Stopping motion service because RSSI is now strong"
+			/usr/bin/logger "Stopping motion service because RSSI is now strong"
+			/usr/sbin/service motion stop
+		fi
+	fi
+	notconnected_count=0
+fi
+
+if ! motion_srvc_started; then
+	if [[ $low_rssi_count -ge $max_consecutive_low_rssi ]]; then
+		#motion_srvc_started=1
+		low_rssi_count=0
+		echo "Starting motion service because of many low RSSI"
+		/usr/bin/logger "Starting motion service because of many low RSSI"
+		/usr/sbin/service motion start
+	fi
+
+	if [[ $notconnected_count -ge $max_consecutive_notconnected ]]; then
+		#motion_srvc_started=1
+		high_rssi_count=0
+		echo "Starting motion service because of many notconnected"
+		/usr/bin/logger "Starting motion service because of many notconnected"
+		/usr/sbin/service motion start
+	fi
+fi
+
+
+if [ $btconnected -ne $btcurrent ]; then
+        if [ $btcurrent -eq 0 ]; then
+                echo "GONE!"
+        fi
+        if [ $btcurrent -eq 1 ]; then
+                echo "HERE!"
+        fi
+        btconnected=$btcurrent
+fi
+
+
+
+/bin/sleep $sleep_secs
+
+done
+

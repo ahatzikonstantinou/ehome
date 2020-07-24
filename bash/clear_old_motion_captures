@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#deletes old files if used space is more than x%
+#put it in root's crontab to run once a day
+
+motion_dir=/var/lib/motion
+used_limit=80
+old_days=30
+/bin/df -h $motion_dir | /usr/bin/tail -1 |  /usr/bin/tr -s [:blank:] | /usr/bin/cut -d " " -f 5 | /usr/bin/cut -c-2 | /usr/bin/awk -v max=$used_limit -v dir=$motion_dir 'c=$1 ; $1 > max {system("/usr/bin/logger " c "% space used. Deleting old motion captures; /usr/bin/find " dir " -mtime +" $old_days " -delete")}'
