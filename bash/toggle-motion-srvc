@@ -15,7 +15,7 @@ notconnected="0"
 connected="1"
 rssi=-1
 
-max_consecutive_notconnected=5
+max_consecutive_notconnected=10
 notconnected_count=0
 max_consecutive_low_rssi=5
 max_consecutive_high_rssi=5
