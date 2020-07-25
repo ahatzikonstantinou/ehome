@@ -22,8 +22,7 @@ max_consecutive_high_rssi=5
 low_rssi_count=0
 high_rssi_count=0
 rssi_threshold=-32
-#in practice any sleep time more than 2 secs results in always unable to connect to mobile phone
-sleep_secs=2
+sleep_secs=3
 
 
 #motion_srvc_started=0
@@ -53,7 +52,7 @@ if [ $btcurrent = $notconnected ]; then
 	fi
         echo "Attempting connection..."
         /usr/bin/rfcomm connect 0 $device 1 2> /dev/null >/dev/null &
-        /bin/sleep $sleep_secs
+        /bin/sleep 1	#wait 1 sec for rfcomm to establish connection
 fi
 
 if [ $btcurrent = $connected ]; then
