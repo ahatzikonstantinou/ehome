@@ -22,7 +22,8 @@ max_consecutive_high_rssi=5
 low_rssi_count=0
 high_rssi_count=0
 rssi_threshold=-32
-sleep_secs=8
+#it looks like if sleep_secs > 3 rpi can never connect to my mobile phone (i.e. rfcomm connect).
+sleep_secs=3
 
 dbg_pipe=/tmp/toggle-motion-srvc-dbg
 
