@@ -15,15 +15,23 @@ notconnected="0"
 connected="1"
 rssi=-1
 
-max_consecutive_notconnected=10
+max_consecutive_notconnected=8
 notconnected_count=0
 max_consecutive_low_rssi=5
 max_consecutive_high_rssi=5
 low_rssi_count=0
 high_rssi_count=0
 rssi_threshold=-32
-sleep_secs=3
+sleep_secs=8
 
+dbg_pipe=/tmp/toggle-motion-srvc-dbg
+
+function dbg_write {
+	if [[ ! -p $dbg_pipe ]]; then
+	    mkfifo $dbg_pipe
+	fi
+	echo "$1" > $dbg_pipe
+}
 
 #motion_srvc_started=0
 #changed var to function
@@ -50,13 +58,18 @@ if [ $btcurrent = $notconnected ]; then
 	if [ $notconnected_count -lt $max_consecutive_notconnected ]; then
 		((notconnected_count=notconnected_count+1))
 	fi
-        echo "Attempting connection..."
+        msg="Attempting connection..."
+        echo "$msg"
+        dbg_write "$msg"
         /usr/bin/rfcomm connect 0 $device 1 2> /dev/null >/dev/null &
         /bin/sleep 1	#wait 1 sec for rfcomm to establish connection
 fi
 
 if [ $btcurrent = $connected ]; then
-        echo "Device connected. RSSI: "$rssi
+        msg="Device connected. RSSI: $rssi"
+        echo "$msg"
+        dbg_write "$msg"
+
 	if [[ $rssi -le $rssi_threshold ]]; then
 		high_rssi_count=0
 		((low_rssi_count=low_rssi_count+1))
@@ -65,8 +78,11 @@ if [ $btcurrent = $connected ]; then
 		((high_rssi_count=high_rssi_count+1))
 		if motion_srvc_started && [[ $high_rssi_count -ge $max_consecutive_high_rssi ]]; then
 			#motion_srvc_started=0
-			echo "Stopping motion service because RSSI is now strong"
-			/usr/bin/logger "Stopping motion service because RSSI is now strong"
+			msg="Stopping motion service because RSSI is now strong"
+			echo "$msg"
+			dbg_write "$msg"
+
+			/usr/bin/logger "$msg"
 			/usr/sbin/service motion stop
 		fi
 	fi
@@ -77,16 +93,20 @@ if ! motion_srvc_started; then
 	if [[ $low_rssi_count -ge $max_consecutive_low_rssi ]]; then
 		#motion_srvc_started=1
 		low_rssi_count=0
-		echo "Starting motion service because of many low RSSI"
-		/usr/bin/logger "Starting motion service because of many low RSSI"
+		msg="Starting motion service because of many low RSSI"
+		echo "$msg"
+		dbg_write "$msg"
+		/usr/bin/logger "$msg"
 		/usr/sbin/service motion start
 	fi
 
 	if [[ $notconnected_count -ge $max_consecutive_notconnected ]]; then
 		#motion_srvc_started=1
 		high_rssi_count=0
-		echo "Starting motion service because of many notconnected"
-		/usr/bin/logger "Starting motion service because of many notconnected"
+		msg="Starting motion service because of many notconnected"
+		echo "$msg"
+		dbg_write "$msg"
+		/usr/bin/logger "$msg"
 		/usr/sbin/service motion start
 	fi
 fi
@@ -94,10 +114,14 @@ fi
 
 if [ $btconnected -ne $btcurrent ]; then
         if [ $btcurrent -eq 0 ]; then
-                echo "GONE!"
+                msg="GONE!"
+                echo "$msg"
+		dbg_write "$msg"
         fi
         if [ $btcurrent -eq 1 ]; then
-                echo "HERE!"
+                msg="HERE!"
+                echo "$msg"
+		dbg_write "$msg"
         fi
         btconnected=$btcurrent
 fi
