@@ -21,7 +21,7 @@ max_consecutive_low_rssi=5
 max_consecutive_high_rssi=5
 low_rssi_count=0
 high_rssi_count=0
-rssi_threshold=-32
+rssi_threshold=-25
 #it looks like if sleep_secs > 3 rpi can never connect to my mobile phone (i.e. rfcomm connect).
 sleep_secs=3
 
@@ -74,9 +74,11 @@ if [ $btcurrent = $connected ]; then
 	if [[ $rssi -le $rssi_threshold ]]; then
 		high_rssi_count=0
 		((low_rssi_count=low_rssi_count+1))
+		dbg_write "rssi <= $rssi_threshold, low_rssi_count: $low_rssi_count, high_rssi_count: 0"
 	else
 		low_rssi_count=0
 		((high_rssi_count=high_rssi_count+1))
+		dbg_write "rssi > $rssi_threshold, high_rssi_count: $high_rssi_count, low_rssi_count: 0"
 		if motion_srvc_started && [[ $high_rssi_count -ge $max_consecutive_high_rssi ]]; then
 			#motion_srvc_started=0
 			msg="Stopping motion service because RSSI is now strong"
