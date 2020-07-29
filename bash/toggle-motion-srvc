@@ -24,14 +24,14 @@ high_rssi_count=0
 rssi_threshold=-25
 #it looks like if sleep_secs > 3 rpi can never connect to my mobile phone (i.e. rfcomm connect).
 sleep_secs=3
+email=ahatzikonstantinou@protonmail.com
+email_from=antonis@home.com
 
-dbg_pipe=/tmp/toggle-motion-srvc-dbg
-
+#the following writes debug messages to localhost's UDP port 4444. Listen using nc -l -k -u 4444
+#NOTE: do not use a named pipe or nc because they will block and the script will freeze until a listener
+#reads the pipe or listens to nc
 function dbg_write {
-	if [[ ! -p $dbg_pipe ]]; then
-	    mkfifo $dbg_pipe
-	fi
-	echo "$1" > $dbg_pipe
+	echo "$1" | /usr/bin/socat -t 0 - UDP:localhost:4444 2>/dev/null
 }
 
 #motion_srvc_started=0
@@ -84,8 +84,9 @@ if [ $btcurrent = $connected ]; then
 			msg="Stopping motion service because RSSI is now strong"
 			echo "$msg"
 			dbg_write "$msg"
-
 			/usr/bin/logger "$msg"
+			#mail will be rejected unless it has a fully qualified from_address e.g. antonis@home.com
+			#echo "At" `/bin/date` ": $msg" | /usr/bin/mail -s "Motion - Stopping" $email
 			/usr/sbin/service motion stop
 		fi
 	fi
@@ -100,6 +101,8 @@ if ! motion_srvc_started; then
 		echo "$msg"
 		dbg_write "$msg"
 		/usr/bin/logger "$msg"
+		#mail will be rejected unless it has a fully qualified from_address e.g. antonis@home.com
+		#echo "At" `/bin/date` ": $msg" | /usr/bin/mail -s "Motion - Starting" $email
 		/usr/sbin/service motion start
 	fi
 
@@ -110,6 +113,8 @@ if ! motion_srvc_started; then
 		echo "$msg"
 		dbg_write "$msg"
 		/usr/bin/logger "$msg"
+		#mail will be rejected unless it has a fully qualified from_address e.g. antonis@home.com
+		#echo "At" `/bin/date` ": $msg" | /usr/bin/mail -s "Motion - Starting" $email
 		/usr/sbin/service motion start
 	fi
 fi
