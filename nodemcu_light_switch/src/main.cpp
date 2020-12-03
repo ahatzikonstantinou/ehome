@@ -1,7 +1,7 @@
 /*
  * Ahat:
  * IMPORTANT NOTES
- * The PubSubClient library has a continuous disconnect - reconnect bug. In order to correct this addr
+ * The PubSubClient library has a continuous disconnect - reconnect bug. In order to correct this add
  * "delay(10);" immediately after "if (connected()) {" in function "boolean PubSubClient::loop()"
  * In order to accommodate larger mqtt messages such as the ones including check errors, increase
  * MQTT_MAX_PACKET_SIZE to 1024 in PubSubClient.h
