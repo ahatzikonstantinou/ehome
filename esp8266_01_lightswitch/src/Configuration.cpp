@@ -1,7 +1,10 @@
 #include "Configuration.h"
+#include "Settings.h"
 
 Configuration::Configuration()
 {  
+  switchDevice.active = "true";
+  switchDevice.sleep_seconds = String( MAX_SLEEP_SECONDS );
 }
 
 void Configuration::setup()
@@ -57,6 +60,7 @@ bool Configuration::read()
           mqtt.configurator_subscribe_topic = json["mqtt_configurator_subscribe_topic"].as<String>();
 
           switchDevice.active = json["active"].as<String>();
+          switchDevice.sleep_seconds = json["sleep_seconds"].as<String>();
 
           return true;
         }
@@ -97,6 +101,7 @@ void Configuration::write()
   json["mqtt_configurator_publish_topic"] = mqtt.configurator_publish_topic;
   json["mqtt_configurator_subscribe_topic"] = mqtt.configurator_subscribe_topic;
   json["active"] = switchDevice.active;
+  json["sleep_seconds"] = switchDevice.sleep_seconds;
 
   File configFile = SPIFFS.open( configFileName , "w");
   if( !configFile )
@@ -104,7 +109,7 @@ void Configuration::write()
     Serial.println("failed to open config file for writing");
   }
 
-  json.printTo(Serial);
+  json.printTo(Serial); Serial.println();
   json.printTo(configFile);
   configFile.close();
 }
@@ -120,4 +125,14 @@ void Configuration::deleteConfigFile()
       Serial.println( "deleted json configuration file." );
     }
   }
+}
+
+unsigned long Configuration::getFinalSleepSeconds()
+{
+  long sleepSeconds = switchDevice.sleep_seconds.toInt();
+  if( sleepSeconds > MAX_SLEEP_SECONDS )
+  {
+    return MAX_SLEEP_SECONDS;
+  }
+  return sleepSeconds;
 }

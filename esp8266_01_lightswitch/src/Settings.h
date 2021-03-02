@@ -27,4 +27,14 @@
 // The time after which wifimanager no longer waits for wifi to connect to access point
 #define MAX_WIFI_CONNECTION_MILLIS 10000
 
+// The time that the device will "sleep" i.e. it will wait before sending a "I am alive"
+// configuration message. Note that if a user presses the reset button and the device restarts
+// the deep sleep timer is effectively reset.
+// 12600 is the max that ESP8266 can sleep. Sleeping longer than that requires a counter
+// to add separate sleep times until the total sleep time is reached. The counter needs
+// to be updated at every wake up and if the counter value is written in the flash memory
+// it will wear it out (flash memories have about 10,000 write cycles lifetime.) Therefore
+// the counter value should be stored in RTC memory
+#define MAX_SLEEP_SECONDS 12600 //3:30h se
+
 #endif

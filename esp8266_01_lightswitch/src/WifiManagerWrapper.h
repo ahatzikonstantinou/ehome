@@ -16,6 +16,7 @@ private:
   PORTAL_IDLE_CALLBACK_SIGNATURE;
   bool resetSettings = false;
   bool connectWithOldCredentials = false;
+  unsigned long connectionTime = 0;
   uint8 bssid[6];
   int32_t wifiChannel;
   IPAddress gateway;
@@ -40,6 +41,7 @@ public:
   void initFromConfiguration();  
   void startAPWithoutConnecting( bool timeout = true );
   bool connect();  // attempt reconnect SSID and password stored in jsonConfig
+  unsigned long getConnectionTime();
 
   String getSSID();
   IPAddress getLocalIP();

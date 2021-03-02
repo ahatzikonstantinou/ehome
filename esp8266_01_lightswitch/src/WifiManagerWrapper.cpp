@@ -47,7 +47,7 @@ bool WifiManagerWrapper::connect()
   WiFi.begin( SSID, password, wifiChannel, bssid );
   // Serial.println( F("DHCP status: " ) ); Serial.println( String( wifi_station_dhcpc_status() == dhcp_status::DHCP_STOPPED ? "STOPPED" : "STARTED" ) );
 
-  unsigned long elapsedTime = waitForConnection();
+  connectionTime = waitForConnection();
 
   // If connection failed attempt to connect without specifying BSSID and wifiChannel in case
   // the infrastructure has changed e.g. 
@@ -59,7 +59,7 @@ bool WifiManagerWrapper::connect()
     Serial.print( configuration->wifi.bssid + F(" and wifiChannel ") + String( wifiChannel ) + F(" failed.") );
     Serial.print( F("Trying slow connection, SSID and password only...") );
     WiFi.begin( SSID, password );
-    elapsedTime = waitForConnection();
+    connectionTime = waitForConnection();
     if( WiFi.status() == WL_CONNECTED )
     {
       // update configuration with new BSSID, wifiChannel
@@ -72,7 +72,7 @@ bool WifiManagerWrapper::connect()
   Serial.println('\n');  
   if( WiFi.status() == WL_CONNECTED )
   {
-    Serial.print( F( "Connection completed after " ) ); Serial.println( String( elapsedTime ) + " milliseconds" );
+    Serial.print( F( "Connection completed after " ) ); Serial.println( String( connectionTime ) + " milliseconds" );
     Serial.print( F( "IP address:\t") ); Serial.println( WiFi.localIP());
     Serial.print( F( "Gateway:\t" ) ); Serial.println( WiFi.gatewayIP());
     Serial.print( F( "Subnet:\t" ) ); Serial.println( WiFi.subnetMask());
@@ -84,7 +84,7 @@ bool WifiManagerWrapper::connect()
   }
   else
   {
-    Serial.print( F( "Connection failed after " ) ); Serial.println( String( elapsedTime ) + " milliseconds" );
+    Serial.print( F( "Connection failed after " ) ); Serial.println( String( connectionTime ) + " milliseconds" );
   }
 
   return WiFi.status() == WL_CONNECTED;
@@ -102,6 +102,7 @@ void WifiManagerWrapper::startAPWithoutConnecting( bool timeout )
   WiFiManagerParameter custom_mqtt_subscribe_topic( "mqtt_subscribe_topic", "mqtt subscribe topic", mqtt->subscribe_topic.c_str(), 128, " required" );
   WiFiManagerParameter custom_mqtt_configurator_publish_topic( "mqtt_configurator_publish_topic", "mqtt configurator publish topic", mqtt->configurator_publish_topic.c_str(), 128, " required" );
   WiFiManagerParameter custom_mqtt_configurator_subscribe_topic( "mqtt_configurator_subscribe_topic", "mqtt configurator subscribe topic", mqtt->configurator_subscribe_topic.c_str(), 128, " required" );
+  WiFiManagerParameter custom_switchDevice_sleep_seconds( "switchDevice_sleep_seconds", "sleep seconds", configuration->switchDevice.sleep_seconds.c_str(), 128, " required" );
 
   //WiFiManager
   //Local intialization. Once its business is done, there is no need to keep it around
@@ -131,6 +132,7 @@ void WifiManagerWrapper::startAPWithoutConnecting( bool timeout )
   wifiManager.addParameter( &custom_mqtt_subscribe_topic );
   wifiManager.addParameter( &custom_mqtt_configurator_publish_topic );
   wifiManager.addParameter( &custom_mqtt_configurator_subscribe_topic );
+  wifiManager.addParameter( &custom_switchDevice_sleep_seconds );
 
   delay( 1000 );
   if( !wifiManager.startConfigPortal( String( String( "OnDemandAP-" ) + mqtt->device_name ).c_str() ) )
@@ -159,6 +161,7 @@ void WifiManagerWrapper::startAPWithoutConnecting( bool timeout )
   configuration->mqtt.subscribe_topic = custom_mqtt_subscribe_topic.getValue();
   configuration->mqtt.configurator_publish_topic = custom_mqtt_configurator_publish_topic.getValue();
   configuration->mqtt.configurator_subscribe_topic = custom_mqtt_configurator_subscribe_topic.getValue();
+  configuration->switchDevice.sleep_seconds = custom_switchDevice_sleep_seconds.getValue();
 
   mqtt->setup();  //re-setup mqtt based on the new configuration values
 
@@ -209,4 +212,9 @@ String WifiManagerWrapper::getSSID()
 IPAddress WifiManagerWrapper::getLocalIP()
 {
   return WiFi.localIP();
+}
+
+unsigned long WifiManagerWrapper::getConnectionTime() 
+{ 
+  return connectionTime; 
 }

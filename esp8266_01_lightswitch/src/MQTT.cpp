@@ -26,9 +26,7 @@ bool MQTT::connect( bool cleanSession, bool publishEmptyLastWill )
     Serial.println( "connected, rc=" + String( client.state() ) );
     // ... and subscribe to topic
     client.subscribe( subscribe_topic.c_str(), 1 );
-    // delay( 1000 );
-    // yield();
-    // client.subscribe( configurator_subscribe_topic.c_str() );
+    client.subscribe( configurator_subscribe_topic.c_str(), 1 );
 
     if( publishEmptyLastWill )
     {
@@ -67,7 +65,7 @@ void MQTT::publish( String topic, String message, bool retain )
     }
 }
 
-void MQTT::publishConfiguration( bool active )
+void MQTT::publishConfiguration( bool active, unsigned long connectionTime )
 {
   String msg(
     String( "{ " ) +
@@ -90,12 +88,15 @@ void MQTT::publishConfiguration( bool active )
     ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
     ", \"VCC\": \"" + ESP.getVcc() + "\"" +
     ", \"active\": \"" + String( active ) + "\"" +
+    ", \"wake up\": \"" + ESP.getResetReason() + "\"" +
+    ", \"connection time\": \"" + connectionTime + "\"" +
+    ", \"sleep seconds config/final\": \"" + configuration->switchDevice.sleep_seconds + "/" + configuration->getFinalSleepSeconds() + "\"" +
     
   " } }" );
   publish( configurator_publish_topic, msg, false );
 }
 
-  void MQTT::publishReport( bool active )
+  void MQTT::publishReport( bool active, unsigned long connectionTime )
   {
     String msg(
     String( "{ " ) +
@@ -114,8 +115,12 @@ void MQTT::publishConfiguration( bool active )
     ", \"ip\": \"" + WiFi.localIP().toString() + "\"" +
     ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
     ", \"VCC\": \"" + ESP.getVcc() + "\"" +    
+    ", \"wake up\": \"" + ESP.getResetReason() + "\"" +
+    ", \"connection time\": \"" + connectionTime + "\"" +
+    ", \"sleep seconds config/final\": \"" + configuration->switchDevice.sleep_seconds + "/" + configuration->getFinalSleepSeconds() + "\"" +
+
   " } }" );
-    publish( publish_topic, msg, true );
+    publish( publish_topic, msg, false );
   }
 
 

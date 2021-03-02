@@ -40,6 +40,7 @@ public:
   typedef struct
   {
     String active;
+    String sleep_seconds;
   } SwitchDeviceConfiguration;
   SwitchDeviceConfiguration switchDevice;
 
@@ -49,6 +50,8 @@ public:
   bool read();
   void write();
   void deleteConfigFile();
+
+  unsigned long getFinalSleepSeconds();
 };
 
 #endif

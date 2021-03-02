@@ -27,13 +27,15 @@
  *        'w': change to access point configuration portal mode
  *        'a': activate
  *        'd': deactivate
- *        'o': change to OTA mode. ESP8266 will keep the wifi on without timeout for OTA functionality
+ *        'o': change to OTA mode. ESP8266 will keep the wifi on without timeout for OTA functionality.
+ *             Note that ESP8266-01 with 512 KB of memory cannot use OTA due to its low memory.
  *        
  *        Any incoming message with configurator_subscribe_topic (regardless of its payload) will cause
  *        ESP8266 to send an mqtt configuration message to configurator_publish_topic.
  * 
- *      To send mqtt messages to ESP8266 from another device ,e.g. use a linux client mosquitto_pub, send
- *      the mqtt message with QOS 1 and then reset ESP8266. When ESP8266 restarts it will listen for pending
+ *      To send mqtt messages to ESP8266 from another device, e.g. use a linux client mosquitto_pub, send
+ *      the mqtt message with QOS 1 and then reset ESP8266. The mqtt broker keeps the message until it is
+ *      delivered at least once. When ESP8266 restarts it will listen for pending
  *      incoming messages.
  * 
  *  If you wish to reset its configuration either stop the mqtt broker or the wifi network so that it
@@ -45,6 +47,16 @@
  *        (see see https://www.raspberrypi.org/documentation/configuration/wireless/access-point-routed.md)
  *        typical wifi connection times are 170ms and the total "switch" event from start to end of setup()
  *        is < 1 sec.
+ * 
+ *  Access Point Portal Configuration params:
+ *    location: the physical location in mqtt topic terms that should match the publish and subscribe topics 
+ *      e.g. "A/4/S" means "Antonis house/4th floor/Study" and a corresponding publish topic would be 
+ *      "A/4/S/SWITCH/S1/state" i.e. location/Type/ID/state, a corresponding publish topic would be
+ *      "A/4/S/SWITCH/S1/set"  i.e. location/Type/ID/set
+ *    sleep seconds: 
+ *      -0: sleep forever until external reset
+ *      -xxx: wake up after xxx seconds and send a configuration mqtt message. If xxx > MAX_SLEEP_SECONDS
+ *            wake up after MAX_SLEEP_SECONDS seconds.
  */
 
 
@@ -173,6 +185,17 @@ void wifiSetup()
 }
 #endif
 
+// for an explanation see https://thingpulse.com/max-deep-sleep-for-esp8266/
+// TLDR; max sleep interval is around 3:35h – 3:50h. So if configured sleep time
+// is > 3:30 i.e. 12600 secs wake up and sleep again
+void deepSleep()
+{
+  long sleepSeconds = configuration.switchDevice.sleep_seconds.toInt();
+  Serial.print( F("Configuration sleep_seconds: ") ); Serial.println( sleepSeconds );
+  Serial.print( F("Final sleep seconds ") ); Serial.println( String( configuration.getFinalSleepSeconds() ) );
+  uint64_t sleepTime = sleepSeconds*1000000;
+  ESP.deepSleep( sleepTime );
+}
 
 void setup() 
 {
@@ -224,12 +247,15 @@ void setup()
     
     if( !wifiManagerWrapper.connect() )
     {
-      Serial.println( "WiFi connect wit saved values failed. Starting Access Point..." );
+      Serial.println( "WiFi connect with saved values failed. Starting Access Point..." );
       wifiManagerWrapper.startAPWithoutConnecting();
     }
   #else
     wifiSetup();
   #endif
+
+  Serial.print( F("Reset reason: ") ); Serial.println( ESP.getResetReason() );
+  const rst_info* resetInfo = ESP.getResetInfoPtr();
 
   if( mqtt.connect() )
   {
@@ -238,9 +264,10 @@ void setup()
     // but it never arrives at the mqtt broker (as observed in the logs of the broker). 
     // In such a case a delay( ??? ) is required before mqtt.publish
     // delay( 5000 );
-    if( active )
+    // if ESP8266 is active and it was reset externally i.e. by a reset button press send mqtt "click event" message
+    // if( active )//&& resetInfo->reason == REASON_EXT_SYS_RST )
     {
-      mqtt.publishReport( active );
+      mqtt.publishReport( active, wifiManagerWrapper.getConnectionTime() );
     }
     // IMPORTANT: without a delay before mqtt.loop() the mqtt message is reported as successfully
     // published but it never arrives at the mqtt broker (as observed in the logs of the broker)
@@ -265,7 +292,7 @@ void setup()
 
   if( !OTA )
   {
-    // TODO: go to deepSleep
+    deepSleep();
   }
 }
 
@@ -359,7 +386,7 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
       if( receivedChar == 'r' )
       {
         //report
-        mqtt.publishReport( active );
+        mqtt.publishReport( active, wifiManagerWrapper.getConnectionTime() );
       }
       else if( receivedChar == 'w' )
       {
@@ -371,13 +398,13 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
       else if( receivedChar == 'a' )
       {
         activate();
-        mqtt.publishReport( active );        
+        mqtt.publishReport( active, wifiManagerWrapper.getConnectionTime() );        
       }
       else if( receivedChar == 'd' )
       {
         //deactivate
         deactivate();
-        mqtt.publishReport( active );
+        mqtt.publishReport( active, wifiManagerWrapper.getConnectionTime() );
       }
       else if ( receivedChar == 'o' )
       {
@@ -389,7 +416,7 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
   }
   else if( topic == mqtt.configurator_subscribe_topic )
   {
-    mqtt.publishConfiguration( active );
+    mqtt.publishConfiguration( active, wifiManagerWrapper.getConnectionTime() );
   }
   else
   {
