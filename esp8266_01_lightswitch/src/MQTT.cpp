@@ -65,65 +65,6 @@ void MQTT::publish( String topic, String message, bool retain )
     }
 }
 
-void MQTT::publishConfiguration( bool active, unsigned long connectionTime )
-{
-  String msg(
-    String( "{ " ) +
-    "\"cmd\": \"ITEM_UPDATE\"" +
-    ", \"data\": { " +
-    "\"type\": \"" + DEVICE_TYPE + "\"" +
-    ", \"domain\": \"" + DEVICE_DOMAIN + "\"" +
-    ", \"firmware\": \"" + FIRMWARE + "\"" +
-    ", \"version\": \"" + VERSION + "\"" +
-    ", \"protocol\": \"mqtt\"" +
-    ", \"name\": \"" + device_name + "\"" +
-    ", \"id\": \"" + client_id + "\"" +
-    ", \"location\": \"" + location + "\"" +
-    ", \"publish\": \"" + publish_topic + "\"" +
-    ", \"subscribe\": \"" + subscribe_topic + "\"" +
-    ", \"ip\": \"" + WiFi.localIP().toString() + "\"" +
-    ", \"SSID\": \"" + WiFi.SSID() + "\"" +
-    ", \"BSSID\": \"" + WiFi.BSSIDstr() + "\"" +
-    ", \"wifi channel\": \"" + WiFi.channel() + "\"" +
-    ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
-    ", \"VCC\": \"" + ESP.getVcc() + "\"" +
-    ", \"active\": \"" + String( active ) + "\"" +
-    ", \"wake up\": \"" + ESP.getResetReason() + "\"" +
-    ", \"connection time\": \"" + connectionTime + "\"" +
-    ", \"sleep seconds config/final\": \"" + configuration->switchDevice.sleep_seconds + "/" + configuration->getFinalSleepSeconds() + "\"" +
-    
-  " } }" );
-  publish( configurator_publish_topic, msg, false );
-}
-
-  void MQTT::publishReport( bool active, unsigned long connectionTime )
-  {
-    String msg(
-    String( "{ " ) +
-    "\"msg\": \"EVENT\"" +
-    ", \"data\": { " +
-    "\"type\": \"" + DEVICE_TYPE + "\"" +
-    ", \"domain\": \"" + DEVICE_DOMAIN + "\"" +
-    ", \"firmware\": \"" + FIRMWARE + "\"" +
-    ", \"version\": \"" + VERSION + "\"" +
-    ", \"protocol\": \"mqtt\"" +
-    ", \"name\": \"" + device_name + "\"" +
-    ", \"id\": \"" + client_id + "\"" +
-    ", \"location\": \"" + location + "\"" +
-    ", \"publish\": \"" + publish_topic + "\"" +
-    ", \"subscribe\": \"" + subscribe_topic + "\"" +
-    ", \"ip\": \"" + WiFi.localIP().toString() + "\"" +
-    ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
-    ", \"VCC\": \"" + ESP.getVcc() + "\"" +    
-    ", \"wake up\": \"" + ESP.getResetReason() + "\"" +
-    ", \"connection time\": \"" + connectionTime + "\"" +
-    ", \"sleep seconds config/final\": \"" + configuration->switchDevice.sleep_seconds + "/" + configuration->getFinalSleepSeconds() + "\"" +
-
-  " } }" );
-    publish( publish_topic, msg, false );
-  }
-
-
 void MQTT::setup( MQTT_CALLBACK_SIGNATURE )
 {
   setup();

@@ -31,8 +31,6 @@ public:
 
   bool connect( bool cleanSession = false, bool publishEmptyLastWill = false );
   void publish( String topic, String message, bool retain );
-  void publishConfiguration( bool active, unsigned long connectionTime );
-  void publishReport( bool active, unsigned long connectionTime );
   void setup( MQTT_CALLBACK_SIGNATURE );
   void setup();
   void loop();

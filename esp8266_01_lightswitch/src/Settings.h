@@ -1,6 +1,7 @@
 #ifndef _settings_h
 #define _settings_h
 
+#include <Arduino.h>
 #include <ESP8266WiFi.h>
 
 #define FIRMWARE "EHome"
@@ -36,5 +37,22 @@
 // it will wear it out (flash memories have about 10,000 write cycles lifetime.) Therefore
 // the counter value should be stored in RTC memory
 #define MAX_SLEEP_SECONDS 12600 //3:30h se
+
+
+// Define TWOGANGSWITCH if this is a two-gang switch so there are two buttons that ESP8266 
+// needs to read and report if they have pressed.
+// For a recommended circuit that allows ESP8266 to read each button see light-2switch_rising_edge.fzz
+#define TWOGANG_SWITCH
+#ifdef TWOGANG_SWITCH
+
+#define Q1 D1 // the input pin that reads output Q of Flip Flop 1, effectively whether button 1 is pressed
+#define Q2 D2 // the input pin that reads output Q of Flip Flop 2, effectively whether button 2 is pressed
+
+// IMPORTANT: Do NOT use pins D3 and D4 to reset the flip flops, if these two pins 
+// are LOW boot (or reboot) of ESP8266 fails
+#define FLIPFLOP_RESET D5 // the output pin that resets the two Flip FLops
+
+#endif
+
 
 #endif

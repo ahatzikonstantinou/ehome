@@ -60,6 +60,14 @@ bool Configuration::read()
           mqtt.configurator_subscribe_topic = json["mqtt_configurator_subscribe_topic"].as<String>();
 
           switchDevice.active = json["active"].as<String>();
+          // The first time an ESP8266 starts, there will be no active entry in json
+          // and this will result in an empty string switchDevice.active
+          // The following lines ensure that unless explicitly defined as "false"
+          // anything else -including the empty string-, is considered to be "true"
+          if( switchDevice.active != "false" )
+          {
+            switchDevice.active = "true";
+          }
           switchDevice.sleep_seconds = json["sleep_seconds"].as<String>();
 
           return true;

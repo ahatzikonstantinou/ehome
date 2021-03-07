@@ -57,6 +57,28 @@
  *      -0: sleep forever until external reset
  *      -xxx: wake up after xxx seconds and send a configuration mqtt message. If xxx > MAX_SLEEP_SECONDS
  *            wake up after MAX_SLEEP_SECONDS seconds.
+ * 
+ *  IMPORTANT: After ESP8266 goes in deep sleep there are several events that can wake it up: (from user_interface.h)
+ *    REASON_DEFAULT_RST      = 0,    normal startup by power on
+ *    REASON_WDT_RST          = 1,    hardware watch dog reset
+ *    REASON_EXCEPTION_RST    = 2,    exception reset, GPIO status won’t change
+ *    REASON_SOFT_WDT_RST     = 3,    software watch dog reset, GPIO status won’t change
+ *    REASON_SOFT_RESTART     = 4,    software restart ,system_restart , GPIO status won’t change
+ *    REASON_DEEP_SLEEP_AWAKE = 5,    wake up from deep-sleep
+ *    REASON_EXT_SYS_RST      = 6     external system reset
+ *    Trying to reset by pressing the RESET button, or even trying to disconnect and reconnect VCC the
+ *    wake up reason is always REASON_DEEP_SLEEP_AWAKE which is the same as waking up by the RTC_timer.
+ *    However, when disconnecting and reconnecting (via a push button) the CH_EN pin to +3.3V the wake
+ *    up reason is REASON_DEFAULT_RST which differentiates from REASON_DEEP_SLEEP_AWAKE. Also if the CH_EN
+ *    pin is disconnected and reconnected while the ESP8266 has not gone to deep sleep yet, it still 
+ *    reboots with REASON_DEFAULT_RST.
+ *    RECOMMENDATION: Use a falling edge one shot timer with an output pulse of about 15 secs to cover
+ *    the case that ESP8266 takes a very long time to connect (althought if this happens all the time
+ *    it will drain the battery very quickly and gives a very large lag between pushing the switch and
+ *    seeing the corresponding light turn on). See https://youtu.be/vmS5YQITRQ0 and https://www.petervis.com/GCSE_Design_and_Technology_Electronic_Products/falling-edge-triggered-monostable/falling-edge-triggered-monostable.html
+ *    A TLC555 works with 3.3V VCC and can be powered from the same sourve as the ESP8266.
+ *    Feed this pulse to CH_EN to turn ESP8266 on for max 15 secs. Normally ESP8266 will connect and send 
+ *    an mqtt "Event" message in less than a second and then go to deep sleep.
  */
 
 
@@ -83,6 +105,15 @@ ADC_MODE( ADC_VCC );
 bool OTA = false; // when OTA is true the device will stay on to receive OTA updates
 
 bool active = true;  // if the switch is not active, upon start it will not generate any mqtt messages
+
+// connectionTime stores the elapsed time between start of wifi.connect() and the moment when either 
+// WiFi.status() == WL_CONNECTED or timeout
+unsigned long connectionTime = 0; 
+
+#ifdef TWOGANG_SWITCH
+bool button1Pressed = false;
+bool button2Pressed = false;
+#endif
 
 //Static IP address configuration
 // IPAddress gateway(192, 168, 1, 254);   //IP Address of home WiFi Router
@@ -146,7 +177,7 @@ WifiManagerWrapper wifiManagerWrapper( configuration, mqtt, wifi_portal_idle );
 
 
 #if USE_WIFIMANAGER == 0
-void wifiSetup()
+unsigned long wifiSetup()
 {
   // WiFi.persistent( true );
   WiFi.mode( WIFI_OFF );
@@ -182,11 +213,13 @@ void wifiSetup()
   Serial.print( F( "wifi channel: " ) ); Serial.println( String( WiFi.channel() ) );
   Serial.print( F( "wifi RSSI: " ) ); Serial.println( String( WiFi.RSSI() ) );
   Serial.print( F( "DHCP status: " ) ); Serial.println( String( wifi_station_dhcpc_status() == dhcp_status::DHCP_STOPPED ? "STOPPED" : "STARTED" ) );
+
+  return elapsedTime;
 }
 #endif
 
 // for an explanation see https://thingpulse.com/max-deep-sleep-for-esp8266/
-// TLDR; max sleep interval is around 3:35h – 3:50h. So if configured sleep time
+// TL;DR max sleep interval is around 3:35h – 3:50h. So if configured sleep time
 // is > 3:30 i.e. 12600 secs wake up and sleep again
 void deepSleep()
 {
@@ -196,6 +229,75 @@ void deepSleep()
   uint64_t sleepTime = sleepSeconds*1000000;
   ESP.deepSleep( sleepTime );
 }
+
+
+void publishConfiguration()
+{
+  const rst_info* resetInfo = ESP.getResetInfoPtr();
+  String msg(
+    String( "{ " ) +
+    "\"cmd\": \"ITEM_UPDATE\"" +
+    ", \"data\": { " +
+    "\"type\": \"" + DEVICE_TYPE + "\"" +
+    ", \"domain\": \"" + DEVICE_DOMAIN + "\"" +
+    ", \"firmware\": \"" + FIRMWARE + "\"" +
+    ", \"version\": \"" + VERSION + "\"" +
+    ", \"protocol\": \"mqtt\"" +
+    ", \"name\": \"" + configuration.mqtt.device_name + "\"" +
+    ", \"id\": \"" + configuration.mqtt.client_id + "\"" +
+    ", \"location\": \"" + location + "\"" +
+    ", \"publish\": \"" + publish_topic + "\"" +
+    ", \"subscribe\": \"" + subscribe_topic + "\"" +
+    ", \"ip\": \"" + WiFi.localIP().toString() + "\"" +
+    ", \"SSID\": \"" + WiFi.SSID() + "\"" +
+    ", \"BSSID\": \"" + WiFi.BSSIDstr() + "\"" +
+    ", \"wifi channel\": \"" + WiFi.channel() + "\"" +
+    ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
+    ", \"VCC\": \"" + ESP.getVcc() + "\"" +
+    ", \"active\": \"" + String( active ) + "\"" +
+    ", \"wake up\": \"" + ESP.getResetReason() + "\" (" + resetInfo->reason + ")" +
+    ", \"connection time\": \"" + connectionTime + "\"" +
+#ifdef TWOGANG_SWITCH
+    ", \"button1Pressed\": \"" + String( button1Pressed ) + "\"" +
+    ", \"button2Pressed\": \"" + String( button2Pressed ) + "\"" +
+#endif
+    ", \"sleep seconds config/final\": \"" + configuration.switchDevice.sleep_seconds + "/" + configuration.getFinalSleepSeconds() + "\"" +
+    
+  " } }" );
+  mqtt.publish( configurator_publish_topic, msg, false );
+}
+
+void publishReport()
+  {
+    const rst_info* resetInfo = ESP.getResetInfoPtr();
+    String msg(
+    String( "{ " ) +
+    "\"msg\": \"EVENT\"" +
+    ", \"data\": { " +
+    "\"type\": \"" + DEVICE_TYPE + "\"" +
+    ", \"domain\": \"" + DEVICE_DOMAIN + "\"" +
+    ", \"firmware\": \"" + FIRMWARE + "\"" +
+    ", \"version\": \"" + VERSION + "\"" +
+    ", \"protocol\": \"mqtt\"" +
+    ", \"name\": \"" + configuration.mqtt.device_name + "\"" +
+    ", \"id\": \"" + configuration.mqtt.client_id + "\"" +
+    ", \"location\": \"" + location + "\"" +
+    ", \"publish\": \"" + publish_topic + "\"" +
+    ", \"subscribe\": \"" + subscribe_topic + "\"" +
+    ", \"ip\": \"" + WiFi.localIP().toString() + "\"" +
+    ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
+    ", \"VCC\": \"" + ESP.getVcc() + "\"" +    
+    ", \"wake up\": \"" + ESP.getResetReason() + "\" (" + resetInfo->reason + ")" +
+    ", \"connection time\": \"" + connectionTime + "\"" +
+#ifdef TWOGANG_SWITCH
+    ", \"button1Pressed\": \"" + String( button1Pressed ) + "\"" +
+    ", \"button2Pressed\": \"" + String( button2Pressed ) + "\"" +
+#endif
+    ", \"sleep seconds config/final\": \"" + configuration.switchDevice.sleep_seconds + "/" + configuration.getFinalSleepSeconds() + "\"" +
+
+  " } }" );
+    mqtt.publish( publish_topic, msg, false );
+  }
 
 void setup() 
 {
@@ -215,6 +317,31 @@ void setup()
 
   Serial.begin( 115200 );
   wifi_set_sleep_type( NONE_SLEEP_T );
+
+#ifdef TWOGANG_SWITCH
+  // NOTE: The following code needs to execute as soon as possible after boot in order
+  // to read the flip-flops that store the button states and reset the flip-flops so
+  // that they are ready to as soon as possible receive and store another button push 
+
+  //read flip flops
+  pinMode( Q1, INPUT );
+  pinMode( Q2, INPUT );
+  pinMode( FLIPFLOP_RESET, OUTPUT );
+
+  button1Pressed = digitalRead( Q1 ) == HIGH;
+  button2Pressed = digitalRead( Q2 ) == HIGH;
+
+  Serial.println( "Button 1 " + String( button1Pressed ? "WAS" : "NOT" ) + " pressed" );
+  Serial.println( "Button 2 " + String( button2Pressed ? "WAS" : "NOT" ) + " pressed" );
+
+  delay( 10 );
+  digitalWrite( FLIPFLOP_RESET, HIGH );
+  delay( 10 );
+  digitalWrite( FLIPFLOP_RESET, LOW );
+
+  Serial.println( "Button 1 " + String( digitalRead( Q1 ) == LOW ? "IS" : "NOT" ) + " reset" );
+  Serial.println( "Button 2 " + String( digitalRead( Q2 ) == LOW ? "IS" : "NOT" ) + " reset" );
+#endif
 
   configuration.setup();
   
@@ -250,8 +377,9 @@ void setup()
       Serial.println( "WiFi connect with saved values failed. Starting Access Point..." );
       wifiManagerWrapper.startAPWithoutConnecting();
     }
+    connectionTime = wifiManagerWrapper.getConnectionTime();
   #else
-    wifiSetup();
+    connectionTime = wifiSetup();
   #endif
 
   Serial.print( F("Reset reason: ") ); Serial.println( ESP.getResetReason() );
@@ -264,10 +392,11 @@ void setup()
     // but it never arrives at the mqtt broker (as observed in the logs of the broker). 
     // In such a case a delay( ??? ) is required before mqtt.publish
     // delay( 5000 );
-    // if ESP8266 is active and it was reset externally i.e. by a reset button press send mqtt "click event" message
-    // if( active )//&& resetInfo->reason == REASON_EXT_SYS_RST )
+    // If ESP8266 is active and it was reset externally (see notes at the top of this file)
+    // i.e. by a button press send mqtt "click event" message
+    if( active && resetInfo->reason == REASON_DEFAULT_RST )
     {
-      mqtt.publishReport( active, wifiManagerWrapper.getConnectionTime() );
+      publishReport();
     }
     // IMPORTANT: without a delay before mqtt.loop() the mqtt message is reported as successfully
     // published but it never arrives at the mqtt broker (as observed in the logs of the broker)
@@ -330,6 +459,7 @@ void loop()
   if( OTA )
   {
     ArduinoOTA.handle(); 
+    delay( 200 );
   }
 
   return;
@@ -386,7 +516,7 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
       if( receivedChar == 'r' )
       {
         //report
-        mqtt.publishReport( active, wifiManagerWrapper.getConnectionTime() );
+        publishReport();
       }
       else if( receivedChar == 'w' )
       {
@@ -398,13 +528,13 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
       else if( receivedChar == 'a' )
       {
         activate();
-        mqtt.publishReport( active, wifiManagerWrapper.getConnectionTime() );        
+        publishReport();        
       }
       else if( receivedChar == 'd' )
       {
         //deactivate
         deactivate();
-        mqtt.publishReport( active, wifiManagerWrapper.getConnectionTime() );
+        publishReport();
       }
       else if ( receivedChar == 'o' )
       {
@@ -416,7 +546,7 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
   }
   else if( topic == mqtt.configurator_subscribe_topic )
   {
-    mqtt.publishConfiguration( active, wifiManagerWrapper.getConnectionTime() );
+    publishConfiguration();
   }
   else
   {
