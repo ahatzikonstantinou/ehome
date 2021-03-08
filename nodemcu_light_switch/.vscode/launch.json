@@ -12,7 +12,8 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
-            "executable": "/home/antonis/Projects/ehome/nodemcu_light_switch/.pioenvs/nodemcuv2/firmware.elf",
+            "executable": "/home/antonis/Projects/ehome/nodemcu_light_switch/.pio/build/nodemcuv2/firmware.elf",
+            "projectEnvName": "nodemcuv2",
             "toolchainBinDir": "/home/antonis/.platformio/packages/toolchain-xtensa/bin",
             "preLaunchTask": {
                 "type": "PlatformIO",
@@ -24,7 +25,8 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
-            "executable": "/home/antonis/Projects/ehome/nodemcu_light_switch/.pioenvs/nodemcuv2/firmware.elf",
+            "executable": "/home/antonis/Projects/ehome/nodemcu_light_switch/.pio/build/nodemcuv2/firmware.elf",
+            "projectEnvName": "nodemcuv2",
             "toolchainBinDir": "/home/antonis/.platformio/packages/toolchain-xtensa/bin",
             "internalConsoleOptions": "openOnSessionStart"
         }

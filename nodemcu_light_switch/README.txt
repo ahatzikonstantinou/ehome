@@ -1,5 +1,5 @@
 According to https://github.com/esp8266/Arduino/issues/1017#issuecomment-156689684
-if the wdt reset is triggert the board reboots, when it reboots it is checking the state of GPIO0 and GPIO15 and GPIO2
+if the wdt reset is triggered the board reboots, when it reboots it is checking the state of GPIO0 and GPIO15 and GPIO2
 GPIO15 	GPIO0 	GPIO2 	Mode
 0V 	0V 	3.3V 	Uart Bootloader
 0V 	3.3V 	3.3V 	Boot sketch
@@ -20,9 +20,20 @@ A trigger (low->high rms amps) is ignored if it occurs less than MIN_TRIGGER_MIL
 If a valid trigger occurs less than MAX_TWO_TRIGGER_MILLIS milliseconds after the previous one, it is considered a DOUBLE trigger and the corresponding callback function is executed.
 A DOUBLE trigger will toggle operation mode between MANUAL_WIFI and MANUAL_ONLY. In MANUAL_WIFI the device operates as described above. In MANUAL_ONLY the device starts a wifi portal that will not timeout, awaiting for user input. Meanwhile, the manual switch, OTA and the flash button continue to function.
 
+MQTT messages:
+-Topic "L/set":
+ "a": activate the relay. Will not set trigger, or send report. Should not use this for proper switch on.
+ "d": deactivate the relay. Will not set trigger, or send report. Should not use this for proper switch off.
+ "r": report
+ "l": calibrate
+ "c": check
+ "w": switch to access point mode for re-initialization
+ "0": switch relay off, set last trigger and report. Use this for proper switch off
+ "1": switch relay on, set last trigger and report. Use this for proper switch on
+
 UPDATE: the DOUBLE trigger seems to cause a lot of false operation mode switches, therefore it is currently disabled. MIN_TRIGGER_MILLIS was set back to 500 (was 300 and MAX_TWO_TRIGGER_MILLIS was 500 )
 
 Replaced the indications given with buzzer, with indications given by leds. 
 -Red led on means that nodemcu is functioning properly. 
--Green led on/of fmeans mqtt connected/disconnected. 
+-Green led on/off means mqtt connected/disconnected. 
 -Yellow led on/off means that the nodemcu wifi is in AP/STA mode.

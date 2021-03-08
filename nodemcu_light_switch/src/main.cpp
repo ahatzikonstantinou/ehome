@@ -1,5 +1,15 @@
 /*
  * Ahat:
+ * This is lightswitch that accepts mqtt messages to turn the light on and off,
+ * but also detects whether a wall switch has been pressed. The wall switch must be
+ * wired so that the light is always on, and it turns off when the switch/button is pressed.
+ * The nodemcu is powered by the same wires that the light is powered, using a HLK-PM03 to
+ * convert AC-DC. If the wall switch os a push button and the button reutrns quickly to the unpressed
+ * state, HLK carries enough energy to keep nodemcu on. The button push is detected using an ACS712
+ * current sensor, see light-switch.fzz
+ * However, there a lot of false positives because of repeated very quick drops of voltage in households.
+ * Instead, a battery powered wall switch is preferred (see light-2switch_rising_edge.fzz) and a
+ * simple nodemcu_relay to turn on and off the lights.
  * IMPORTANT NOTES
  * The PubSubClient library has a continuous disconnect - reconnect bug. In order to correct this add
  * "delay(10);" immediately after "if (connected()) {" in function "boolean PubSubClient::loop()"
@@ -149,46 +159,6 @@ void setup()
   if( configuration.operation_mode == OPERATION_MANUAL_WIFI )
   {
     Serial.println( "operation_mode: OPERATION_MANUAL_WIFI" );
-
-    // // Setup some initial values to mqtt params before wifimanager attempts to read from storage or get from AP
-    // // IMPORTANT NOTE: access of member variables is allowed only inside function blocks!
-    // // The following lines will produce "error: 'mqtt' does not name a type" if placed outside function setup()
-    // mqtt.device_name = "Φως επίδειξης";
-    // mqtt.client_id = "light1";
-    // mqtt.location = location;
-    // mqtt.server = mqtt_server;
-    // mqtt.port = mqtt_port;
-    // mqtt.publish_topic = publish_topic;
-    // mqtt.subscribe_topic = subscribe_topic;
-    // mqtt.configurator_publish_topic = configurator_publish_topic;
-    // mqtt.configurator_subscribe_topic = configurator_subscribe_topic;
-
-    // NOTE: mqtt setup must run before wifiManagerProxy because wifiManagerWrapper may get new values and will then
-    // run mqtt.setup() again with the new values
-    mqtt.setup( mqtt_callback );
-    Serial.println( "mqttSetup finished" );
-
-    #if USE_WIFIMANAGER == 1
-      // wifiManagerWrapper.setup( true );
-      wifiManagerWrapper.initFromConfiguration();
-      if( !wifiManagerWrapper.reconnectsExceeded() )
-      {
-        Serial.println( "wifiManagerWrapper reconnects NOT exceeded, attempting autoconnectWithOldValues..." );
-        // debugging
-        // configuration.wifi.SSID = "ST-VIRUS";
-        // configuration.wifi.password = "ap2109769675ap";
-        wifiManagerWrapper.autoconnectWithOldValues();
-      }
-      else
-      {
-        Serial.println( "wifiManagerWrapper.reconnectsExceeded, attempting startAPWithoutConnecting..." );
-        wifiManagerWrapper.resetReconnects();
-        wifiManagerWrapper.startAPWithoutConnecting();
-      }
-
-    #else
-      wifiSetup();
-    #endif
   }
   else
   {
@@ -229,7 +199,6 @@ bool firstRun = true;
 
 void loop()
 {
-  manualSwitch.loop( firstRun );
 
   if( configuration.operation_mode == OPERATION_MANUAL_WIFI )
   {
@@ -405,7 +374,6 @@ void mqtt_callback( char* topic, byte* payload, unsigned int length )
   Serial.print( "] " );
 
   String _topic( topic );
-  // String _subscribe_topic( mqtt.subscribe_topic );
   // String _configurator_subscribe_topic( configurator_subscribe_topic );
 
   Serial.println( "subscribe_topic: [" + mqtt.subscribe_topic + "], _configurator_subscribe_topic: [" + mqtt.configurator_subscribe_topic + "]" );

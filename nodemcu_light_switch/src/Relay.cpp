@@ -4,7 +4,8 @@
 
 void Relay::activate()
 {
-    Relay::active = true;
+  Relay::on();
+  Relay::active = true;
 }
 void Relay::deactivate()
 {
@@ -30,7 +31,7 @@ int Relay::off()
 
 int Relay::on()
 {
-  if( !active ) { return state; }
+  if( active ) { return state; }
   state = LOW;  // When the light is connected on the Normally Open contact of the relay, a LOW will keep the light ON
   digitalWrite( pin, state );
   return state;
