@@ -11,7 +11,6 @@
 
 #define PIN_FLASH 1
 
-
 // It seems that PubSubClient library has a bug. The "loop" function will not send any PING i.e. keepalive requests
 // if it is executed without any delay between runs e.g. function loop() { ... client.loop(); }
 // However, using the "delay" function is not good practice, therefore a time check is performed in function mqttClientLoop

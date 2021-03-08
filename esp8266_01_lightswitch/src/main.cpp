@@ -110,8 +110,8 @@ bool active = true;  // if the switch is not active, upon start it will not gene
 // WiFi.status() == WL_CONNECTED or timeout
 unsigned long connectionTime = 0; 
 
+bool buttonPressed = false;
 #ifdef TWOGANG_SWITCH
-bool button1Pressed = false;
 bool button2Pressed = false;
 #endif
 
@@ -230,10 +230,8 @@ void deepSleep()
   ESP.deepSleep( sleepTime );
 }
 
-
 void publishConfiguration()
 {
-  const rst_info* resetInfo = ESP.getResetInfoPtr();
   String msg(
     String( "{ " ) +
     "\"cmd\": \"ITEM_UPDATE\"" +
@@ -245,9 +243,9 @@ void publishConfiguration()
     ", \"protocol\": \"mqtt\"" +
     ", \"name\": \"" + configuration.mqtt.device_name + "\"" +
     ", \"id\": \"" + configuration.mqtt.client_id + "\"" +
-    ", \"location\": \"" + location + "\"" +
-    ", \"publish\": \"" + publish_topic + "\"" +
-    ", \"subscribe\": \"" + subscribe_topic + "\"" +
+    ", \"location\": \"" + configuration.mqtt.location + "\"" +
+    ", \"publish\": \"" + configuration.mqtt.publish_topic + "\"" +
+    ", \"subscribe\": \"" + configuration.mqtt.subscribe_topic + "\"" +
     ", \"ip\": \"" + WiFi.localIP().toString() + "\"" +
     ", \"SSID\": \"" + WiFi.SSID() + "\"" +
     ", \"BSSID\": \"" + WiFi.BSSIDstr() + "\"" +
@@ -255,12 +253,8 @@ void publishConfiguration()
     ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
     ", \"VCC\": \"" + ESP.getVcc() + "\"" +
     ", \"active\": \"" + String( active ) + "\"" +
-    ", \"wake up\": \"" + ESP.getResetReason() + "\" (" + resetInfo->reason + ")" +
+    ", \"wake up\": \"" + ESP.getResetReason() + "\"" +
     ", \"connection time\": \"" + connectionTime + "\"" +
-#ifdef TWOGANG_SWITCH
-    ", \"button1Pressed\": \"" + String( button1Pressed ) + "\"" +
-    ", \"button2Pressed\": \"" + String( button2Pressed ) + "\"" +
-#endif
     ", \"sleep seconds config/final\": \"" + configuration.switchDevice.sleep_seconds + "/" + configuration.getFinalSleepSeconds() + "\"" +
     
   " } }" );
@@ -268,36 +262,36 @@ void publishConfiguration()
 }
 
 void publishReport()
-  {
-    const rst_info* resetInfo = ESP.getResetInfoPtr();
-    String msg(
-    String( "{ " ) +
-    "\"msg\": \"EVENT\"" +
-    ", \"data\": { " +
-    "\"type\": \"" + DEVICE_TYPE + "\"" +
-    ", \"domain\": \"" + DEVICE_DOMAIN + "\"" +
-    ", \"firmware\": \"" + FIRMWARE + "\"" +
-    ", \"version\": \"" + VERSION + "\"" +
-    ", \"protocol\": \"mqtt\"" +
-    ", \"name\": \"" + configuration.mqtt.device_name + "\"" +
-    ", \"id\": \"" + configuration.mqtt.client_id + "\"" +
-    ", \"location\": \"" + location + "\"" +
-    ", \"publish\": \"" + publish_topic + "\"" +
-    ", \"subscribe\": \"" + subscribe_topic + "\"" +
-    ", \"ip\": \"" + WiFi.localIP().toString() + "\"" +
-    ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
-    ", \"VCC\": \"" + ESP.getVcc() + "\"" +    
-    ", \"wake up\": \"" + ESP.getResetReason() + "\" (" + resetInfo->reason + ")" +
-    ", \"connection time\": \"" + connectionTime + "\"" +
+{
+  String msg(
+  String( "{ " ) +
+  "\"msg\": \"EVENT\"" +
+  ", \"info\": { " +
+  "\"type\": \"" + DEVICE_TYPE + "\"" +
+  ", \"domain\": \"" + DEVICE_DOMAIN + "\"" +
+  ", \"firmware\": \"" + FIRMWARE + "\"" +
+  ", \"version\": \"" + VERSION + "\"" +
+  ", \"protocol\": \"mqtt\"" +
+  ", \"name\": \"" + configuration.mqtt.device_name + "\"" +
+  ", \"id\": \"" + configuration.mqtt.client_id + "\"" +
+  ", \"location\": \"" + configuration.mqtt.location + "\"" +
+  ", \"publish\": \"" + configuration.mqtt.publish_topic + "\"" +
+  ", \"subscribe\": \"" + configuration.mqtt.subscribe_topic + "\"" +
+  ", \"ip\": \"" + WiFi.localIP().toString() + "\"" +
+  ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
+  ", \"VCC\": \"" + ESP.getVcc() + "\"" +    
+  ", \"wake up\": \"" + ESP.getResetReason() + "\"" +
+  ", \"connection time\": \"" + connectionTime + "\"" +
+  ", \"sleep seconds config/final\": \"" + configuration.switchDevice.sleep_seconds + "/" + configuration.getFinalSleepSeconds() + "\"" +
+  "}, \"data\": { " +
+  "\"buttonPressed\": \"" + String( buttonPressed ) + "\"" +
 #ifdef TWOGANG_SWITCH
-    ", \"button1Pressed\": \"" + String( button1Pressed ) + "\"" +
-    ", \"button2Pressed\": \"" + String( button2Pressed ) + "\"" +
+  ", \"button2Pressed\": \"" + String( button2Pressed ) + "\"" +
 #endif
-    ", \"sleep seconds config/final\": \"" + configuration.switchDevice.sleep_seconds + "/" + configuration.getFinalSleepSeconds() + "\"" +
 
-  " } }" );
-    mqtt.publish( publish_topic, msg, false );
-  }
+" } }" );
+  mqtt.publish( publish_topic, msg, false );
+}
 
 void setup() 
 {
@@ -327,11 +321,14 @@ void setup()
   pinMode( Q1, INPUT );
   pinMode( Q2, INPUT );
   pinMode( FLIPFLOP_RESET, OUTPUT );
-
-  button1Pressed = digitalRead( Q1 ) == HIGH;
+#endif
+#ifndef TWOGANG_SWITCH
+buttonPressed = true;
+#else
+  buttonPressed = digitalRead( Q1 ) == HIGH;
   button2Pressed = digitalRead( Q2 ) == HIGH;
 
-  Serial.println( "Button 1 " + String( button1Pressed ? "WAS" : "NOT" ) + " pressed" );
+  Serial.println( "Button 1 " + String( buttonPressed ? "WAS" : "NOT" ) + " pressed" );
   Serial.println( "Button 2 " + String( button2Pressed ? "WAS" : "NOT" ) + " pressed" );
 
   delay( 10 );
@@ -462,7 +459,6 @@ void loop()
     delay( 200 );
   }
 
-  return;
 }
 
 void activate()
