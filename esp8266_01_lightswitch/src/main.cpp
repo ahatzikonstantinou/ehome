@@ -532,7 +532,7 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
         deactivate();
         publishReport();
       }
-      else if ( receivedChar == 'o' )
+      else if( receivedChar == 'o' )
       {
         OTA = true;
         Serial.println( F("Changing to OTA mode") );
