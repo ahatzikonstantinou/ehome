@@ -49,6 +49,8 @@ public:
   {
     String active;
     String sleep_seconds;
+    String sensor_onmains_read_seconds;
+    String sensor_onbattery_read_seconds;
   } SwitchDeviceConfiguration;
   SwitchDeviceConfiguration switchDevice;
 
@@ -59,7 +61,7 @@ public:
   void write();
   void deleteConfigFile();
 
-  unsigned long getFinalSleepSeconds();
+  unsigned long getFinalSleepSeconds( unsigned long sleepSeconds );
 };
 
 #endif

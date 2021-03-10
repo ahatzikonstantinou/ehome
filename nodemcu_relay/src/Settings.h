@@ -9,14 +9,14 @@
 
 // see https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
 // to find which pins are preferable for each function
-#define POWER_READER_PIN D5
+#define POWER_READER_PIN D4
 
 // The pin were the relay control input is connected
 #define RELAY_PIN D1
 
 #define ON_LED_PIN D6
-#define MQTT_LED_PIN D7
-#define AP_LED_PIN D8
+#define AP_LED_PIN D7
+#define MQTT_LED_PIN D8
 
 // The initial state of the relay. The light is connected on the NORMALLY OPEN contact so that
 // when mains power in the house is initially switched on the light will remain OFF. Same for initial
@@ -66,5 +66,21 @@
 #else
 #define DEVICE_TYPE "RELAY1"
 #endif
+
+
+// define WITH_TEMP_SENSOR if this device also has a DHT22 temp sensor
+#define WITH_TEMP_SENSOR
+
+#ifdef WITH_TEMP_SENSOR
+#define TEMP_PIN D5
+
+// The time in seconds between reading and sending temperature readings when on mains power
+#define ON_MAINS_TEMP_REPORT_SECS 5
+
+// The time in seconds between reading and sending temperature readings when on battery
+#define ON_BATTERY_TEMP_REPORT_SECS 8
+
+#endif
+
 
 #endif

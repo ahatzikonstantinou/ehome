@@ -5,6 +5,7 @@
  * "delay(10);" immediately after "if (connected()) {" in function "boolean PubSubClient::loop()"
  * In order to accommodate larger mqtt messages such as the ones including check errors, increase
  * MQTT_MAX_PACKET_SIZE to 1024 in PubSubClient.h
+ * 
  */
 
 
@@ -24,6 +25,10 @@
 #include "WifiManagerWrapper.h"
 #endif
 #include <FS.h>
+#ifdef WITH_TEMP_SENSOR
+#include "DHT.h"
+#define DHTTYPE DHT22
+#endif
 
 unsigned long start = millis();
 
@@ -31,9 +36,12 @@ unsigned long start = millis();
 // see https://arduino-esp8266.readthedocs.io/en/stable/libraries.html#esp-specific-apis
 ADC_MODE( ADC_VCC );  
 
-bool active = true;  // if the switch is not active, upon start it will not generate any mqtt messages
+// if the device is not active, it will ignore incoming mqtt messages to toggle the relay
+bool active = true;  
 
 bool OTA = false; // when OTA is true the device will stay on to receive OTA updates
+
+bool onMainsPower = true; // should be updated whenever mains power goes and comes back on
 
 // connectionTime stores the elapsed time between start of wifi.connect() and the moment when either 
 // WiFi.status() == WL_CONNECTED or timeout
@@ -41,22 +49,32 @@ unsigned long connectionTime = 0;
 
 void wifi_portal_idle();
 void mqtt_callback( char* topic, byte* payload, unsigned int length );
+void mqtt_connected_callback( bool connected )
+{
+  digitalWrite( MQTT_LED_PIN, connected ? HIGH : LOW );
+  Serial.println( "MQTT" + String( connected ? " " : " NOT " ) + "connected." );
+}
 
 Configuration configuration;
 WiFiClient espClient;
-MQTT mqtt( configuration, espClient );
+MQTT mqtt( configuration, espClient, mqtt_connected_callback );
 Relay relay( RELAY_PIN, INIT_RELAY_STATE );
 #ifdef DOUBLE_RELAY
 Relay relay2( RELAY2_PIN, INIT_RELAY_STATE );
 #endif
 
+#ifdef WITH_TEMP_SENSOR
+DHT dht( TEMP_PIN, DHTTYPE );
+float temperature = 0;
+float humidity = 0;
+#endif
 
 #if USE_WIFIMANAGER == 1
 void wifi_portal_idle()
 {
   // This runs with almost no delay, do not print to Serial or it will "clog" the output terminal
   // Serial.println( "Doing other staff while wifi portal is idle" );
-  digitalWrite( AP_LED_PIN, HIGH );
+  // digitalWrite( AP_LED_PIN, HIGH );
   mqtt.loop();
   ArduinoOTA.handle();
 }
@@ -111,16 +129,16 @@ unsigned long wifiSetup()
 // 3.3v power source is read by input pin POWER_READER.
 bool mainPowerIsOn()
 {
+  // return false;
   return digitalRead( POWER_READER_PIN ) == HIGH;
 }
 
 void publishConfiguration()
 {
-  const rst_info* resetInfo = ESP.getResetInfoPtr();
   String msg(
     String( "{ " ) +
     "\"cmd\": \"ITEM_UPDATE\"" +
-    ", \"data\": { " +
+    ", \"info\": { " +
     "\"type\": \"" + DEVICE_TYPE + "\"" +
     ", \"domain\": \"" + DEVICE_DOMAIN + "\"" +
     ", \"firmware\": \"" + FIRMWARE + "\"" +
@@ -139,14 +157,21 @@ void publishConfiguration()
     ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
     ", \"VCC\": \"" + ESP.getVcc() + "\"" +
     ", \"active\": \"" + String( active ) + "\"" +
-    ", \"wake up\": \"" + ESP.getResetReason() + "\" (" + resetInfo->reason + ")" +
+    ", \"wake up\": \"" + ESP.getResetReason() + "\"" +
     ", \"connection time\": \"" + connectionTime + "\"" +
     ", \"mainPowerIsOn\": \"" + String( mainPowerIsOn() ) + "\"" +
-    ", \"relay is on\": \"" + String( relay.isOn() ) + "\"" +
+    ", \"sleep seconds config/final\": \"" + configuration.switchDevice.sleep_seconds + "/" + configuration.getFinalSleepSeconds(configuration.switchDevice.sleep_seconds.toInt() ) + "\"" +
+    ", \"sensor read seconds on mains config/final\": \"" + configuration.switchDevice.sensor_onmains_read_seconds + "/" + configuration.getFinalSleepSeconds( configuration.switchDevice.sensor_onmains_read_seconds.toInt() ) + "\"" +
+    ", \"sensor read seconds on battery config/final\": \"" + configuration.switchDevice.sensor_onbattery_read_seconds + "/" + configuration.getFinalSleepSeconds( configuration.switchDevice.sensor_onbattery_read_seconds.toInt() ) + "\"" +
+    "}, \"data\": { " +
+#ifdef WITH_TEMP_SENSOR
+  "\"temperature_celsius\": " + temperature +
+  ", \"humidity\": " + humidity + ", " +
+#endif  
+    "\"relay is on\": \"" + String( relay.isOn() ) + "\"" +
 #ifdef DOUBLE_RELAY
-    ", \"relay2 is on\": \"" + String( relay2.isOn() ) + "\"" +
+      ", \"relay2 is on\": \"" + String( relay2.isOn() ) + "\"" +
 #endif
-    ", \"sleep seconds config/final\": \"" + configuration.switchDevice.sleep_seconds + "/" + configuration.getFinalSleepSeconds() + "\"" +
     
   " } }" );
   mqtt.publish( configuration.mqtt.configurator_publish_topic, msg, false );
@@ -154,37 +179,44 @@ void publishConfiguration()
 
 void publishReport()
 { 
-  const rst_info* resetInfo = ESP.getResetInfoPtr();
   String msg(
-  String( "{ " ) +
-  "\"msg\": \"EVENT\"" +
-  ", \"data\": { " +
-  "\"type\": \"" + DEVICE_TYPE + "\"" +
-  ", \"domain\": \"" + DEVICE_DOMAIN + "\"" +
-  ", \"firmware\": \"" + FIRMWARE + "\"" +
-  ", \"version\": \"" + VERSION + "\"" +
-  ", \"protocol\": \"mqtt\"" +
-  ", \"name\": \"" + configuration.mqtt.device_name + "\"" +
-  ", \"id\": \"" + configuration.mqtt.client_id + "\"" +
-  ", \"location\": \"" + configuration.mqtt.location + "\"" +
-  ", \"publish\": \"" + configuration.mqtt.publish_topic + "\"" +
-  ", \"subscribe\": \"" + configuration.mqtt.subscribe_topic + "\"" +
-  ", \"subscribe_cmd_topic\": \"" + configuration.mqtt.subscribe_cmd_topic + "\"" +
-  ", \"ip\": \"" + WiFi.localIP().toString() + "\"" +
-  ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
-  ", \"VCC\": \"" + ESP.getVcc() + "\"" +    
-  ", \"wake up\": \"" + ESP.getResetReason() + "\" (" + resetInfo->reason + ")" +
-  ", \"connection time\": \"" + connectionTime + "\"" +
-  ", \"mainPowerIsOn\": \"" + String( mainPowerIsOn() ) + "\"" +
-  ", \"relay is on\": \"" + String( relay.isOn() ) + "\"" +
+    String( "{ " ) +
+    "\"msg\": \"EVENT\"" +
+    ", \"info\": { " +
+    "\"type\": \"" + DEVICE_TYPE + "\"" +
+    ", \"domain\": \"" + DEVICE_DOMAIN + "\"" +
+    ", \"firmware\": \"" + FIRMWARE + "\"" +
+    ", \"version\": \"" + VERSION + "\"" +
+    ", \"protocol\": \"mqtt\"" +
+    ", \"name\": \"" + configuration.mqtt.device_name + "\"" +
+    ", \"id\": \"" + configuration.mqtt.client_id + "\"" +
+    ", \"location\": \"" + configuration.mqtt.location + "\"" +
+    ", \"publish\": \"" + configuration.mqtt.publish_topic + "\"" +
+    ", \"subscribe\": \"" + configuration.mqtt.subscribe_topic + "\"" +
+    ", \"subscribe_cmd_topic\": \"" + configuration.mqtt.subscribe_cmd_topic + "\"" +
+    ", \"ip\": \"" + WiFi.localIP().toString() + "\"" +
+    ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
+    ", \"VCC\": \"" + ESP.getVcc() + "\"" +    
+    ", \"wake up\": \"" + ESP.getResetReason() + "\"" +
+    ", \"connection time\": \"" + connectionTime + "\"" +
+    ", \"mainPowerIsOn\": \"" + String( mainPowerIsOn() ) + "\"" +
+    ", \"sleep seconds config/final\": \"" + configuration.switchDevice.sleep_seconds + "/" + configuration.getFinalSleepSeconds( configuration.switchDevice.sleep_seconds.toInt() ) + "\"" +
+    ", \"sensor read seconds on mains config/final\": \"" + configuration.switchDevice.sensor_onmains_read_seconds + "/" + configuration.getFinalSleepSeconds( configuration.switchDevice.sensor_onmains_read_seconds.toInt() ) + "\"" +
+    ", \"sensor read seconds on battery config/final\": \"" + configuration.switchDevice.sensor_onbattery_read_seconds + "/" + configuration.getFinalSleepSeconds( configuration.switchDevice.sensor_onbattery_read_seconds.toInt() ) + "\"" +
+    "}, \"data\": { " +
+#ifdef WITH_TEMP_SENSOR
+  "\"temperature_celsius\": " + temperature +
+  ", \"humidity\": " + humidity + ", " +
+#endif  
+    "\"relay is on\": \"" + String( relay.isOn() ) + "\"" +
 #ifdef DOUBLE_RELAY
-    ", \"relay2 is on\": \"" + String( relay2.isOn() ) + "\"" +
+      ", \"relay2 is on\": \"" + String( relay2.isOn() ) + "\"" +
 #endif
-  ", \"sleep seconds config/final\": \"" + configuration.switchDevice.sleep_seconds + "/" + configuration.getFinalSleepSeconds() + "\"" +
-  " } }" );
+" } }" );
   mqtt.publish( configuration.mqtt.publish_topic, msg, false );
 }
 
+bool OTASetupComplete = false;
 void OTASetup()
 {
   // OTA setup
@@ -211,6 +243,8 @@ void OTASetup()
 
   ArduinoOTA.begin();
 
+  OTASetupComplete = true;
+
   Serial.println( "ArduinoOTA setup finished" );
 }
 
@@ -219,25 +253,58 @@ void OTASetup()
 // is > 3:30 i.e. 12600 secs wake up and sleep again
 void deepSleep()
 {
+#ifdef WITH_TEMP_SENSOR
+  long sleepSeconds = configuration.switchDevice.sensor_onbattery_read_seconds.toInt();
+#else
   long sleepSeconds = configuration.switchDevice.sleep_seconds.toInt();
+#endif
+
   Serial.print( F("Configuration sleep_seconds: ") ); Serial.println( sleepSeconds );
-  Serial.print( F("Final sleep seconds ") ); Serial.println( String( configuration.getFinalSleepSeconds() ) );
+  Serial.print( F("Final sleep seconds ") ); Serial.println( String( configuration.getFinalSleepSeconds( sleepSeconds ) ) );
   uint64_t sleepTime = sleepSeconds*1000000;
   ESP.deepSleep( sleepTime );
 }
 
+WiFiEventHandler wifiConnectedEventHandler, wifiDisconnectedEventHandler;
 void onWifiConnected(const WiFiEventStationModeConnected& event)
 {
   digitalWrite( AP_LED_PIN, HIGH );
+  Serial.println( "AP connected." );
 }
 
 void onWifiDisconnected(const WiFiEventStationModeDisconnected& event)
 {
   digitalWrite( AP_LED_PIN, LOW );
+  Serial.println( "AP NOT connected." );
 }
 
-void setup() {
+#ifdef WITH_TEMP_SENSOR
+unsigned int getTempReportMillis()
+{
+  return ( onMainsPower ? 
+      configuration.switchDevice.sensor_onmains_read_seconds.toInt() :
+      configuration.switchDevice.sensor_onbattery_read_seconds.toInt()
+    ) * 1000;
+}
 
+unsigned int lastTempReportMillis = 0;
+void reportTemperature( bool waitTempMillis = false )
+{
+  if( waitTempMillis && millis() - lastTempReportMillis < getTempReportMillis() )
+  {
+    return;
+  }
+
+  temperature = dht.readTemperature();
+  humidity = dht.readHumidity();
+
+  publishReport();
+
+  lastTempReportMillis = millis();
+}
+#endif
+
+void setup() {
   pinMode( POWER_READER_PIN, INPUT );
 
   pinMode( ON_LED_PIN, OUTPUT );
@@ -254,9 +321,16 @@ void setup() {
 
   Serial.println();
 
+  onMainsPower = mainPowerIsOn();
+
   configuration.setup();
 
   active = configuration.switchDevice.active == "true";
+
+#ifdef WITH_TEMP_SENSOR
+  pinMode( TEMP_PIN, INPUT );
+  dht.begin();
+#endif
 
   relay.setup();
 #ifdef DOUBLE_RELAY
@@ -271,8 +345,10 @@ void setup() {
   int vdd = ESP.getVcc();
   Serial.print( F("VDD: ") ); Serial.println( String( vdd ) );
 
-  WiFi.onStationModeDisconnected( &onWifiDisconnected );
-  WiFi.onStationModeConnected( &onWifiConnected );
+  // NOTE: if the results of onStationModeDisconnected and onStationModeConnected are not
+  // save in WifiEventHandler, the corresponding callbacks are never called!!!
+  wifiDisconnectedEventHandler = WiFi.onStationModeDisconnected( &onWifiDisconnected );
+  wifiConnectedEventHandler = WiFi.onStationModeConnected( &onWifiConnected );
 
   #if USE_WIFIMANAGER == 1
     wifiManagerWrapper.initFromConfiguration();
@@ -287,74 +363,111 @@ void setup() {
     connectionTime = wifiSetup();
   #endif
 
-  Serial.print( F("Reset reason: ") ); Serial.println( ESP.getResetReason() );
-  const rst_info* resetInfo = ESP.getResetInfoPtr();
-
-  if( mqtt.connect() )
+#ifdef WITH_TEMP_SENSOR
+  // If this device also has a temp sensor and mainsPower is off report temperature and battery status
+  if( !onMainsPower )
   {
-    // IMPORTANT: if this device subscribes to a topic at the time of connection and if mqtt.loop() 
-    // is ommited the publishConfiguration() mqtt message is reported as successfully published 
-    // but it never arrives at the mqtt broker (as observed in the logs of the broker). 
-    // In such a case a delay( ??? ) is required before mqtt.publish
-    // delay( 5000 );
-    // If ESP8266 is active and it was reset externally (see notes at the top of this file)
-    // i.e. by a button press send mqtt "click event" message
-    if( active && resetInfo->reason == REASON_DEFAULT_RST )
+    if( mqtt.connect() )
     {
-      publishReport();
+      // IMPORTANT: if this device subscribes to a topic at the time of connection and if mqtt.loop() 
+      // is ommited the publish() mqtt message is reported as successfully published 
+      // but it never arrives at the mqtt broker (as observed in the logs of the broker). 
+      // In such a case a delay( ??? ) is required before mqtt.publish
+      delay( 50 );
+      reportTemperature();
+
+      // IMPORTANT: without a delay before mqtt.loop() the mqtt message is reported as successfully
+      // published but it never arrives at the mqtt broker (as observed in the logs of the broker)
+      delay( 10 );
+      mqtt.loop();  // receive any pending incoming messages
+      delay( 200 );
     }
-    // IMPORTANT: without a delay before mqtt.loop() the mqtt message is reported as successfully
-    // published but it never arrives at the mqtt broker (as observed in the logs of the broker)
-    delay( 10 );
-    mqtt.loop();  // receive any messages
-    delay( 200 );
+    else
+    {
+      Serial.println( F("MQTT connection failed. Changing to WIFI AP Setup mode") );
+      // We want wifimanager to collect fresh parameters.
+      wifiManagerWrapper.startAPWithoutConnecting();
+    }
   }
-  else
-  {
-    Serial.println( F("MQTT connection failed. Changing to WIFI AP Setup mode") );
-    // We want wifimanager to collect fresh parameters.
-    wifiManagerWrapper.startAPWithoutConnecting();
-  }
-  
+#endif
+
   unsigned long finish = millis();
   unsigned long total = finish - start;
   Serial.print( F("Complete setup finished in ") ); Serial.print( String( total ) ); Serial.println( F(" milliseconds") );
 
-  if( !OTA && !mainPowerIsOn() )
+  if( !OTA && !onMainsPower )
   {
+    Serial.println( "!OTA && !onMainsPower" );
+    Serial.println( "Switching wifi off" );
     WiFi.mode( WIFI_OFF );
+    Serial.println( "Going to deep sleep at end of Setup()" );
     deepSleep();
   }
 
 }
 
 
-void loop() 
+void handleOTA()
 {
-  bool onMainsPower = mainPowerIsOn();
+  if( !OTASetupComplete )
+  {
+    OTASetup();
+  }
+  ArduinoOTA.handle();
+}
 
+void onMainsPowerLoop()
+{  
+  // Serial.println( "In onMainsPowerLoop" );
+  onMainsPower = mainPowerIsOn();
+  
+  if( !mqtt.connected() )
+  {
+    Serial.println( " !mqtt.connected" );
+    if( mqtt.connect() )
+    {
+      publishConfiguration();
+    }
+    else
+    {
+      Serial.println( " mqtt.connect failed" );
+      wifiManagerWrapper.startAPWithoutConnecting();
+    }
+  }
+
+  reportTemperature( true );
+
+  mqtt.loop();
+
+  handleOTA();
+
+}
+
+void onBatteryLoop()
+{
+  // Serial.println( "In onBatteryLoop" );
+
+  if( OTA )
+  {
+    handleOTA();
+    delay( 50 );
+  }
+  else
+  {
+    deepSleep();
+  }
+}
+
+void loop() 
+{  
   if( onMainsPower )
   {
-    if( !mqtt.connected() )
-    {
-      if( mqtt.connect() )
-      {
-        publishConfiguration();
-      }
-      else
-      {
-        wifiManagerWrapper.startAPWithoutConnecting();
-      }
-    }
-
-    mqtt.loop();
+    onMainsPowerLoop();
   }
-
-  if( mainPowerIsOn() || OTA )
+  else
   {
-    ArduinoOTA.handle();
+    onBatteryLoop();
   }
-
 }
 
 
@@ -427,7 +540,6 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
 
   if( topic == mqtt.subscribe_cmd_topic )
   {
-  
     if( payload == "r" )
     {
       publishReport();
@@ -446,27 +558,38 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
     else if( payload == "a" )
     {
       activate();
+      publishReport();
     }
     else if( payload == "d" )
     {
       deactivate();
+      publishReport();
+    }
+    else if( payload == "o" )
+    {
+      OTA = true;
+      Serial.println( F("Changing to OTA mode") );
     }
     else if( payload == "on" )
     {
       relay.on();
+      publishReport();
     }
     else if( payload == "off" )
     {
       relay.off();
+      publishReport();
     }
 #ifdef DOUBLE_RELAY
     else if( payload == "on2" )
     {
       relay2.on();
+      publishReport();
     }
     else if( payload == "off2" )
     {
       relay2.off();
+      publishReport();
     }    
 #endif
     
@@ -475,13 +598,21 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
   {
     if( jsonContainsData( payload, "buttonPressed", "1" ) )
     {
-      relay.toggle();
+      if( active )
+      {
+        relay.toggle();
+        publishReport();
+      }
     }
 
 #ifdef DOUBLE_RELAY   
     if( jsonContainsData( payload, "button2Pressed", "1" ) )
     {
-      relay2.toggle();
+      if( active )
+      {
+        relay2.toggle();
+        publishReport();
+      }
     }
 #endif
 

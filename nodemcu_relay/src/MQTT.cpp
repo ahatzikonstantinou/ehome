@@ -2,22 +2,23 @@
 #include "Settings.h"
 
 bool MQTT::connect( bool cleanSession )
-{
+{  
+  connected_callback( false );
+
   if( !client.connected() )
   {
-    digitalWrite( MQTT_LED_PIN, LOW );
-
     bool success = client.connect(
       client_id.c_str(),  // id
+      0, // user
+      0, // pass
       configuration->mqtt.publish_topic.c_str(), // last will topic
       0,  // last will QoS
       true, // last will retain
-      String( "{ \"id\": \"" + client_id + "\", \"state\": \"offline\" }" ).c_str()  //last will message
+      String( "{ \"id\": \"" + client_id + "\", \"state\": \"offline\" }" ).c_str(),  //last will message
+      cleanSession
     );
     if( success )
     {
-      digitalWrite( MQTT_LED_PIN, HIGH );
-
       Serial.println( "connected, rc=" + String( client.state() ) );
       // ... and subscribe to topic
       subscribe_topic.trim();
@@ -46,29 +47,32 @@ bool MQTT::connect( bool cleanSession )
      return false;
     }
   }
+  connected_callback( true );
   return true;
 }
 
 void MQTT::publish( String topic, String message, bool retain )
 {
-    if( client.connected() )
-    {
-      Serial.print( "Publishing: " + String( topic ) );
-      Serial.println( message );
-      // // Serial.println( "sizeof message: " + String( sizeof( message ) ) );
-      //
-      // char _msg[ message.length() + 1 ];  // note: sizeof( message ) will give the wrong size, use message.length() instead
-      // memset(&_msg[0], 0, sizeof(_msg));
-      // message.toCharArray( _msg, sizeof( _msg ) ) ;
-      // // Serial.println( _msg );
-      //
-      // client.publish( topic, _msg );
-      client.publish( topic.c_str(), message.c_str(), retain );
-    }
-    else
-    {
-      Serial.println( "Cannot publish because client is not connected." );
-    }
+  if( client.connected() )
+  {
+    connected_callback( true );
+    Serial.print( "Publishing: " + String( topic ) );
+    Serial.println( message );
+    // // Serial.println( "sizeof message: " + String( sizeof( message ) ) );
+    //
+    // char _msg[ message.length() + 1 ];  // note: sizeof( message ) will give the wrong size, use message.length() instead
+    // memset(&_msg[0], 0, sizeof(_msg));
+    // message.toCharArray( _msg, sizeof( _msg ) ) ;
+    // // Serial.println( _msg );
+    //
+    // client.publish( topic, _msg );
+    client.publish( topic.c_str(), message.c_str(), retain );
+  }
+  else
+  {
+    connected_callback( false );
+    Serial.println( "Cannot publish because client is not connected." );
+  }
 }
 
 void MQTT::setup( MQTT_CALLBACK_SIGNATURE )
@@ -129,4 +133,5 @@ void MQTT::disconnect()
   {
     client.disconnect();
   }
+  connected_callback( false );
 }
