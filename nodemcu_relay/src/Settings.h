@@ -83,5 +83,9 @@
 
 #endif
 
+#define BLINK_OTA_ON_MSECS 600
+#define BLINK_OTA_OFF_MSECS 500
+#define BLINK_UPLOAD_OTA_ON_MSECS 300
+#define BLINK_UPLOAD_OTA_OFF_MSECS 200
 
 #endif

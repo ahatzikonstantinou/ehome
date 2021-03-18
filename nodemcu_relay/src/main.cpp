@@ -216,20 +216,43 @@ void publishReport()
   mqtt.publish( configuration.mqtt.publish_topic, msg, false );
 }
 
+// this function blinks the MQTT led
+unsigned int lastMQTTLedToggleMsecs = 0;
+bool MQTTLedOn = false;
+void blinkOTA( bool upload = false )
+{
+  unsigned int now = millis();
+  if( now - lastMQTTLedToggleMsecs > 
+      ( MQTTLedOn ? 
+        ( upload ? BLINK_UPLOAD_OTA_ON_MSECS : BLINK_OTA_ON_MSECS ) : 
+        ( upload ? BLINK_UPLOAD_OTA_OFF_MSECS : BLINK_OTA_OFF_MSECS ) 
+      )
+    )
+  {
+    // Serial.println( "MQTT Led blink " + String( MQTTLedOn ? "ON" : "OFF" ) );
+    MQTTLedOn = !MQTTLedOn;
+    digitalWrite( MQTT_LED_PIN, ( MQTTLedOn ? HIGH : LOW ) );
+    lastMQTTLedToggleMsecs = now;
+  }
+}
+
 bool OTASetupComplete = false;
 void OTASetup()
 {
   // OTA setup
   ArduinoOTA.onStart([]() {
-    Serial.println("Start OTA");
+    Serial.println("Start OTA");    
+    OTA = true;
   });
 
   ArduinoOTA.onEnd([]() {
-    Serial.println("End OTA");
+    Serial.println("End OTA");    
+    OTA = false;
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     Serial.printf("Progress: %u%%\n", (progress / (total / 100)));
+    blinkOTA( true );
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
@@ -449,6 +472,10 @@ void onMainsPowerLoop()
   mqtt.loop();
 
   handleOTA();
+  if( OTA )
+  {
+    blinkOTA();
+  }
 
 }
 
@@ -458,6 +485,7 @@ void onBatteryLoop()
 
   if( OTA )
   {
+    blinkOTA();
     handleOTA();
     delay( 50 );
   }
