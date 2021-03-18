@@ -9,12 +9,13 @@
 
 // see https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
 // to find which pins are preferable for each function
-#define POWER_READER_PIN D4
+// ahat: since I used all Digital pins I am using GPIO3 for input, since this is Rx and I am using OTA to upload
+#define POWER_READER_PIN D2
 
 // The pin were the relay control input is connected
 #define RELAY_PIN D1
 
-#define ON_LED_PIN D6
+#define ON_LED_PIN D4
 #define AP_LED_PIN D7
 #define MQTT_LED_PIN D8
 
@@ -61,7 +62,7 @@
 #define DOUBLE_RELAY
 
 #ifdef DOUBLE_RELAY
-#define RELAY2_PIN D2
+#define RELAY2_PIN D6
 #define DEVICE_TYPE "RELAY2"
 #else
 #define DEVICE_TYPE "RELAY1"

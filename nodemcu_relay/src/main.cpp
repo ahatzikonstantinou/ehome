@@ -259,6 +259,9 @@ void deepSleep()
   long sleepSeconds = configuration.switchDevice.sleep_seconds.toInt();
 #endif
 
+  Serial.println( "Switching wifi off" );
+  WiFi.mode( WIFI_OFF );
+
   Serial.print( F("Configuration sleep_seconds: ") ); Serial.println( sleepSeconds );
   Serial.print( F("Final sleep seconds ") ); Serial.println( String( configuration.getFinalSleepSeconds( sleepSeconds ) ) );
   uint64_t sleepTime = sleepSeconds*1000000;
@@ -304,7 +307,8 @@ void reportTemperature( bool waitTempMillis = false )
 }
 #endif
 
-void setup() {
+void setup() 
+{
   pinMode( POWER_READER_PIN, INPUT );
 
   pinMode( ON_LED_PIN, OUTPUT );
@@ -378,7 +382,7 @@ void setup() {
 
       // IMPORTANT: without a delay before mqtt.loop() the mqtt message is reported as successfully
       // published but it never arrives at the mqtt broker (as observed in the logs of the broker)
-      delay( 10 );
+      delay( 50 );
       mqtt.loop();  // receive any pending incoming messages
       delay( 200 );
     }
@@ -398,8 +402,7 @@ void setup() {
   if( !OTA && !onMainsPower )
   {
     Serial.println( "!OTA && !onMainsPower" );
-    Serial.println( "Switching wifi off" );
-    WiFi.mode( WIFI_OFF );
+    
     Serial.println( "Going to deep sleep at end of Setup()" );
     deepSleep();
   }
@@ -418,8 +421,14 @@ void handleOTA()
 
 void onMainsPowerLoop()
 {  
-  // Serial.println( "In onMainsPowerLoop" );
+  bool previousOnMainsPower = onMainsPower; //debug
+
   onMainsPower = mainPowerIsOn();
+
+  if( previousOnMainsPower != onMainsPower )
+  {
+    Serial.println( "From main power " + String( previousOnMainsPower ? "ON" : "OFF") + " to " + String( onMainsPower ? "ON" : "OFF") );
+  }
   
   if( !mqtt.connected() )
   {
@@ -569,6 +578,34 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
     {
       OTA = true;
       Serial.println( F("Changing to OTA mode") );
+    }
+    else if( payload.startsWith( "sensor_onmains_read_seconds" ) )
+    {
+      String txtSecs = payload.substring( 28 );
+      if( isnan( txtSecs.toInt() ) )
+      {
+        Serial.println( txtSecs + " is not a number or is less than 0. Sensor read seconds on mains unchanged" );
+      }
+      else
+      {
+        configuration.switchDevice.sensor_onmains_read_seconds = txtSecs;
+        Serial.println( "Sensor read seconds on mains: " + txtSecs );
+        configuration.write();
+      }
+    }
+    else if( payload.startsWith( "sensor_onbattery_read_seconds" ) )
+    {
+      String txtSecs = payload.substring( 30 );
+      if( isnan( txtSecs.toInt() ) )
+      {
+        Serial.println( txtSecs + " is not a number. Sensor read seconds on battery unchanged" );
+      }
+      else
+      {
+        configuration.switchDevice.sensor_onbattery_read_seconds = txtSecs;
+        Serial.println( "Sensor read seconds on battery: " + txtSecs );
+        configuration.write();
+      }
     }
     else if( payload == "on" )
     {
