@@ -248,6 +248,8 @@ void OTASetup()
   ArduinoOTA.onEnd([]() {
     Serial.println("End OTA");    
     OTA = false;
+    WiFi.mode( WIFI_OFF );
+    ESP.restart();
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
