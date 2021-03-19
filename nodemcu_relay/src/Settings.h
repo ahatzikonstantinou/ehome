@@ -50,12 +50,16 @@
 // The time that the device will "sleep" i.e. it will wait before sending a "I am alive"
 // configuration message. Note that if a user presses the reset button and the device restarts
 // the deep sleep timer is effectively reset.
-// 12600 is the max that ESP8266 can sleep. Sleeping longer than that requires a counter
-// to add separate sleep times until the total sleep time is reached. The counter needs
-// to be updated at every wake up and if the counter value is written in the flash memory
-// it will wear it out (flash memories have about 10,000 write cycles lifetime.) Therefore
-// the counter value should be stored in RTC memory
-#define MAX_SLEEP_SECONDS 12600 //3:30h se
+// 
+// 2147 is the max that nodemcu v2 can sleep. It was found experimentally after looking at the source
+// code of ESP.deepSleepMax() and trial & error testing, because Serial.ptintln and String do not
+// have uint_64 overloads. Anything larger for deepSleep and ESP8266 will not go to deep sleep.
+// ESP32 has a much better max sleep time.
+// Sleeping longer than that requires a counter to add separate sleep times until the total sleep 
+// time is reached. The counter needs to be updated at every wake up and if the counter value is 
+// written in the flash memory it will wear it out (flash memories have about 10,000 write cycles 
+// lifetime.) Therefore the counter value should be stored in RTC memory.
+#define MAX_SLEEP_SECONDS 2147 // 35,78 min
 
 // define DOUBLE_RELAY if this device controls two relays, which is expected when one light
 // fixture houses two light circuits (two gang light)

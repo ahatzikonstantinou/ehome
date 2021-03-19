@@ -35,8 +35,8 @@ unsigned long WifiManagerWrapper::waitForConnection()
 bool WifiManagerWrapper::connect()
 {
   WiFi.mode( WIFI_OFF );
-  WiFi.setAutoConnect( false );
-  WiFi.setAutoReconnect( false );
+  WiFi.setAutoConnect( true );    // set to true to be able to connect quickly (<200msec) with static ip, BSSID, channel
+  WiFi.setAutoReconnect( true );  // set to true to be able to connect quickly (<200msec) with static ip, BSSID, channel
   WiFi.hostname( mqtt->device_name );      // DHCP Hostname (useful for finding device for static lease)
   WiFi.config( staticIP, subnet, gateway );//, dns1, dns2);
   WiFi.mode(WIFI_STA);
@@ -104,9 +104,10 @@ void WifiManagerWrapper::startAPWithoutConnecting( bool timeout )
   WiFiManagerParameter custom_mqtt_configurator_publish_topic( "mqtt_configurator_publish_topic", "mqtt configurator publish topic", mqtt->configurator_publish_topic.c_str(), 128, " required" );
   WiFiManagerParameter custom_mqtt_configurator_subscribe_topic( "mqtt_configurator_subscribe_topic", "mqtt configurator subscribe topic", mqtt->configurator_subscribe_topic.c_str(), 128, " required" );
   WiFiManagerParameter custom_switchDevice_sleep_seconds( "switchDevice_sleep_seconds", "sleep seconds", configuration->switchDevice.sleep_seconds.c_str(), 128, " required" );
+#ifdef WITH_TEMP_SENSOR
   WiFiManagerParameter custom_switchDevice_sensor_onmains_read_seconds( "switchDevice_sensor_onmains_read_seconds", "sensor onmains read seconds", configuration->switchDevice.sensor_onmains_read_seconds.c_str(), 128, " required" );
   WiFiManagerParameter custom_switchDevice_sensor_onbattery_read_seconds( "switchDevice_sensor_onbattery_read_seconds", "sensor onbattery read seconds", configuration->switchDevice.sensor_onbattery_read_seconds.c_str(), 128, " required" );
-
+#endif
   //WiFiManager
   //Local intialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager( portal_idle_callback );
@@ -137,8 +138,10 @@ void WifiManagerWrapper::startAPWithoutConnecting( bool timeout )
   wifiManager.addParameter( &custom_mqtt_configurator_publish_topic );
   wifiManager.addParameter( &custom_mqtt_configurator_subscribe_topic );
   wifiManager.addParameter( &custom_switchDevice_sleep_seconds );
+#ifdef WITH_TEMP_SENSOR
   wifiManager.addParameter( &custom_switchDevice_sensor_onmains_read_seconds );
   wifiManager.addParameter( &custom_switchDevice_sensor_onbattery_read_seconds );
+#endif
 
   delay( 1000 );
   if( !wifiManager.startConfigPortal( String( String( "OnDemandAP-" ) + mqtt->device_name ).c_str() ) )
@@ -169,8 +172,10 @@ void WifiManagerWrapper::startAPWithoutConnecting( bool timeout )
   configuration->mqtt.configurator_publish_topic = custom_mqtt_configurator_publish_topic.getValue();
   configuration->mqtt.configurator_subscribe_topic = custom_mqtt_configurator_subscribe_topic.getValue();
   configuration->switchDevice.sleep_seconds = custom_switchDevice_sleep_seconds.getValue();
+#ifdef WITH_TEMP_SENSOR
   configuration->switchDevice.sensor_onmains_read_seconds = custom_switchDevice_sensor_onmains_read_seconds.getValue();
   configuration->switchDevice.sensor_onbattery_read_seconds = custom_switchDevice_sensor_onbattery_read_seconds.getValue();
+#endif
 
   mqtt->setup();  //re-setup mqtt based on the new configuration values
 

@@ -5,8 +5,10 @@ Configuration::Configuration()
 {  
   switchDevice.active = "true";
   switchDevice.sleep_seconds = String( MAX_SLEEP_SECONDS );
+#ifdef WITH_TEMP_SENSOR          
   switchDevice.sensor_onmains_read_seconds = String( ON_MAINS_TEMP_REPORT_SECS );
   switchDevice.sensor_onbattery_read_seconds = String( ON_BATTERY_TEMP_REPORT_SECS );
+#endif  
 }
 
 void Configuration::setup()
@@ -72,6 +74,7 @@ bool Configuration::read()
             switchDevice.active = "true";
           }
           switchDevice.sleep_seconds = json["sleep_seconds"].as<String>();
+#ifdef WITH_TEMP_SENSOR          
           switchDevice.sensor_onmains_read_seconds = json["sensor_onmains_read_seconds"].as<String>();
           if( switchDevice.sensor_onmains_read_seconds.isEmpty() )
           {
@@ -82,7 +85,7 @@ bool Configuration::read()
           {
             switchDevice.sensor_onbattery_read_seconds = String( ON_BATTERY_TEMP_REPORT_SECS );
           }
-
+#endif
           return true;
         }
         else
@@ -125,8 +128,10 @@ void Configuration::write()
   json["mqtt_configurator_subscribe_topic"] = mqtt.configurator_subscribe_topic;
   json["active"] = switchDevice.active;
   json["sleep_seconds"] = switchDevice.sleep_seconds;
+#ifdef WITH_TEMP_SENSOR          
   json["sensor_onmains_read_seconds"] = switchDevice.sensor_onmains_read_seconds;
   json["sensor_onbattery_read_seconds"] = switchDevice.sensor_onbattery_read_seconds;
+#endif
 
   File configFile = SPIFFS.open( configFileName , "w");
   if( !configFile )

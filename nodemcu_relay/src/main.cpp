@@ -6,7 +6,82 @@
  * In order to accommodate larger mqtt messages such as the ones including check errors, increase
  * MQTT_MAX_PACKET_SIZE to 1024 in PubSubClient.h
  * 
- */
+ * USAGE:
+ *  NOTE: Use with Settings.h:USE_WIFIMANAGER 1. USE_WIFIMANAGER 0 should be used only in development
+ *        as it requires to manuall set initial values for wifi and mqtt connections
+ * 
+ *                TODO
+ * 
+ *  Whenever ESP8266 starts (e.g. after a manual or software reset) it will read configuration data
+ *  from flash memory and attempt to:
+ *  1) connect to a wifi. First attempt is done using static ip, gateway, subnet, bssid ( i.e. mac 
+ *      address of access point), wifi channel, ssid, and password. If the connection fails it 
+ *      will attempt to slow connect using only ssid and password. If this fails too it will change
+ *      to Access Point Configuration Portal mode. Use a smartphone or laptop to find it, connect to 
+ *      it over wifi, and set the correct connection parameters.
+ *  2) if wifi connection succeeds it will attempt to make an mqtt connection. If the connection fails
+ *      it will change to Access Point Configuration Portal mode. Use a smartphone or laptop to find it, 
+ *      connect to it over wifi, and set the correct connection parameters.
+ *  3) if mqtt connection succeeds and ESP8266 is "active" it will send an mqtt message to the configured
+ *      mqtt publish topic.
+ *      It will also listen for any pending incoming mqtt messages with the configured subscribe topic.
+ *      The following messages are available:
+ *        'r': publishReport( active );
+ *        'w': change to access point configuration portal mode
+ *        'a': activate
+ *        'd': deactivate
+ *        'o': change to OTA mode. ESP8266 will keep the wifi on without timeout for OTA functionality.
+ *             Note that ESP8266-01 with 512 KB of memory cannot use OTA due to its low memory.
+ *        
+ *        Any incoming message with configurator_subscribe_topic (regardless of its payload) will cause
+ *        ESP8266 to send an mqtt configuration message to configurator_publish_topic.
+ * 
+ *      To send mqtt messages to ESP8266 from another device, e.g. use a linux client mosquitto_pub, send
+ *      the mqtt message with QOS 1 and then reset ESP8266. The mqtt broker keeps the message until it is
+ *      delivered at least once. When ESP8266 restarts it will listen for pending
+ *      incoming messages.
+ * 
+ *  If you wish to reset its configuration either stop the mqtt broker or the wifi network so that it
+ *  will change to Access Point Configuration Portal mode. Use a smartphone or laptop to find it, 
+ *  connect to it over wifi, and set the correct connection parameters.
+ * 
+ *  NOTE: wifi connection to a ZTE home router varies widely between 200ms and 12secs. However, when 
+ *        using a raspeberry pi 3B+ as a routed wireless access point 
+ *        (see see https://www.raspberrypi.org/documentation/configuration/wireless/access-point-routed.md)
+ *        typical wifi connection times are 170ms and the total "switch" event from start to end of setup()
+ *        is < 1 sec.
+ * 
+ *  Access Point Portal Configuration params:
+ *    location: the physical location in mqtt topic terms that should match the publish and subscribe topics 
+ *      e.g. "A/4/S" means "Antonis house/4th floor/Study" and a corresponding publish topic would be 
+ *      "A/4/S/SWITCH/S1/state" i.e. location/Type/ID/state, a corresponding publish topic would be
+ *      "A/4/S/SWITCH/S1/set"  i.e. location/Type/ID/set
+ *    sleep seconds: 
+ *      -0: sleep forever until external reset
+ *      -xxx: wake up after xxx seconds and send a configuration mqtt message. If xxx > MAX_SLEEP_SECONDS
+ *            wake up after MAX_SLEEP_SECONDS seconds.
+ * 
+ *  IMPORTANT: After ESP8266 goes in deep sleep there are several events that can wake it up: (from user_interface.h)
+ *    REASON_DEFAULT_RST      = 0,    normal startup by power on
+ *    REASON_WDT_RST          = 1,    hardware watch dog reset
+ *    REASON_EXCEPTION_RST    = 2,    exception reset, GPIO status won’t change
+ *    REASON_SOFT_WDT_RST     = 3,    software watch dog reset, GPIO status won’t change
+ *    REASON_SOFT_RESTART     = 4,    software restart ,system_restart , GPIO status won’t change
+ *    REASON_DEEP_SLEEP_AWAKE = 5,    wake up from deep-sleep
+ *    REASON_EXT_SYS_RST      = 6     external system reset
+ *    Trying to reset by pressing the RESET button, or even trying to disconnect and reconnect VCC the
+ *    wake up reason is always REASON_DEEP_SLEEP_AWAKE which is the same as waking up by the RTC_timer.
+ *    However, when disconnecting and reconnecting (via a push button) the CH_EN pin to +3.3V the wake
+ *    up reason is REASON_DEFAULT_RST which differentiates from REASON_DEEP_SLEEP_AWAKE. Also if the CH_EN
+ *    pin is disconnected and reconnected while the ESP8266 has not gone to deep sleep yet, it still 
+ *    reboots with REASON_DEFAULT_RST.
+ *    RECOMMENDATION: Use a falling edge one shot timer with an output pulse of about 15 secs to cover
+ *    the case that ESP8266 takes a very long time to connect (althought if this happens all the time
+ *    it will drain the battery very quickly and gives a very large lag between pushing the switch and
+ *    seeing the corresponding light turn on). See https://youtu.be/vmS5YQITRQ0 and https://www.petervis.com/GCSE_Design_and_Technology_Electronic_Products/falling-edge-triggered-monostable/falling-edge-triggered-monostable.html
+ *    A TLC555 works with 3.3V VCC and can be powered from the same sourve as the ESP8266.
+ *    Feed this pulse to CH_EN to turn ESP8266 on for max 15 secs. Normally ESP8266 will connect and send 
+ *    an mqtt "Event" message in less than a second and then go to deep sleep. */
 
 
 #include <ESP8266WiFi.h>
@@ -54,10 +129,11 @@ void mqtt_connected_callback( bool connected )
   digitalWrite( MQTT_LED_PIN, connected ? HIGH : LOW );
   Serial.println( "MQTT" + String( connected ? " " : " NOT " ) + "connected." );
 }
+void mqtt_published_callback();
 
 Configuration configuration;
 WiFiClient espClient;
-MQTT mqtt( configuration, espClient, mqtt_connected_callback );
+MQTT mqtt( configuration, espClient, mqtt_connected_callback, mqtt_published_callback );
 Relay relay( RELAY_PIN, INIT_RELAY_STATE );
 #ifdef DOUBLE_RELAY
 Relay relay2( RELAY2_PIN, INIT_RELAY_STATE );
@@ -161,16 +237,16 @@ void publishConfiguration()
     ", \"connection time\": \"" + connectionTime + "\"" +
     ", \"mainPowerIsOn\": \"" + String( mainPowerIsOn() ) + "\"" +
     ", \"sleep seconds config/final\": \"" + configuration.switchDevice.sleep_seconds + "/" + configuration.getFinalSleepSeconds(configuration.switchDevice.sleep_seconds.toInt() ) + "\"" +
+#ifdef WITH_TEMP_SENSOR
     ", \"sensor read seconds on mains config/final\": \"" + configuration.switchDevice.sensor_onmains_read_seconds + "/" + configuration.getFinalSleepSeconds( configuration.switchDevice.sensor_onmains_read_seconds.toInt() ) + "\"" +
     ", \"sensor read seconds on battery config/final\": \"" + configuration.switchDevice.sensor_onbattery_read_seconds + "/" + configuration.getFinalSleepSeconds( configuration.switchDevice.sensor_onbattery_read_seconds.toInt() ) + "\"" +
     "}, \"data\": { " +
-#ifdef WITH_TEMP_SENSOR
   "\"temperature_celsius\": " + temperature +
-  ", \"humidity\": " + humidity + ", " +
+  ", \"humidity\": " + humidity +
 #endif  
-    "\"relay is on\": \"" + String( relay.isOn() ) + "\"" +
+    ", \"relay is on\": \"" + String( relay.isOn() ) + "\"" +
 #ifdef DOUBLE_RELAY
-      ", \"relay2 is on\": \"" + String( relay2.isOn() ) + "\"" +
+    ", \"relay2 is on\": \"" + String( relay2.isOn() ) + "\"" +
 #endif
     
   " } }" );
@@ -201,19 +277,40 @@ void publishReport()
     ", \"connection time\": \"" + connectionTime + "\"" +
     ", \"mainPowerIsOn\": \"" + String( mainPowerIsOn() ) + "\"" +
     ", \"sleep seconds config/final\": \"" + configuration.switchDevice.sleep_seconds + "/" + configuration.getFinalSleepSeconds( configuration.switchDevice.sleep_seconds.toInt() ) + "\"" +
+#ifdef WITH_TEMP_SENSOR
     ", \"sensor read seconds on mains config/final\": \"" + configuration.switchDevice.sensor_onmains_read_seconds + "/" + configuration.getFinalSleepSeconds( configuration.switchDevice.sensor_onmains_read_seconds.toInt() ) + "\"" +
     ", \"sensor read seconds on battery config/final\": \"" + configuration.switchDevice.sensor_onbattery_read_seconds + "/" + configuration.getFinalSleepSeconds( configuration.switchDevice.sensor_onbattery_read_seconds.toInt() ) + "\"" +
     "}, \"data\": { " +
-#ifdef WITH_TEMP_SENSOR
   "\"temperature_celsius\": " + temperature +
-  ", \"humidity\": " + humidity + ", " +
+  ", \"humidity\": " + humidity +
 #endif  
-    "\"relay is on\": \"" + String( relay.isOn() ) + "\"" +
+    ", \"relay is on\": \"" + String( relay.isOn() ) + "\"" +
 #ifdef DOUBLE_RELAY
-      ", \"relay2 is on\": \"" + String( relay2.isOn() ) + "\"" +
+    ", \"relay2 is on\": \"" + String( relay2.isOn() ) + "\"" +
 #endif
 " } }" );
   mqtt.publish( configuration.mqtt.publish_topic, msg, false );
+}
+
+// lastPublishMsecs is updated every time a mqtt publish happens
+// It is checked in mainPower loop and if nothing has been published for MAX_SLEEP_SECONDS
+// a battery status report will be published
+unsigned int lastPublishMsecs = 0;
+void reportBatteryStatus()
+{
+  // Serial.println( "reportBatteryStatus()" );
+  if( millis() - lastPublishMsecs > configuration.switchDevice.sleep_seconds.toInt()*1000 )
+  {
+    // Serial.println( "Reporting battery status" );
+    publishReport();
+  }
+}
+
+void mqtt_published_callback()
+{
+  // whenever a mqtt message is published, update lastPublishMsecs
+  // Serial.println( "Updating lastPublishMsecs" );
+  lastPublishMsecs = millis();
 }
 
 // this function blinks the MQTT led
@@ -289,8 +386,22 @@ void deepSleep()
 
   Serial.print( F("Configuration sleep_seconds: ") ); Serial.println( sleepSeconds );
   Serial.print( F("Final sleep seconds ") ); Serial.println( String( configuration.getFinalSleepSeconds( sleepSeconds ) ) );
-  uint64_t sleepTime = sleepSeconds*1000000;
-  ESP.deepSleep( sleepTime );
+  uint64_t sleepTime = configuration.getFinalSleepSeconds( sleepSeconds )*1000000;
+  
+  // attempt to split and print a uint_64
+  // uint32_t low = sleepTime % 0xFFFFFFFF; 
+  // uint32_t high = (sleepTime >> 32) % 0xFFFFFFFF;
+
+  // Serial.print( F("Final sleepTime ") ); Serial.println( String( low ) + String( high ) );
+  
+  // The following line can help you determine the max sleep time, formula taken from Esp.maxDeepSleep()
+  // Note that Serial.println() and String() do not have uint_64 overloads.
+  // Serial.println( "Sleep time " + String( sleepTime > ((uint64_t)system_rtc_clock_cali_proc()*(0x80000000-1)/(0x1000)) ? ">" : "<" ) + " max sleep time" );
+  
+  // NOTE: Esp.deepSleep will NOT go to sleep immediately and will allow loop to run again
+  // and since wifi is off wifimanager will start the ConfigPortal
+  ESP.deepSleepInstant( sleepTime, WAKE_RFCAL ); 
+  // delay( 100 );
 }
 
 WiFiEventHandler wifiConnectedEventHandler, wifiDisconnectedEventHandler;
@@ -332,6 +443,7 @@ void reportTemperature( bool waitTempMillis = false )
 }
 #endif
 
+
 void setup() 
 {
   pinMode( POWER_READER_PIN, INPUT );
@@ -357,8 +469,7 @@ void setup()
   active = configuration.switchDevice.active == "true";
 
 #ifdef WITH_TEMP_SENSOR
-  pinMode( TEMP_PIN, INPUT );
-  dht.begin();
+  pinMode( TEMP_PIN, INPUT );  
 #endif
 
   relay.setup();
@@ -394,6 +505,14 @@ void setup()
 
 #ifdef WITH_TEMP_SENSOR
   // If this device also has a temp sensor and mainsPower is off report temperature and battery status
+  dht.begin();
+  // while( millis() - start < 8000 )  // must wait at least 1 sec before reading temp DHT22
+  // {
+  //   delay( 10 );
+  //   yield();
+  // }
+#endif
+
   if( !onMainsPower )
   {
     if( mqtt.connect() )
@@ -403,7 +522,7 @@ void setup()
       // but it never arrives at the mqtt broker (as observed in the logs of the broker). 
       // In such a case a delay( ??? ) is required before mqtt.publish
       delay( 50 );
-      reportTemperature();
+      // reportTemperature(); //will do that in the batteryloop
 
       // IMPORTANT: without a delay before mqtt.loop() the mqtt message is reported as successfully
       // published but it never arrives at the mqtt broker (as observed in the logs of the broker)
@@ -418,19 +537,18 @@ void setup()
       wifiManagerWrapper.startAPWithoutConnecting();
     }
   }
-#endif
 
   unsigned long finish = millis();
   unsigned long total = finish - start;
   Serial.print( F("Complete setup finished in ") ); Serial.print( String( total ) ); Serial.println( F(" milliseconds") );
 
-  if( !OTA && !onMainsPower )
-  {
-    Serial.println( "!OTA && !onMainsPower" );
+  // if( !OTA && !onMainsPower )
+  // {
+  //   Serial.println( "!OTA && !onMainsPower" );
     
-    Serial.println( "Going to deep sleep at end of Setup()" );
-    deepSleep();
-  }
+  //   Serial.println( "Going to deep sleep at end of Setup()" );
+  //   deepSleep();
+  // }
 
 }
 
@@ -469,7 +587,11 @@ void onMainsPowerLoop()
     }
   }
 
+#ifdef WITH_TEMP_SENSOR
   reportTemperature( true );
+#else
+  reportBatteryStatus();
+#endif
 
   mqtt.loop();
 
@@ -493,7 +615,30 @@ void onBatteryLoop()
   }
   else
   {
-    deepSleep();
+    if( mqtt.connect() )
+    {
+      // IMPORTANT: if this device subscribes to a topic at the time of connection and if mqtt.loop() 
+      // is ommited the publish() mqtt message is reported as successfully published 
+      // but it never arrives at the mqtt broker (as observed in the logs of the broker). 
+      // In such a case a delay( ??? ) is required before mqtt.publish
+      delay( 50 );
+#ifdef WITH_TEMP_SENSOR
+      yield();
+      delay( 1000 );
+      yield();
+      reportTemperature();
+#else
+      publishReport();    
+#endif
+      delay( 200 );
+    }
+    else
+    {
+      Serial.println( F("In onbatteryloop: MQTT connection failed. Changing to WIFI AP Setup mode") );
+      // We want wifimanager to collect fresh parameters.
+      wifiManagerWrapper.startAPWithoutConnecting();
+    }
+    deepSleep();  
   }
 }
 
@@ -609,6 +754,21 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
       OTA = true;
       Serial.println( F("Changing to OTA mode") );
     }
+    else if( payload.startsWith( "sleep_seconds" ) )
+    {
+      String txtSecs = payload.substring( 14 );
+      if( isnan( txtSecs.toInt() ) )
+      {
+        Serial.println( txtSecs + " is not a number or is less than 0. Sensor sleep seconds unchanged" );
+      }
+      else
+      {
+        configuration.switchDevice.sleep_seconds = txtSecs;
+        Serial.println( "Sensor sleep seconds: " + txtSecs );
+        configuration.write();
+      }
+    }
+#ifdef WITH_TEMP_SENSOR
     else if( payload.startsWith( "sensor_onmains_read_seconds" ) )
     {
       String txtSecs = payload.substring( 28 );
@@ -637,6 +797,7 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
         configuration.write();
       }
     }
+#endif    
     else if( payload == "on" )
     {
       relay.on();

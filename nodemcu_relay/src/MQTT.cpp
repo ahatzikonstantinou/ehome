@@ -39,6 +39,7 @@ bool MQTT::connect( bool cleanSession )
 
       // and publish an empty retained message to the last will topic to remove any retained messages
       client.publish( configuration->mqtt.publish_topic.c_str(), "", true );
+      published_callback();
       Serial.println( "Published a zero length retained message to " + configuration->mqtt.publish_topic + " to clear any previous last will retained messsages" );
     }
     else
@@ -67,6 +68,7 @@ void MQTT::publish( String topic, String message, bool retain )
     //
     // client.publish( topic, _msg );
     client.publish( topic.c_str(), message.c_str(), retain );
+    published_callback();
   }
   else
   {

@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <FS.h> //for WiFiManager this needs to be first, or it all crashes and burns...
 #include <ArduinoJson.h>  //https://github.com/bblanchon/ArduinoJson
+#include "Settings.h"
 
 class Configuration
 {
@@ -49,8 +50,10 @@ public:
   {
     String active;
     String sleep_seconds;
+#ifdef WITH_TEMP_SENSOR          
     String sensor_onmains_read_seconds;
     String sensor_onbattery_read_seconds;
+#endif    
   } SwitchDeviceConfiguration;
   SwitchDeviceConfiguration switchDevice;
 

@@ -10,8 +10,10 @@
 #if defined(ESP8266) || defined(ESP32)
 #include <functional>
 #define CONNECTED_CALLBACK_SIGNATURE std::function<void( bool connected )> connected_callback
+#define PUBLISHED_CALLBACK_SIGNATURE std::function<void()> published_callback
 #else
 #define CONNECTED_CALLBACK_SIGNATURE void (*connected_callback)( bool connected )
+#define PUBLISHED_CALLBACK_SIGNATURE void (*published_callback)()
 #endif
 
 class MQTT
@@ -21,6 +23,7 @@ private:
   unsigned int reconnectAttempts;
   Configuration* configuration;
   CONNECTED_CALLBACK_SIGNATURE;
+  PUBLISHED_CALLBACK_SIGNATURE;
 
 public:
   String device_name;// = "";
@@ -34,12 +37,13 @@ public:
   String configurator_publish_topic = "";
   String configurator_subscribe_topic = "";
 
-  MQTT( Configuration &_configuration, WiFiClient& espClient, CONNECTED_CALLBACK_SIGNATURE ):
+  MQTT( Configuration &_configuration, WiFiClient& espClient, CONNECTED_CALLBACK_SIGNATURE, PUBLISHED_CALLBACK_SIGNATURE ):
     client( espClient )
   {
     configuration = &_configuration;
     reconnectAttempts = 0;
     this->connected_callback = connected_callback;
+    this->published_callback = published_callback;
   }
 
   bool connected();
