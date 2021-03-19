@@ -10,10 +10,30 @@
  *  NOTE: Use with Settings.h:USE_WIFIMANAGER 1. USE_WIFIMANAGER 0 should be used only in development
  *        as it requires to manuall set initial values for wifi and mqtt connections
  * 
- *                TODO
+ *  There are two configurations WITH and without TEMP SENSOR (see Settings.h). 
+ *  Also, the relay device may be active or inactive.
  * 
- *  Whenever ESP8266 starts (e.g. after a manual or software reset) it will read configuration data
- *  from flash memory and attempt to:
+ *  INACTIVE: the device will not respond to mqtt messages for toggling or turning on/off the relay.
+ *    It will simply turn on the relay as soon as it powers up. This corresponds to a traditional
+ *    light switch turning on the lights (the switch on the wall powers up the nodemcu device which
+ *    controls the relay/s).
+ *    When INACTIVE the ON led will blink.
+ *  ACTIVE: the device will NOT turn on the relay when it powers up. It will toggle and turn on/off
+ *    the relay only according to mqtt messages and commands.
+ *  
+ *  LEDs: There are 3 leds, the ON, the WIFI, and the MQTT.
+ *    ON:   turns on when power is on, blinks if INACTIVE, stays ON when ACTIVE
+ *    WIFI: turns on when connected, off when disconnected
+ *    MQTT: turns on when connected to mqtt broker, turns off while not connected, blinks slow when
+ *          the device is in OTA mode waiting for OTA connection, blinks fast while OTA image is
+ *          uploading.
+ * 
+ *  On mains power: the device accepts mqtt messages and commands to turn on/of and toggle the relay/s
+ *          If the device has a DHT sensor it will also transmit temperature readings.
+ *  On battery: the device is expected to be charged by a battery only if it has a DHT sensor. It
+ *          will transmit temperature readings and go to deep sleep.
+ * 
+ *  Whenever ESP8266 starts it will read configuration data from flash memory and attempt to:
  *  1) connect to a wifi. First attempt is done using static ip, gateway, subnet, bssid ( i.e. mac 
  *      address of access point), wifi channel, ssid, and password. If the connection fails it 
  *      will attempt to slow connect using only ssid and password. If this fails too it will change
@@ -22,16 +42,28 @@
  *  2) if wifi connection succeeds it will attempt to make an mqtt connection. If the connection fails
  *      it will change to Access Point Configuration Portal mode. Use a smartphone or laptop to find it, 
  *      connect to it over wifi, and set the correct connection parameters.
- *  3) if mqtt connection succeeds and ESP8266 is "active" it will send an mqtt message to the configured
- *      mqtt publish topic.
- *      It will also listen for any pending incoming mqtt messages with the configured subscribe topic.
- *      The following messages are available:
+ *  3) if mqtt connection succeeds and ESP8266 and if mains power is on it will go in a loop waiting 
+ *      for mqtt messages and commands with the configured subscribe topics.
+ *      The following mqtt commands are available for subscribe_cmd_topic topic:
  *        'r': publishReport( active );
  *        'w': change to access point configuration portal mode
  *        'a': activate
  *        'd': deactivate
- *        'o': change to OTA mode. ESP8266 will keep the wifi on without timeout for OTA functionality.
+ *        'o': change to OTA mode. On battery ESP8266 will keep the wifi on without timeout for OTA functionality.
  *             Note that ESP8266-01 with 512 KB of memory cannot use OTA due to its low memory.
+ *        'sleep_seconds:x': set the sleep seconds (see Settings.h) to x. When on battery and no DHT22 is 
+ *             present, the device will wake ever x sleep_seconds and send a report.
+ *        'sensor_onmains_read_seconds': if a DHT22 is present, the device will send a report containing
+ *             temperature readings every sensor_onmains_read_seconds seconds when on mains power
+ *        'sensor_onbattery_read_seconds': if a DHT22 is present, the device will send a report containing
+ *             temperature readings every sensor_onmains_read_seconds seconds when on battery
+ *        'on': turn relay on if ACTIVE
+ *        'on2': turn relay2 (if it exists) on if ACTIVE
+ *        'off': turn relay off if ACTIVE
+ *        'off2': turn relay2 (if it exists) off if ACTIVE
+ *      The following MQTT messages are available for subscribe_topic topic:
+ *        -json messages containing "buttonPressed":"1" will toggle relay
+ *        -json messages containing "button2Pressed":"1" will toggle relay2 if it exists
  *        
  *        Any incoming message with configurator_subscribe_topic (regardless of its payload) will cause
  *        ESP8266 to send an mqtt configuration message to configurator_publish_topic.
@@ -41,9 +73,9 @@
  *      delivered at least once. When ESP8266 restarts it will listen for pending
  *      incoming messages.
  * 
- *  If you wish to reset its configuration either stop the mqtt broker or the wifi network so that it
- *  will change to Access Point Configuration Portal mode. Use a smartphone or laptop to find it, 
- *  connect to it over wifi, and set the correct connection parameters.
+ *  If you wish to reset its configuration send message "w". Alteratively, either stop the mqtt broker 
+ *  or the wifi network so that it will change to Access Point Configuration Portal mode. Use a 
+ *  smartphone or laptop to find it, connect to it over wifi, and set the correct connection parameters.
  * 
  *  NOTE: wifi connection to a ZTE home router varies widely between 200ms and 12secs. However, when 
  *        using a raspeberry pi 3B+ as a routed wireless access point 
@@ -54,8 +86,8 @@
  *  Access Point Portal Configuration params:
  *    location: the physical location in mqtt topic terms that should match the publish and subscribe topics 
  *      e.g. "A/4/S" means "Antonis house/4th floor/Study" and a corresponding publish topic would be 
- *      "A/4/S/SWITCH/S1/state" i.e. location/Type/ID/state, a corresponding publish topic would be
- *      "A/4/S/SWITCH/S1/set"  i.e. location/Type/ID/set
+ *      "A/4/S/LIGHT/L1/state" i.e. location/Type/ID/state, a corresponding publish topic would be
+ *      "A/4/S/LIGHT/L1/set"  i.e. location/Type/ID/set
  *    sleep seconds: 
  *      -0: sleep forever until external reset
  *      -xxx: wake up after xxx seconds and send a configuration mqtt message. If xxx > MAX_SLEEP_SECONDS
@@ -81,7 +113,8 @@
  *    seeing the corresponding light turn on). See https://youtu.be/vmS5YQITRQ0 and https://www.petervis.com/GCSE_Design_and_Technology_Electronic_Products/falling-edge-triggered-monostable/falling-edge-triggered-monostable.html
  *    A TLC555 works with 3.3V VCC and can be powered from the same sourve as the ESP8266.
  *    Feed this pulse to CH_EN to turn ESP8266 on for max 15 secs. Normally ESP8266 will connect and send 
- *    an mqtt "Event" message in less than a second and then go to deep sleep. */
+ *    an mqtt "Event" message in less than a second and then go to deep sleep. 
+ */
 
 
 #include <ESP8266WiFi.h>
@@ -112,6 +145,7 @@ unsigned long start = millis();
 ADC_MODE( ADC_VCC );  
 
 // if the device is not active, it will ignore incoming mqtt messages to toggle the relay
+// and explicit/cmd mqtt messages to switch the relay on and off
 bool active = true;  
 
 bool OTA = false; // when OTA is true the device will stay on to receive OTA updates
@@ -129,11 +163,10 @@ void mqtt_connected_callback( bool connected )
   digitalWrite( MQTT_LED_PIN, connected ? HIGH : LOW );
   Serial.println( "MQTT" + String( connected ? " " : " NOT " ) + "connected." );
 }
-void mqtt_published_callback();
 
 Configuration configuration;
 WiFiClient espClient;
-MQTT mqtt( configuration, espClient, mqtt_connected_callback, mqtt_published_callback );
+MQTT mqtt( configuration, espClient, mqtt_connected_callback );
 Relay relay( RELAY_PIN, INIT_RELAY_STATE );
 #ifdef DOUBLE_RELAY
 Relay relay2( RELAY2_PIN, INIT_RELAY_STATE );
@@ -273,6 +306,7 @@ void publishReport()
     ", \"ip\": \"" + WiFi.localIP().toString() + "\"" +
     ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
     ", \"VCC\": \"" + ESP.getVcc() + "\"" +    
+    ", \"active\": \"" + String( active ) + "\"" +    
     ", \"wake up\": \"" + ESP.getResetReason() + "\"" +
     ", \"connection time\": \"" + connectionTime + "\"" +
     ", \"mainPowerIsOn\": \"" + String( mainPowerIsOn() ) + "\"" +
@@ -292,27 +326,6 @@ void publishReport()
   mqtt.publish( configuration.mqtt.publish_topic, msg, false );
 }
 
-// lastPublishMsecs is updated every time a mqtt publish happens
-// It is checked in mainPower loop and if nothing has been published for MAX_SLEEP_SECONDS
-// a battery status report will be published
-unsigned int lastPublishMsecs = 0;
-void reportBatteryStatus()
-{
-  // Serial.println( "reportBatteryStatus()" );
-  if( millis() - lastPublishMsecs > configuration.switchDevice.sleep_seconds.toInt()*1000 )
-  {
-    // Serial.println( "Reporting battery status" );
-    publishReport();
-  }
-}
-
-void mqtt_published_callback()
-{
-  // whenever a mqtt message is published, update lastPublishMsecs
-  // Serial.println( "Updating lastPublishMsecs" );
-  lastPublishMsecs = millis();
-}
-
 // this function blinks the MQTT led
 unsigned int lastMQTTLedToggleMsecs = 0;
 bool MQTTLedOn = false;
@@ -330,6 +343,21 @@ void blinkOTA( bool upload = false )
     MQTTLedOn = !MQTTLedOn;
     digitalWrite( MQTT_LED_PIN, ( MQTTLedOn ? HIGH : LOW ) );
     lastMQTTLedToggleMsecs = now;
+  }
+}
+
+// this function blinks the ON led
+unsigned int lastONLedToggleMsecs = 0;
+bool ONLedOn = false;
+void blinkONLed()
+{
+  unsigned int now = millis();
+  if( now - lastONLedToggleMsecs > ( ONLedOn ? BLINK_ONLED_ON_MSECS : BLINK_ONLED_OFF_MSECS ) )
+  {
+    // Serial.println( "MQTT Led blink " + String( MQTTLedOn ? "ON" : "OFF" ) );
+    ONLedOn = !ONLedOn;
+    digitalWrite( ON_LED_PIN, ( ONLedOn ? HIGH : LOW ) );
+    lastONLedToggleMsecs = now;
   }
 }
 
@@ -473,8 +501,19 @@ void setup()
 #endif
 
   relay.setup();
+  // if the device is inactive it will not accept mqtt messages and cmd to toggle or turn on/off
+  // the relay. Instead, as soon as it powers up (e.g. when a connected light switch is turned on)
+  // the relay will be switched on, effectively turing the light on as soon as the switch is turned on
+  if( !active )
+  {
+    relay.on();
+  }
 #ifdef DOUBLE_RELAY
   relay2.setup();
+  if( !active )
+  {
+    relay2.on();
+  }
 #endif
 
   // NOTE: mqtt setup must run before wifiManagerProxy init because wifiManagerWrapper may get
@@ -589,8 +628,6 @@ void onMainsPowerLoop()
 
 #ifdef WITH_TEMP_SENSOR
   reportTemperature( true );
-#else
-  reportBatteryStatus();
 #endif
 
   mqtt.loop();
@@ -599,6 +636,11 @@ void onMainsPowerLoop()
   if( OTA )
   {
     blinkOTA();
+  }
+
+  if( !active )
+  {
+    blinkONLed();
   }
 
 }
@@ -664,6 +706,7 @@ void activate()
   active = true;
   configuration.switchDevice.active = "true";
   configuration.write();
+  digitalWrite( ON_LED_PIN, HIGH );
 }
 
 void deactivate()
@@ -798,29 +841,31 @@ void mqtt_callback( char* _topic, byte* _payload, unsigned int length )
       }
     }
 #endif    
-    else if( payload == "on" )
+    else if( active )
     {
-      relay.on();
-      publishReport();
-    }
-    else if( payload == "off" )
-    {
-      relay.off();
-      publishReport();
-    }
+      if( payload == "on" )
+      {
+        relay.on();
+        publishReport();
+      }
+      else if( payload == "off" )
+      {
+        relay.off();
+        publishReport();
+      }
 #ifdef DOUBLE_RELAY
-    else if( payload == "on2" )
-    {
-      relay2.on();
-      publishReport();
-    }
-    else if( payload == "off2" )
-    {
-      relay2.off();
-      publishReport();
-    }    
+      else if( payload == "on2" )
+      {
+        relay2.on();
+        publishReport();
+      }
+      else if( payload == "off2" )
+      {
+        relay2.off();
+        publishReport();
+      }    
 #endif
-    
+    }
   }
   else if( topic == mqtt.subscribe_topic )
   {
