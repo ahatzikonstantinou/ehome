@@ -6,7 +6,7 @@
  * In order to accommodate larger mqtt messages such as the ones including check errors, increase
  * MQTT_MAX_PACKET_SIZE to 1024 in PubSubClient.h
  * 
- * USAGE:
+ * USAGE: See nodemcu_relay.fzz for a circuit that this code is valid for.
  *  NOTE: Use with Settings.h:USE_WIFIMANAGER 1. USE_WIFIMANAGER 0 should be used only in development
  *        as it requires to manuall set initial values for wifi and mqtt connections
  * 
