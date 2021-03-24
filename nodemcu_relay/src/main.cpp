@@ -115,12 +115,16 @@
  *    Feed this pulse to CH_EN to turn ESP8266 on for max 15 secs. Normally ESP8266 will connect and send 
  *    an mqtt "Event" message in less than a second and then go to deep sleep. 
  * 
- *    PIR SENSOR NOTE: see https://diyi0t.com/hc-sr501-pir-motion-sensor-arduino-esp8266-esp32/ on how to
- *    hardware configure HC-SR501 sensor. Either connect 5V to Vcc input (e.g. +IN of a TP4056) or connect 
- *    3.3V (e.g. from a nodemcu) to the innermost pin of the trigger mode jumper. If 3.3V is connected to
+ *    PIR SENSOR NOTES: 
+ *    - see https://diyi0t.com/hc-sr501-pir-motion-sensor-arduino-esp8266-esp32/ on how to
+ *    hardware configure HC-SR501 sensor. Connect 5V (or the output of 18650 battery) to Vcc input, e.g.
+ *    OUT+ of a TP4056. Do not connect 3.3V (e.g. from a nodemcu) to the innermost pin of the trigger mode
+ *    jumper as suggested in the last url. It makes the sensor very unstable. Also if 3.3V is connected to
  *    Vcc HC-SR501 will become unstable and the output will continuously fluctuate between 0 and 1.
- *    It is very important to connect a pull down 10K resistor between signal and gnd pins or else HC-SR501
+ *    - It is very important to connect a pull down 10K resistor between signal and gnd pins or else HC-SR501
  *    is very unstable and practically useless.
+ *    - HC-SR501 will cause nodemcu to freeze after deep sleep when using pin D3, boot fails if pin 3 is 
+ *    pulled low which is necessary for the signal pin of HC-SR501.
  */
 
 
@@ -713,10 +717,9 @@ void onBatteryLoop()
       yield();
       delay( 1000 );
       yield();
-      reportTemperature();
-#else
-      publishReport();    
+      reportTemperature();  // just reads the sensor and stores new values in variables
 #endif
+      publishReport();    
       delay( 200 );
     }
     else
