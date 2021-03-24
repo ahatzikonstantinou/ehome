@@ -114,6 +114,13 @@
  *    A TLC555 works with 3.3V VCC and can be powered from the same sourve as the ESP8266.
  *    Feed this pulse to CH_EN to turn ESP8266 on for max 15 secs. Normally ESP8266 will connect and send 
  *    an mqtt "Event" message in less than a second and then go to deep sleep. 
+ * 
+ *    PIR SENSOR NOTE: see https://diyi0t.com/hc-sr501-pir-motion-sensor-arduino-esp8266-esp32/ on how to
+ *    hardware configure HC-SR501 sensor. Either connect 5V to Vcc input (e.g. +IN of a TP4056) or connect 
+ *    3.3V (e.g. from a nodemcu) to the innermost pin of the trigger mode jumper. If 3.3V is connected to
+ *    Vcc HC-SR501 will become unstable and the output will continuously fluctuate between 0 and 1.
+ *    It is very important to connect a pull down 10K resistor between signal and gnd pins or else HC-SR501
+ *    is very unstable and practically useless.
  */
 
 
@@ -508,7 +515,7 @@ void setup()
 
 #ifdef WITH_PIR_SENSOR
   // pinMode( PIR_PIN, FUNCTION_3 ); // special mode to use pin Rx for input
-  pinMode( PIR_PIN, INPUT );
+  pinMode( PIR_PIN, INPUT_PULLUP );
 #endif
 
   Serial.begin(115200);
