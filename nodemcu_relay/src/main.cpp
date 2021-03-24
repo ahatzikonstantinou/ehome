@@ -152,6 +152,22 @@ bool OTA = false; // when OTA is true the device will stay on to receive OTA upd
 
 bool onMainsPower = true; // should be updated whenever mains power goes and comes back on
 
+#ifdef WITH_PIR_SENSOR
+bool pirDetected = false; // becomes true when the PIR sensor detects positive, false otherwise
+
+// returns true if there is a change in PIR status
+bool reportPIR()
+{
+  bool currentPirDetected = digitalRead( PIR_PIN ) == HIGH;
+  if( pirDetected != currentPirDetected )
+  {
+    pirDetected = currentPirDetected;
+    return true;
+  }
+  return false;
+}
+#endif
+
 // connectionTime stores the elapsed time between start of wifi.connect() and the moment when either 
 // WiFi.status() == WL_CONNECTED or timeout
 unsigned long connectionTime = 0; 
@@ -281,6 +297,9 @@ void publishConfiguration()
 #ifdef DOUBLE_RELAY
     ", \"relay2 is on\": \"" + String( relay2.isOn() ) + "\"" +
 #endif
+#ifdef WITH_PIR_SENSOR
+    ", \"pir\": \"" + String( pirDetected ) + "\"" +
+#endif
     
   " } }" );
   mqtt.publish( configuration.mqtt.configurator_publish_topic, msg, false );
@@ -321,6 +340,9 @@ void publishReport()
     ", \"relay is on\": \"" + String( relay.isOn() ) + "\"" +
 #ifdef DOUBLE_RELAY
     ", \"relay2 is on\": \"" + String( relay2.isOn() ) + "\"" +
+#endif
+#ifdef WITH_PIR_SENSOR
+    ", \"pir\": \"" + String( pirDetected ) + "\"" +
 #endif
 " } }" );
   mqtt.publish( configuration.mqtt.publish_topic, msg, false );
@@ -455,19 +477,18 @@ unsigned int getTempReportMillis()
 }
 
 unsigned int lastTempReportMillis = 0;
-void reportTemperature( bool waitTempMillis = false )
+bool reportTemperature( bool waitTempMillis = false )
 {
   if( waitTempMillis && millis() - lastTempReportMillis < getTempReportMillis() )
   {
-    return;
+    return false;
   }
 
   temperature = dht.readTemperature();
   humidity = dht.readHumidity();
 
-  publishReport();
-
   lastTempReportMillis = millis();
+  return true;
 }
 #endif
 
@@ -484,6 +505,11 @@ void setup()
 
   pinMode( AP_LED_PIN, OUTPUT );
   digitalWrite( AP_LED_PIN, LOW );
+
+#ifdef WITH_PIR_SENSOR
+  // pinMode( PIR_PIN, FUNCTION_3 ); // special mode to use pin Rx for input
+  pinMode( PIR_PIN, INPUT );
+#endif
 
   Serial.begin(115200);
   // Serial.setTimeout(2000);
@@ -601,6 +627,7 @@ void handleOTA()
   ArduinoOTA.handle();
 }
 
+
 void onMainsPowerLoop()
 {  
   bool previousOnMainsPower = onMainsPower; //debug
@@ -626,9 +653,20 @@ void onMainsPowerLoop()
     }
   }
 
+bool hasDataToPublish = false;
+
 #ifdef WITH_TEMP_SENSOR
-  reportTemperature( true );
+  hasDataToPublish = hasDataToPublish || reportTemperature( true );
 #endif
+
+#ifdef WITH_PIR_SENSOR
+  hasDataToPublish = hasDataToPublish || reportPIR();
+#endif
+
+  if( hasDataToPublish )
+  {
+    publishReport();
+  }
 
   mqtt.loop();
 

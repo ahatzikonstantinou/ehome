@@ -95,4 +95,10 @@
 #define BLINK_ONLED_ON_MSECS 500
 #define BLINK_ONLED_OFF_MSECS 1100
 
+// define WITH_PIR_SENSOR if this device also has a PIR digital sensor (HIGH on detect, LOW on no-detection)
+#define WITH_PIR_SENSOR
+#ifdef WITH_PIR_SENSOR
+#define PIR_PIN D3
+#endif
+
 #endif
