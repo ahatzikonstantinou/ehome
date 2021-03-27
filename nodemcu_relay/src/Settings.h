@@ -105,4 +105,36 @@
 #define PIR_PIN D1
 #endif
 
+// define WITH_PHOTORESISTOR if this device also has a photoresistor to measure light
+#define WITH_PHOTORESISTOR
+#ifdef WITH_PHOTORESISTOR
+#define READ_BATTERY LOW
+#define READ_PHOTORESISTOR HIGH
+#define ANALOG_SELECT_PIN 3 // Rx pin
+
+// NOTE: photoresistor is read via a diode that stops mixing photoresistor and battery divider outputs.
+// The max value (shining a S10 flash light on the photoresistor) at the cathode of the diode is 2.7V
+// i.e. at the pin of A0.
+// analogRead returns 1023 for 3.3V so 2.7V will return 2.7*1023/3.3 = 837 which we consider as the max.
+#define PHOTORESISTOR_VOLTAGE_CONVERSION 0.1195
+
+// if light voltage is larger or smaller by LIGHT_REPORT_THRESHOLD% it should be reported
+#define LIGHT_REPORT_THRESHOLD 20
+
+#endif
+
+// NOTE: battery voltage is read via a voltage divider Rbottom = 47K Rtop = 22K => 4.2V battery
+// will be 2.86V at Rbottom where A0 pin reads. There is another voltage drop due to a diode 
+// that stops mixing photoresistor and battery divider outputs.
+// The final value measured with a DMM is 2.29 at A0 pin.
+// analogRead returns 1023 for 3.3V so 2.29V will return 2.29*1023/3.3 = 709.9. So a raw 
+// reading of 709.9 corresponds to battery voltage 4.2V (actually 4.1V measured at the OUT+
+// pin of a TP4056 charger module).  
+// In order to convert raw readings to battery voltages multiply by 4.1/709.9 = 0.005775
+#define BATTERY_VOLTAGE_CONVERSION 0.005775
+
+// if battery voltage is larger or smaller by LIGHT_REPORT_THRESHOLD% it should be reported
+#define BATTERY_REPORT_THRESHOLD (4.2/20)  // 1/20th of the max battery voltage
+
+
 #endif

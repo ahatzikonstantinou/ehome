@@ -43,8 +43,9 @@ bool MQTT::connect( bool cleanSession )
     }
     else
     {
-     Serial.println( "Mqtt connection failed, rc=" + String( client.state() ) );
-     return false;
+      Serial.println( "Mqtt connection failed, rc=" + String( client.state() ) );
+      connected_callback( false );
+      return false;
     }
   }
   connected_callback( true );

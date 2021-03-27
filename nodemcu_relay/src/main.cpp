@@ -125,6 +125,15 @@
  *    is very unstable and practically useless.
  *    - HC-SR501 will cause nodemcu to freeze after deep sleep when using pin D3, boot fails if pin 3 is 
  *    pulled low which is necessary for the signal pin of HC-SR501.
+ *    
+ *    ADC (Battery - Photoresistor) NOTES:
+ *    - see https://ezcontents.org/esp8266-battery-level-meter, https://www.instructables.com/ESP8266-with-Multiple-Analog-Sensors/
+ *    - nodemcu has only one ADC. In order to read two analog channels pin Rx is used as output. A p-mosfet
+ *    blocks or allows voltage from the battery -via a voltage divider- to be read by the adc (A0). When
+ *    Rx is LOW the p-mosfet conducts, when it is HIGH it blocks. The photoresistor is powered by Rx when
+ *    Rx is HIGH (and battery voltage is blocked from the adc), it is off when Rx is LOW.
+ *    IMPORTANT: Rx (and Tx probably) ignore digitalWrite when used as GPIO pins. analogRead( Rx, 0 ) must
+ *    be used for LOW, and analogRead( Rx, 1023 ) for HIGH.
  */
 
 
@@ -153,7 +162,7 @@ unsigned long start = millis();
 
 // The following line is required to allow ESP to measure Vcc
 // see https://arduino-esp8266.readthedocs.io/en/stable/libraries.html#esp-specific-apis
-ADC_MODE( ADC_VCC );  
+// ADC_MODE( ADC_VCC );  
 
 // if the device is not active, it will ignore incoming mqtt messages to toggle the relay
 // and explicit/cmd mqtt messages to switch the relay on and off
@@ -260,6 +269,85 @@ unsigned long wifiSetup()
 }
 #endif
 
+#ifdef WITH_PHOTORESISTOR
+float lightVoltage = 0.0;
+void readLight()
+{
+  analogWrite( ANALOG_SELECT_PIN, 1023 );
+
+  delay( 10 );  // without the delay the adc reads 0 volts from the photoresistor
+  lightVoltage = analogRead( A0 )*PHOTORESISTOR_VOLTAGE_CONVERSION; 
+  analogWrite( ANALOG_SELECT_PIN, 0 );
+}
+
+bool reportLight()
+{
+  float previousLight = lightVoltage;
+  readLight();  
+  // TODO : fix comparison % of maximum, not of last value
+  return  abs(previousLight - lightVoltage) > LIGHT_REPORT_THRESHOLD;
+}
+#endif
+
+float batteryVoltage = 0.0;
+void readBattery()
+{
+  analogWrite( ANALOG_SELECT_PIN, 0 );
+  batteryVoltage = (float) analogRead( A0 ) * BATTERY_VOLTAGE_CONVERSION;
+}
+
+// matrix taken from https://ezcontents.org/esp8266-battery-level-meter
+float batteryCapacityPercent()
+{
+  float voltageMatrix[22][2] = {
+    {4.2,  100},
+    {4.15, 95},
+    {4.11, 90},
+    {4.08, 85},
+    {4.02, 80},
+    {3.98, 75},
+    {3.95, 70},
+    {3.91, 65},
+    {3.87, 60},
+    {3.85, 55},
+    {3.84, 50},
+    {3.82, 45},
+    {3.80, 40},
+    {3.79, 35},
+    {3.77, 30},
+    {3.75, 25},
+    {3.73, 20},
+    {3.71, 15},
+    {3.69, 10},
+    {3.61, 5},
+    {3.27, 0},
+    {0, 0}
+  };
+
+  int i, perc;
+
+  perc = 100;
+
+  for(i=20; i>=0; i--) 
+  {
+    if(voltageMatrix[i][0] >= batteryVoltage ) 
+    {
+      perc = voltageMatrix[i + 1][1];
+      break;
+    }
+  }
+  return perc;
+}
+
+bool reportBattery()
+{
+  float previousBattery = batteryVoltage;
+  readBattery();
+  // TODO : fix comparison % of maximum, not of last value
+  return  abs( previousBattery - batteryVoltage ) > BATTERY_REPORT_THRESHOLD;
+}
+
+
 // This function will return true if the mains power is on, false if the device 
 // operates on battery. In order to detect if power is on, the output of the
 // 3.3v power source is read by input pin POWER_READER.
@@ -291,7 +379,7 @@ void publishConfiguration()
     ", \"BSSID\": \"" + WiFi.BSSIDstr() + "\"" +
     ", \"wifi channel\": \"" + WiFi.channel() + "\"" +
     ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
-    ", \"VCC\": \"" + ESP.getVcc() + "\"" +
+    ", \"Battery\": \"" + String( batteryVoltage ) + "V (" + String( batteryCapacityPercent() ) +"%)\"" +
     ", \"active\": \"" + String( active ) + "\"" +
     ", \"wake up\": \"" + ESP.getResetReason() + "\"" +
     ", \"connection time\": \"" + connectionTime + "\"" +
@@ -310,6 +398,9 @@ void publishConfiguration()
 #endif
 #ifdef WITH_PIR_SENSOR
     ", \"pir\": \"" + String( pirDetected ) + "\"" +
+#endif
+#ifdef WITH_PHOTORESISTOR
+    ", \"light\": \"" + String( lightVoltage ) + "\%\"" +
 #endif
     
   " } }" );
@@ -335,7 +426,7 @@ void publishReport()
     ", \"subscribe_cmd_topic\": \"" + configuration.mqtt.subscribe_cmd_topic + "\"" +
     ", \"ip\": \"" + WiFi.localIP().toString() + "\"" +
     ", \"wifi RSSI\": \"" + WiFi.RSSI() + "\"" +
-    ", \"VCC\": \"" + ESP.getVcc() + "\"" +    
+    ", \"Battery\": \"" + String( batteryVoltage ) + "V (" + String( batteryCapacityPercent() ) +"%)\"" +
     ", \"active\": \"" + String( active ) + "\"" +    
     ", \"wake up\": \"" + ESP.getResetReason() + "\"" +
     ", \"connection time\": \"" + connectionTime + "\"" +
@@ -354,6 +445,9 @@ void publishReport()
 #endif
 #ifdef WITH_PIR_SENSOR
     ", \"pir\": \"" + String( pirDetected ) + "\"" +
+#endif
+#ifdef WITH_PHOTORESISTOR
+    ", \"light\": \"" + String( lightVoltage ) + "\%\"" +
 #endif
 " } }" );
   mqtt.publish( configuration.mqtt.publish_topic, msg, false );
@@ -504,7 +598,6 @@ bool reportTemperature( bool waitTempMillis = false )
 }
 #endif
 
-
 void setup() 
 {
   pinMode( POWER_READER_PIN, INPUT );
@@ -519,9 +612,15 @@ void setup()
   digitalWrite( AP_LED_PIN, LOW );
 
 #ifdef WITH_PIR_SENSOR
-  // pinMode( PIR_PIN, FUNCTION_3 ); // special mode to use pin Rx for input
   pinMode( PIR_PIN, INPUT );
-  // attachInterrupt( digitalPinToInterrupt( PIR_PIN ), [](){ pirDetected = true; }, RISING );
+#endif
+
+#ifdef WITH_PHOTORESISTOR
+  pinMode( ANALOG_SELECT_PIN, FUNCTION_3 ); // special mode to use pin Tx for output
+  pinMode( ANALOG_SELECT_PIN, OUTPUT );
+  // digitalWrite( ANALOG_SELECT_PIN, LOW );
+  analogWrite( ANALOG_SELECT_PIN, 0 );
+
 #endif
 
   Serial.begin(115200);
@@ -560,8 +659,8 @@ void setup()
   mqtt.setup( mqtt_callback );
   Serial.println( F( "mqttSetup finished" ) );
 
-  int vdd = ESP.getVcc();
-  Serial.print( F("VDD: ") ); Serial.println( String( vdd ) );
+  // int vdd = ESP.getVcc();
+  // Serial.print( F("VDD: ") ); Serial.println( String( vdd ) );
 
   // NOTE: if the results of onStationModeDisconnected and onStationModeConnected are not
   // save in WifiEventHandler, the corresponding callbacks are never called!!!
@@ -666,7 +765,18 @@ void onMainsPowerLoop()
     }
   }
 
+  //
+  // read sensors
+
   bool hasDataToPublish = false;
+
+  // hasDataToPublish = hasDataToPublish || reportBattery();
+  readBattery();
+
+#ifdef WITH_PHOTORESISTOR
+  // hasDataToPublish = hasDataToPublish || reportLight();
+  readLight();
+#endif
 
 #ifdef WITH_TEMP_SENSOR
   hasDataToPublish = hasDataToPublish || reportTemperature( true );
@@ -724,6 +834,12 @@ void onBatteryLoop()
 
 #ifdef WITH_PIR_SENSOR
       reportPIR();
+#endif
+
+      readBattery();
+
+#ifdef WITH_PHOTORESISTOR
+      readLight();
 #endif
 
       publishReport();    
