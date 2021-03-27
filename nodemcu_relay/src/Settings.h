@@ -13,11 +13,15 @@
 #define POWER_READER_PIN D2
 
 // The pin were the relay control input is connected
-#define RELAY_PIN D1
+#define RELAY_PIN D3
 
-#define ON_LED_PIN D4
+// IMPORTANT. The ON_LED_PIN is also used to stop PIR sensor from resetting the device while the device is on.
+// The ON_LED_PIN is expected to be LOW when the device is in deep sleep, and in that case the PIR sensor is
+// allowed to reset i.e. "wake up" the device. Therefore, DO NOT use pins D3 or D4 which are pulled up, even
+// while the device is in deep sleep, or else the PIR sensor will be forever blocked regardles of deep sleep.
+#define ON_LED_PIN D8 
 #define AP_LED_PIN D7
-#define MQTT_LED_PIN D8
+#define MQTT_LED_PIN D6
 
 // The initial state of the relay. The light is connected on the NORMALLY OPEN contact so that
 // when mains power in the house is initially switched on the light will remain OFF. Same for initial
@@ -66,7 +70,7 @@
 #define DOUBLE_RELAY
 
 #ifdef DOUBLE_RELAY
-#define RELAY2_PIN D6
+#define RELAY2_PIN D4
 #define DEVICE_TYPE "RELAY2"
 #else
 #define DEVICE_TYPE "RELAY1"
@@ -98,7 +102,7 @@
 // define WITH_PIR_SENSOR if this device also has a PIR digital sensor (HIGH on detect, LOW on no-detection)
 #define WITH_PIR_SENSOR
 #ifdef WITH_PIR_SENSOR
-#define PIR_PIN D3
+#define PIR_PIN D1
 #endif
 
 #endif

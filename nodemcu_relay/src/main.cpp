@@ -461,6 +461,7 @@ void deepSleep()
   
   // NOTE: Esp.deepSleep will NOT go to sleep immediately and will allow loop to run again
   // and since wifi is off wifimanager will start the ConfigPortal
+  digitalWrite( ON_LED_PIN, LOW );
   ESP.deepSleepInstant( sleepTime, WAKE_RFCAL ); 
   // delay( 100 );
 }
@@ -519,7 +520,8 @@ void setup()
 
 #ifdef WITH_PIR_SENSOR
   // pinMode( PIR_PIN, FUNCTION_3 ); // special mode to use pin Rx for input
-  pinMode( PIR_PIN, INPUT_PULLUP );
+  pinMode( PIR_PIN, INPUT );
+  // attachInterrupt( digitalPinToInterrupt( PIR_PIN ), [](){ pirDetected = true; }, RISING );
 #endif
 
   Serial.begin(115200);
@@ -664,7 +666,7 @@ void onMainsPowerLoop()
     }
   }
 
-bool hasDataToPublish = false;
+  bool hasDataToPublish = false;
 
 #ifdef WITH_TEMP_SENSOR
   hasDataToPublish = hasDataToPublish || reportTemperature( true );
@@ -719,6 +721,11 @@ void onBatteryLoop()
       yield();
       reportTemperature();  // just reads the sensor and stores new values in variables
 #endif
+
+#ifdef WITH_PIR_SENSOR
+      reportPIR();
+#endif
+
       publishReport();    
       delay( 200 );
     }
