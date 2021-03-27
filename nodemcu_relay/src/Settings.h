@@ -118,7 +118,7 @@
 // analogRead returns 1023 for 3.3V so 2.7V will return 2.7*1023/3.3 = 837 which we consider as the max.
 #define PHOTORESISTOR_VOLTAGE_CONVERSION 0.1195
 
-// if light voltage is larger or smaller by LIGHT_REPORT_THRESHOLD% it should be reported
+// if light voltage is larger or smaller by LIGHT_REPORT_THRESHOLD% within the last it should be reported
 #define LIGHT_REPORT_THRESHOLD 20
 
 #endif

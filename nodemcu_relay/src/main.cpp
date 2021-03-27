@@ -284,7 +284,7 @@ bool reportLight()
 {
   float previousLight = lightVoltage;
   readLight();  
-  // TODO : fix comparison % of maximum, not of last value
+  // TODO : comparison should between the max and min of the last x seconds?
   return  abs(previousLight - lightVoltage) > LIGHT_REPORT_THRESHOLD;
 }
 #endif
@@ -339,11 +339,12 @@ float batteryCapacityPercent()
   return perc;
 }
 
+
 bool reportBattery()
 {
   float previousBattery = batteryVoltage;
   readBattery();
-  // TODO : fix comparison % of maximum, not of last value
+  // TODO : comparison should between the max and min of the last x seconds?
   return  abs( previousBattery - batteryVoltage ) > BATTERY_REPORT_THRESHOLD;
 }
 
@@ -770,12 +771,12 @@ void onMainsPowerLoop()
 
   bool hasDataToPublish = false;
 
-  // hasDataToPublish = hasDataToPublish || reportBattery();
-  readBattery();
+  hasDataToPublish = hasDataToPublish || reportBattery();
+  // readBattery();
 
 #ifdef WITH_PHOTORESISTOR
-  // hasDataToPublish = hasDataToPublish || reportLight();
-  readLight();
+  hasDataToPublish = hasDataToPublish || reportLight();
+  // readLight();
 #endif
 
 #ifdef WITH_TEMP_SENSOR
